@@ -187,15 +187,35 @@ class mcmc_inv(object):
         			f.write("{:15.7f} ".format(sampler.chain[k,i,j]))
         		f.write("{:15.7f}\n".format(sampler.lnprobability[k,i]))
         f.close()
-        ## assign results to station object attributes 
-        
+        # assign results to station object attributes 
         self.time = time.time() - start_time # enlapsed time
         ## move chain.dat to file directory
-        shutil.rmtree('.'+os.sep+str('mcmc_inversions'))
-        os.mkdir('.'+os.sep+str('mcmc_inversions'))
-        os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
-        shutil.move('chain.dat', '.'+os.sep+str('mcmc_inversions')+os.sep+self.name+os.sep+'chain.dat')
+        # shutil.rmtree('.'+os.sep+str('mcmc_inversions'))
+        if not os.path.exists('.'+os.sep+str('mcmc_inversions')):
+            os.mkdir('.'+os.sep+str('mcmc_inversions'))
+        elif not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+self.name):
+            os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
+        
         self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
+        shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
+
+            
+
+
+            #self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name 
+            #os.mkdir(self.path_results)
+            #shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
+
+        #    shutil.rmtree('.'+os.sep+str("last_inv")+os.sep+str('mcmc_inversions'))
+        #    shutil.move('.'+os.sep+str('mcmc_inversions'), '.'+os.sep+str("last_inv")+os.sep+str('mcmc_inversions'))
+        #else:
+        #    os.mkdir('.'+os.sep+str('mcmc_inversions'))
+        #    self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
+        
+        
+        #os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
+        #shutil.move('chain.dat', '.'+os.sep+str('mcmc_inversions')+os.sep+self.name+os.sep+'chain.dat')
+        #self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         # # save text file with inversion parameters
         a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)"] 
         b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time)]
@@ -203,7 +223,7 @@ class mcmc_inv(object):
             writer = csv.writer(f, delimiter='\t')
             writer.writerows(zip(a,b))
         f.close()
-        shutil.move('inv_par.txt','.'+os.sep+str('mcmc_inversions')+os.sep+self.name+os.sep+'inv_par.txt')
+        shutil.move('inv_par.txt',self.path_results+os.sep+'inv_par.txt')
 
     def lnprob(self, pars, obs):
         ## function to calculate likelihood probability
@@ -397,7 +417,6 @@ class mcmc_inv(object):
 
         if path is None: 
             path =  self.path_results
-        
         # import chain and estimated model parameters
         rest_mod_samples = np.genfromtxt(path+os.sep+"chain_sample_order.dat")
         num_samples = len(rest_mod_samples[0:,1])

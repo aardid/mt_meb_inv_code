@@ -39,9 +39,9 @@ if __name__ == "__main__":
 	if True:
 		#### Import data: MT from edi files and wells from spreadsheet files
 		## MT
-		#path_files = "D:\kk_full\*.edi" 	# Whole array 
+		path_files = "D:\kk_full\*.edi" 	# Whole array 
 		#path_files = "D:\kk_sample\*.edi"  # Sample of stations
-		path_files = "D:\kk_1\*.edi"		# One station
+		#path_files = "D:\kk_1\*.edi"		# One station
 		
 		## Data paths for personal's pc (uncommend the one to use)
 		#path_files = "C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\1_sta\\*.edi"
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 			sta_obj.app_res_phase()
 			## Create station objects and fill them
 			station_objects.append(sta_obj)
-		
+			count  += 1
 		## Create wells objects
 		# Import wells data:
 		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
@@ -101,33 +101,44 @@ if __name__ == "__main__":
 			
 			# add well object to directory of well objects
 			wells_objects.append(wl_obj)
-
+			count  += 1
 		
 	# (1) Calculate priors for each station (using two nearest) 
 
 	
-	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model 
+	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
+	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
 	if True:
-		print('Running MCMC inversion')
 		start_time = time.time()
 		for sta_obj in station_objects: 
-			print(sta_obj.name[:-4])
-			 
+			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
+			## range for the parameters
 			par_range = [[100,1000],[100,1000],[1e2,5*1e3],[1e-3,2*1e1],[1e2,5*1e3]]
-			#mcmc_sta = mcmc_inv(sta_obj)
+			## create object mcmc_inv 
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', prior_input=par_range)
+			## run inversion 
 			mcmc_sta.inv()
-			#print(mcmc_sta.time)
-			mcmc_sta.plot_results()
-		enlap_time = time.time() - start_time # enlapsed time
-		print("Time consumed: {:.1f} s".format(enlap_time))
-	# (4) Sample posterior and construct uncertain resistivity distribution
-	if True: 
-		print('Sampling posterior')
-		start_time = time.time()
-		for sta_obj in station_objects:
+			## sample posterior
+			#print('({:}/{:}) Sampling posterior:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 			mcmc_sta.sample_post()
+			## calculate estimate parameters
 			mcmc_sta.model_pars_est()
+			## plot results (save in .png)
+			mcmc_sta.plot_results()
+			## sum one to index
+		## enlapsed time for the inversion (every station in station_objects)
+		enlap_time = time.time() - start_time # enlapsed time
+		## print time consumed
+		print("Time consumed:\t{:.1f} s".format(enlap_time))
+
+	# (4) Sample posterior and construct uncertain resistivity distribution
+	#if True: 
+	#	print('Sampling posterior')
+	#	start_time = time.time()
+	#	for sta_obj in station_objects:
+	#		print(sta_obj.name[:-4])
+	#		mcmc_sta.sample_post()
+	#		mcmc_sta.model_pars_est()
 	
 	# (5) Construct uncertain distribution of temperature 
 
