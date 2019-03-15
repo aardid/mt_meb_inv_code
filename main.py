@@ -27,6 +27,7 @@ from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import * 
 from Maping_functions import coord_dms2dec
+from matplotlib.backends.backend_pdf import PdfPages
 
 textsize = 15.
 
@@ -39,8 +40,8 @@ if __name__ == "__main__":
 	if True:
 		#### Import data: MT from edi files and wells from spreadsheet files
 		## MT
-		path_files = "D:\kk_full\*.edi" 	# Whole array 
-		#path_files = "D:\kk_sample\*.edi"  # Sample of stations
+		#path_files = "D:\kk_full\*.edi" 	# Whole array 
+		path_files = "D:\kk_sample\*.edi"  # Sample of stations
 		#path_files = "D:\kk_1\*.edi"		# One station
 		
 		## Data paths for personal's pc (uncommend the one to use)
@@ -109,6 +110,9 @@ if __name__ == "__main__":
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
 	if True:
+		## create pdf file to save the fit results for the whole inversion 
+		pp = PdfPages('fit.pdf')
+
 		start_time = time.time()
 		for sta_obj in station_objects: 
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
@@ -118,18 +122,21 @@ if __name__ == "__main__":
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', prior_input=par_range)
 			## run inversion 
 			mcmc_sta.inv()
+			## plot results (save in .png)
+			mcmc_sta.plot_results_mcmc()
 			## sample posterior
-			#print('({:}/{:}) Sampling posterior:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
-			mcmc_sta.sample_post()
+			#mcmc_sta.sample_post()
+			f = mcmc_sta.sample_post(exp_fig = True) # Figure with fit to be add in pdf (whole station)
+			pp.savefig(f)
+			plt.close("all")
 			## calculate estimate parameters
 			mcmc_sta.model_pars_est()
-			## plot results (save in .png)
-			mcmc_sta.plot_results()
 			## sum one to index
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
 		print("Time consumed:\t{:.1f} s".format(enlap_time))
+		pp.close()
 
 	# (4) Sample posterior and construct uncertain resistivity distribution
 	#if True: 

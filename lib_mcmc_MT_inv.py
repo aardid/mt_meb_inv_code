@@ -39,8 +39,8 @@ class mcmc_inv(object):
                             Station class (see lib_MT_station.py).
     num_lay                 number of layers in the inversion           3
     inv_dat		 			weighted data to invert [a,b,c,d,e]         [1,1,0,0,0]
-                            a: app. res. TE mode
-                            b: app. res. TM mode
+                            a: app. res. and phase TE mode 
+                            b: app. res. and phase TM mode
                             c: maximum value in Z
                             d: determinat of Z
                             e: sum of squares elements of Z
@@ -116,7 +116,7 @@ class mcmc_inv(object):
         if num_lay is None: 
             self.num_lay = 3
         if inv_dat is None: 
-            self.inv_dat = [1,0,0,0,0] 
+            self.inv_dat = [1,1,0,0,0] 
         if norm is None: 
             self.norm = 2.     
         if prior is None: 
@@ -199,23 +199,6 @@ class mcmc_inv(object):
         self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
 
-            
-
-
-            #self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name 
-            #os.mkdir(self.path_results)
-            #shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
-
-        #    shutil.rmtree('.'+os.sep+str("last_inv")+os.sep+str('mcmc_inversions'))
-        #    shutil.move('.'+os.sep+str('mcmc_inversions'), '.'+os.sep+str("last_inv")+os.sep+str('mcmc_inversions'))
-        #else:
-        #    os.mkdir('.'+os.sep+str('mcmc_inversions'))
-        #    self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
-        
-        
-        #os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
-        #shutil.move('chain.dat', '.'+os.sep+str('mcmc_inversions')+os.sep+self.name+os.sep+'chain.dat')
-        #self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         # # save text file with inversion parameters
         a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)"] 
         b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time)]
@@ -231,7 +214,7 @@ class mcmc_inv(object):
 		    # log likelihood for the model, given the data
             v = 0.15
             v_vec = np.ones(len(self.T_obs))
-            v_vec[18:] = np.inf 
+            #v_vec[18:] = np.inf 
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
@@ -323,7 +306,7 @@ class mcmc_inv(object):
 					
         return  # lp_thick_layer1 + lp_rho_layer1 + lp_rho_layer2 + lp_thick_layer2 + lp_rho_hs
 
-    def plot_results(self, corner_plt = False, walker_plt = True): 
+    def plot_results_mcmc(self, corner_plt = False, walker_plt = True): 
         chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
         if corner_plt: 
         # show corner plot
@@ -351,7 +334,7 @@ class mcmc_inv(object):
         chain = None
         plt.close('all')
 
-    def sample_post(self, plot_fit = True): 
+    def sample_post(self, plot_fit = True, exp_fig = None): 
 		######################################################################
 		# reproducability
         np.random.seed(1)
@@ -390,12 +373,13 @@ class mcmc_inv(object):
         if plot_fit: 
             f,ax = plt.subplots(1,1)
             f.set_size_inches(8,4) 
+            f.suptitle(self.name, size = textsize)
             ax.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
             ax.set_xlim([1E-3,1e3])
             ax.set_ylim([1e0,1e3])
             ax.set_xlabel('period [s]', size = textsize)
-            ax.set_ylabel('resistiviy [Ohm m]', size = textsize)
-            ax.set_title('Apparent Resistivity: MCMC posterior samples', size = textsize)
+            ax.set_ylabel('app. res. [Ohm m]', size = textsize)
+            #ax.set_title('Apparent Resistivity: MCMC posterior samples', size = textsize)
 				
             for par in pars:
                 if all(x > 0. for x in par):
@@ -411,7 +395,12 @@ class mcmc_inv(object):
             plt.tight_layout()
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
-            plt.close(f) 
+        if exp_fig == None:
+            plt.close(f)
+            plt.clf()
+        if exp_fig:  # True: return figure
+            return f
+
 
     def model_pars_est(self, path = None):
 
