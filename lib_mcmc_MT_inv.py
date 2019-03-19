@@ -16,6 +16,7 @@ import os, shutil, time, math, cmath
 import corner, emcee
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
+import multiprocessing 
 import csv
 
 textsize = 15.
@@ -140,10 +141,10 @@ class mcmc_inv(object):
                 self.prior_type = prior
                 self.prior_input = prior_input
         if walk_jump is None: 
-            self.walk_jump = 4000      
+            self.walk_jump = 5000      
         if ini_mod is None: 
             if self.num_lay == 3:
-                self.ini_mod = [200,100,150,50,500]
+                self.ini_mod = [800,250,300,5,200]
             if self.num_lay == 4:
                 self.ini_mod = [200,100,200,150,50,500,1000]    
         self.time = None  
@@ -157,7 +158,7 @@ class mcmc_inv(object):
     # Methods               
     # =====================
     def inv(self):
-        nwalkers= 50           # number of walkers
+        nwalkers= 30               # number of walkers
         # Create chain.dat
         if self.num_lay == 3:
             ndim = 5               # parameter space dimensionality
@@ -170,14 +171,19 @@ class mcmc_inv(object):
                     self.rho_app_obs[1],self.phase_obs[1],\
                     self.rho_app_obs[2],self.phase_obs[2],\
                     self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs]).T
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=4, args=[data,])
+        cores = multiprocessing.cpu_count()
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores, args=[data,])
 		# set the initial location of the walkers
         pars = self.ini_mod  # initial guess
-        p0 = np.array([pars + 1e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.array([pars + 0.5e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.abs(p0)
+        #p0 = emcee.utils.sample_ball(p0, [20., 20.,], size=nwalkers)
+
+        # p0_log = np.log(np.abs(p0))
 		# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
-        pos,prob,state=sampler.run_mcmc(p0,self.walk_jump)
+        pos,prob,state=sampler.run_mcmc(np.abs(p0),self.walk_jump)
 		# sampler.reset()
-		#print(1)
+
         f = open("chain.dat", "w")
         nk,nit,ndim=sampler.chain.shape
         for k in range(nk):
@@ -236,7 +242,8 @@ class mcmc_inv(object):
                         -np.log10(Z_est*np.sqrt(2)/2))/v_vec)**self.norm)/v
             # retunr sum od probabilities
             return TE_sc + TM_sc + max_Z + det_Z + ssq_Z
-
+        
+        # pars = np.exp(pars)  # pars was define in log space, here we take it back to linear space
 		## Parameter constrain
         if (any(x<0 for x in pars)):
         	return -np.Inf
@@ -246,6 +253,8 @@ class mcmc_inv(object):
                     for i in range(len(pars)): # Check if parameters are inside the range
                         if (pars[i] < self.prior_input[i][0] or pars[i] > self.prior_input[i][1]): 
                             return -np.Inf  # if pars are outside range, return -inf
+                    if (pars[1]*pars[3]<1000. or pars[1]*pars[3]>5000.): # constrain correlation between rest and thick (alpha) 
+                        return -np.Inf  # if product between rest and thick of second layer is outside range
                     Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
                     # calculate prob without priors
                     prob = prob_likelihood(Z_est, rho_ap_est, phi_est)
@@ -351,12 +360,13 @@ class mcmc_inv(object):
         
         while Nsamples != Nruns:
             id = np.random.randint(0,params.shape[0]-1)
-            #par_new = [params[id,0], params[id,1], params[id,2], params[id,3], params[id,4]]
-            pars.append([Nsamples, params[id,0], params[id,1], params[id,2], params[id,3], \
-                params[id,4]])
-            pars_order.append([chain[id,0], chain[id,1],chain[id,2], chain[id,3],chain[id,4],\
-                chain[id,5],chain[id,6],chain[id,7]])
-            Nsamples += 1
+            if chain[id,7] != -np.inf: 
+                #par_new = [params[id,0], params[id,1], params[id,2], params[id,3], params[id,4]]
+                pars.append([Nsamples, params[id,0], params[id,1], params[id,2], params[id,3], \
+                    params[id,4]])
+                pars_order.append([chain[id,0], chain[id,1],chain[id,2], chain[id,3],chain[id,4],\
+                    chain[id,5],chain[id,6],chain[id,7]])
+                Nsamples += 1
 
 		# Write in .dat paramateres sampled in order of fit (best fit a the top)
         pars_order= np.asarray(pars_order)
@@ -369,6 +379,7 @@ class mcmc_inv(object):
                 pars_order[j,2], pars_order[j,3], pars_order[j,4],\
                 pars_order[j,5], pars_order[j,6], pars_order[j,7]))
         f.close()
+
         
         if plot_fit: 
             f,ax = plt.subplots(1,1)

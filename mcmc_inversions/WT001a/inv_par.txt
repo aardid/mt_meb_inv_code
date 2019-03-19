@@ -1,6 +1,6 @@
-Station name	WT001a
-Number of layers	3
-Inverted data	[1, 1, 0, 0, 0]
-Norm	2.0
-Priors	True
-Time(s)	20
+Station name	WT001a
+Number of layers	3
+Inverted data	[1, 1, 0, 0, 0]
+Norm	2.0
+Priors	True
+Time(s)	97
