@@ -1,0 +1,33 @@
+To do: 
+------------------------------------------------------------------------
+Main
+	- Automatic path for file in office or personal PC (done)
+	- Add MeB info to well object 
+------------------------------------------------------------------------
+Well library
+	- Write docstring for methods
+	- import and add MeD data 
+		- Check if the depth are the same in the temp profile 
+		- Develop conversion from MeB to Res 
+	- incorporate MeB priors: calculate prior for every station 
+
+------------------------------------------------------------------------
+MCMC library
+	- Write docstring for methods
+
+------------------------------------------------------------------------
+MT library
+	- Write docstring for methods
+	- Create synthetic data: Impedance tensors for synthetic case (2D)
+		- Simple ~2D model from anomaly	
+		- Complex 2D model from anomaly
+	- Optimize functions
+		- read_edi: change how each block is extracted 
+			(use number of periods)
+------------------------------------------------------------------------
+Data
+	- 2D profile: select MT stations and wells (temp and MeB) 
+
+------------------------------------------------------------------------
+Repository
+	-
