@@ -41,3 +41,4 @@ def coord_dms2dec(H):
     lon_dec = round((abs(lon_degree) + ((lon_minute * 60.0) + lon_second) / 3600.0) * 1000000.0) / 1000000.0
 
     return lat_dec, lon_dec
+

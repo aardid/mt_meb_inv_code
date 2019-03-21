@@ -101,6 +101,7 @@ if __name__ == "__main__":
 		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
 			read_well_temperature(path_wells_temp)
 		# Note: dir_no_depth_red contain a list of wells with no information of reduced depth
+		
 		## import meb profiles
 		wl_name_meb, wl_prof_depth_meb, wl_prof_meb = read_well_meb(path_wells_meb)
 
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 		wells_location = read_well_location(path_wells_loc)
 		# Note: wells_location = [[wl_name1,lat1,lon1,elev1],...] list of arrays
 		
-		## Loop over the wells to create objects and assing data attributes 
+		## Loop over the wells to create objects and assing data attributes from temp. files 
 		wells_objects = []   # list to be fill with station objects
 		count  = 0
 		for wl in wl_name: 
@@ -122,6 +123,23 @@ if __name__ == "__main__":
 			# add well object to directory of well objects
 			wells_objects.append(wl_obj)
 			count  += 1
+	
+		## Loop wells_objects (list) to assing data attributes from MeB files 
+		# list of wells with MeB (names)
+		wells_meb = []
+		for wl in wells_objects: 
+			if wl.name in wl_name_meb:
+				idx = wl_name_meb.index(wl.name)
+				wl.meb_prof = wl_prof_meb[idx]
+				wl.meb_depth = wl_prof_depth_meb[idx]
+				wells_meb.append(wl.name)
+		# save to .txt names of wells with MeB content 
+		f = open("wells_MeB_list.txt", "w")
+		f.write('# Wells with MeB data available\n')
+		f.write('# Total: {:}\n'.format(len(wells_meb)))
+		for wl in wells_meb:
+			f.write(wl+'\n')
+		f.close()
 		
 	# (1) Calculate priors for each station (using two nearest) 
 
