@@ -48,6 +48,7 @@ class Wells(object):
 	# betas					beta value for each layer
 	# slopes				slopes values for each layer
 	#
+    # meb                   Methylene-blue (MeB) data available         False
 	# meb_prof				methylene-blue (MeB) profiles
 	# meb_depth				methylene-blue (MeB) depths (samples)
     """
@@ -75,6 +76,7 @@ class Wells(object):
         self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
 		# MeB profile
+        self.meb = False            # Methylene-blue (MeB) data available
         self.meb_prof = None		# methylene-blue (MeB) profile
         self.meb_depth = None		# methylene-blue (MeB) depths (samples)
     # ===================== 

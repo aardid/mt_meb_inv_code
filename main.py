@@ -26,7 +26,7 @@ import time
 from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import * 
-from Maping_functions import coord_dms2dec
+from Maping_functions import coord_dms2dec, for_google_earth
 from matplotlib.backends.backend_pdf import PdfPages
 
 textsize = 15.
@@ -118,21 +118,33 @@ if __name__ == "__main__":
 			wl_obj.depth = wl_prof_depth[count]
 			wl_obj.red_depth = wl_prof_depth_red[count]
 			wl_obj.temp_prof_true = wl_prof_temp[count]
-			# Search for location of the well and add to attributes
-			#if wl in wells_location[0][:]:
 			# add well object to directory of well objects
 			wells_objects.append(wl_obj)
 			count  += 1
-	
+		
+		# Search for location of the well and add to attributes
+		for wl in wells_objects:
+			for i in range(len(wells_location)): 
+				wl_name = wells_location[i][0]
+				if wl.name == wl_name: 
+					wl.lat_dec = wells_location[i][2]
+					wl.lon_dec = wells_location[i][1]
+					wl.elev = wells_location[i][3]
+
 		## Loop wells_objects (list) to assing data attributes from MeB files 
 		# list of wells with MeB (names)
 		wells_meb = []
 		for wl in wells_objects: 
 			if wl.name in wl_name_meb:
 				idx = wl_name_meb.index(wl.name)
+				wl.meb = True
 				wl.meb_prof = wl_prof_meb[idx]
 				wl.meb_depth = wl_prof_depth_meb[idx]
 				wells_meb.append(wl.name)
+		## create text file for google earth
+		#list_meb_wells = [obj for obj in wells_objects if obj.meb] 
+		#for_google_earth(list_meb_wells, name_file = 'meb_wells_google_earth.txt', type_obj = 'well')
+
 		# save to .txt names of wells with MeB content 
 		f = open("wells_MeB_list.txt", "w")
 		f.write('# Wells with MeB data available\n')
@@ -140,13 +152,13 @@ if __name__ == "__main__":
 		for wl in wells_meb:
 			f.write(wl+'\n')
 		f.close()
-		
+
 	# (1) Calculate priors for each station (using two nearest) 
 
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if True:
+	if False:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 

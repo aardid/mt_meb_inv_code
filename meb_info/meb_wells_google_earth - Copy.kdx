@@ -1,0 +1,27 @@
+Layout {
+  FileType : "delimited"
+  Delimiter : "	"
+  CoalesceDelimiters : "1"
+  Latitude : "2"
+  Longitude : "1"
+  SkipRows : "1"
+  TextCodec : "System"
+  FieldDefinitions {
+    0 {
+      Name : "well"
+      Type : "string"
+    }
+    1 {
+      Name : "longitud"
+      Type : "double"
+    }
+    2 {
+      Name : "latitud "
+      Type : "double"
+    }
+    3 {
+      Name : "elevation"
+      Type : "double"
+    }
+  }
+}
