@@ -24,6 +24,7 @@ MT library
 	- Optimize functions
 		- read_edi: change how each block is extracted 
 			(use number of periods)
+	- Move function for coord (bottom) to lib of coord. 
 ------------------------------------------------------------------------
 Data
 	- 2D profile: select MT stations and wells (temp and MeB) 
