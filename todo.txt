@@ -1,0 +1,47 @@
+To do: 
+------------------------------------------------------------------------
+Main
+	- Automatic path for file in office or personal PC (done)
+	- Add MeB info to well object (done)
+------------------------------------------------------------------------
+Well library
+	- Write docstring for methods
+	- import and add MeD data 
+		- Check if the depth are the same in the temp profile 
+		- Develop conversion from MeB to Res 
+	- incorporate MeB priors: calculate prior for every station 
+
+------------------------------------------------------------------------
+MCMC library
+	- Write docstring for methods
+
+------------------------------------------------------------------------
+MT library
+	- Write docstring for methods
+	- Create synthetic data: Impedance tensors for synthetic case (2D)
+		- Simple ~2D model from anomaly	
+		- Complex 2D model from anomaly
+	- Optimize functions
+		- read_edi: change how each block is extracted 
+			(use number of periods)
+	- Move function for coord (bottom) to lib of coord. 
+------------------------------------------------------------------------
+Data
+	- 2D profile: select MT stations and wells (temp and MeB) 
+------------------------------------------------------------------------
+Mapping functions 
+	- Functions to create files for google earth
+		- google earth file for wells with MeB
+		- receive list of objects with attributes: 
+			- name
+			- loc (lat, lon, elev) 
+------------------------------------------------------------------------
+Repository
+	-
+------------------------------------------------------------------------
+Questions to aboard: 
+	- Which part of Z is better to invert in this particular problem? 
+	- Which measure is more adequate (L1, L2 or other)? 
+	- How much information is gain by the likelihood fn. (comp. to prior)?
+	- Our method is better at solving depth boundaries or rest. mag.? 
+ 

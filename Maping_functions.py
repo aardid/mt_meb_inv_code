@@ -41,3 +41,19 @@ def coord_dms2dec(H):
     lon_dec = round((abs(lon_degree) + ((lon_minute * 60.0) + lon_second) / 3600.0) * 1000000.0) / 1000000.0
 
     return lat_dec, lon_dec
+
+def for_google_earth(list, name_file = 'for_google_earth.txt', type_obj = None):
+    # received a list of objects that posses name, lat, lon, elev as attributes
+    # save a .txt to be open un googleearth
+    locations4gearth= open(name_file,'w')
+    if type_obj is None: 
+        locations4gearth.write('object '+'\t'+'longitud'+'\t'+'latitud '+'\t'+'elevation'+'\n')
+    else:
+        locations4gearth.write(type_obj+'\t'+'longitud'+'\t'+'latitud '+'\t'+'elevation'+'\n')
+    for obj in list: 
+        # for google earth: change coordenate system (to decimals)
+        lat_dec = str(obj.lat_dec)
+        lon_dec = str(obj.lon_dec)
+        elev = str(obj.elev)
+        locations4gearth.write(obj.name+'\t'+lon_dec+'\t'+lat_dec+'\t'+elev+'\n')
+    locations4gearth.close()

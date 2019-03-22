@@ -44,37 +44,59 @@ class Wells(object):
 	# depth_dev				depths deviation
 	# temp_prof_true		temperature profile 
 	#
-	# temp_prof				true temperaure profile resample
+	# temp_prof				resample true temperaure profile
 	# betas					beta value for each layer
 	# slopes				slopes values for each layer
+	#
+    # meb                   Methylene-blue (MeB) data available         False
+	# meb_prof				methylene-blue (MeB) profiles
+	# meb_depth				methylene-blue (MeB) depths (samples)
     """
     def __init__(self, name, ref):  						
         self.name = name # name: extracted from the name of the file
         self.ref = ref	 # ref: reference number in the code
 		## Properties to be fill
 		## File location 
-        self.path_loc = "not filled" 		# path to file with wells locations	
-        self.path_temp = "not filled" 		# path to file with wells temperatures
-        self.path_meb = "not filled" 		# path to file with wells MeB content		
+        self.path_loc = None 		# path to file with wells locations	
+        self.path_temp = None 		# path to file with wells temperatures
+        self.path_meb = None 		# path to file with wells MeB content		
 		# Position 
-        self.lat = "not filled" 		# latitud in dd:mm:ss	
-        self.lon = "not filled" 		# longitud in dd:mm:ss
-        self.lat_dec = "not filled" 	# latitud in decimal	
-        self.lon_dec = "not filled" 	# longitud  in decimal
-        self.elev = "not filled" 		# topography (elevation of the well)
+        self.lat = None 		# latitud in dd:mm:ss	
+        self.lon = None 		# longitud in dd:mm:ss
+        self.lat_dec = None 	# latitud in decimal	
+        self.lon_dec = None 	# longitud  in decimal
+        self.elev = None 		# topography (elevation of the well)
         # Temp data
-        self.depth = "not filled"		     # Depths for temperature profile
-        self.red_depth = "not filled"		 # Reduced depths for temperature profile
-        self.depth_dev = "not filled"		 # Depths deviation
-        self.temp_prof_true = "not filled" 	 # Temperature profile 
+        self.depth = None		     # Depths for temperature profile
+        self.red_depth = None		 # Reduced depths for temperature profile
+        self.depth_dev = None		 # Depths deviation
+        self.temp_prof_true = None 	 # Temperature profile 
 		# Temperature estimates
-        self.temp_prof = "not filled"		# True temperaure profile resample
-        self.betas = "not filled"			# beta value for each layer
-        self.slopes = "not filled"			# slopes values for each layer
+        self.temp_prof = None		# True temperaure profile resample
+        self.betas = None			# beta value for each layer
+        self.slopes = None			# slopes values for each layer
+		# MeB profile
+        self.meb = False            # Methylene-blue (MeB) data available
+        self.meb_prof = None		# methylene-blue (MeB) profile
+        self.meb_depth = None		# methylene-blue (MeB) depths (samples)
     # ===================== 
     # Methods               
     # =====================
 
+    def plot_meb_curve(self, square = False):
+        f,(ax1) = plt.subplots(1,1)
+        f.set_size_inches(6,8)
+        f.suptitle(self.name, fontsize=22)
+        ax1.set_xscale("linear")
+        ax1.set_yscale("linear")    
+        ax1.plot(self.meb_prof,self.meb_depth,'*-')
+        ax1.set_xlim([0, 20])
+        ax1.set_ylim([0,2000])
+        ax1.set_xlabel('MeB [?]', fontsize=18)
+        ax1.set_ylabel('Depth [m]', fontsize=18)
+        ax1.grid(True, which='both', linewidth=0.4)
+        ax1.invert_yaxis()
+        return f
 
 
 # ==============================================================================
@@ -83,6 +105,7 @@ class Wells(object):
 
 def read_well_location(file):
     infile = open(file, 'r')
+    next(infile) # jump first line
     wells_location = []
     next(infile) # jump first line
     for line in infile:
@@ -94,56 +117,91 @@ def read_well_location(file):
     return wells_location
 	
 def read_well_temperature(file):
-	infile = open(file, 'r')
-	next(infile) # jump first line
-	wells_name = []
-	# wells catalog names
-	for line in infile:
-		name = line.split()[0]
-		if name not in wells_name:
-			wells_name.append(name)
-	infile.close()
+    infile = open(file, 'r')
+    next(infile) # jump first line
+    wells_name = []
+    # wells catalog names
+    for line in infile:
+        name = line.split()[0]
+        if name not in wells_name:
+        	wells_name.append(name)
+    infile.close()
 	
-	# wells temp profiles 
-	temp_aux = []
-	depth_aux = []
-	depth_red_aux = []
-	
-	wl_prof_depth = []
-	wl_prof_depth_red = []
-	wl_prof_temp = []
-	
-	dir_no_depth_red = []  # directory of wells that don't have reduce depth
-	
-	for well_aux2 in wells_name:
-		infile2 = open(file, 'r')
-		next(infile2) # jump first line
-		for line in infile2:
-			if well_aux2 in line:
-				line2 = line.split("\t")
-				if not line2[2]: 
-					line2[2] = float('NaN') # define empty value as NaN 
-					if well_aux2 not in dir_no_depth_red: # save in directory name of the well
-						dir_no_depth_red.append(well_aux2)
-				
-				depth_aux.append(float(line2[1]))
-				depth_red_aux.append(float(line2[2]))
-				temp_aux.append(float(line2[3]))
+    # wells temp profiles 
+    temp_aux = []
+    depth_aux = []
+    depth_red_aux = []
 
-		wl_prof_depth.append(depth_aux)
-		wl_prof_depth_red.append(depth_red_aux)
-		wl_prof_temp.append(temp_aux)
-		
-		temp_aux = []       # clear variable 
-		depth_aux = []      # clear variable 
-		depth_red_aux = []  # clear variable 
-		
-		infile2.close()
-	return wells_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red
+    wl_prof_depth = []
+    wl_prof_depth_red = []
+    wl_prof_temp = []
+
+    dir_no_depth_red = []  # directory of wells that don't have reduce depth
+	
+    for well_aux2 in wells_name:
+        infile2 = open(file, 'r')
+        next(infile2) # jump first line
+        for line in infile2:
+            if well_aux2 in line:
+                line2 = line.split("\t")
+                if not line2[2]: 
+                    line2[2] = float('NaN') # define empty value as NaN 
+                    if well_aux2 not in dir_no_depth_red: # save in directory name of the well
+                        dir_no_depth_red.append(well_aux2)
+                
+                depth_aux.append(float(line2[1]))
+                depth_red_aux.append(float(line2[2]))
+                temp_aux.append(float(line2[3]))
+
+        wl_prof_depth.append(depth_aux)
+        wl_prof_depth_red.append(depth_red_aux)
+        wl_prof_temp.append(temp_aux)
+        
+        temp_aux = []       # clear variable 
+        depth_aux = []      # clear variable 
+        depth_red_aux = []  # clear variable 
+        infile2.close()
+
+    return wells_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red
+
+def read_well_meb(file):
+    infile = open(file, 'r')
+    next(infile) # jump first line
+    wells_name = []
+    # wells catalog names
+    for line in infile:
+        name = line.split()[0]
+        if name not in wells_name:
+            wells_name.append(name)
+    infile.close()
+
+    # wells meb profiles 
+    meb_aux = []
+    depth_aux = []
+    wl_prof_depth = []
+    wl_prof_meb = []
+
+    for well_aux2 in wells_name:
+        infile2 = open(file, 'r')
+        next(infile2) # jump first line
+        for line in infile2:
+            if well_aux2 in line:
+                line2 = line.split("\t")
+                depth_aux.append(float(line2[1]))
+                meb_aux.append(float(line2[2]))
+        wl_prof_depth.append(depth_aux) 
+        wl_prof_meb.append(meb_aux)
+
+        meb_aux = []        # clear variable 
+        depth_aux = []      # clear variable 
+        infile2.close()
+
+    return wells_name, wl_prof_depth, wl_prof_meb
 	
 # ==============================================================================
 # Plots
 # ==============================================================================
+
 def plot_Temp_profile(name, depth_aux, temp_aux):
     print(name)
     f,(ax1) = plt.subplots(1,1)
@@ -164,4 +222,3 @@ def plot_Temp_profile(name, depth_aux, temp_aux):
     
     
     return f
-    # Funcion que lee perfil de temperatura de un pozo y grafica. 
