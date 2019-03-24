@@ -36,8 +36,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 
@@ -46,9 +46,11 @@ if __name__ == "__main__":
 		#### Import data: MT from edi files and wells from spreadsheet files
 		#########  MT data
 		if pc == 'office': 
-			path_files = "D:\kk_1\*.edi"		# One station
-			#path_files = "D:\kk_sample\*.edi"  # Sample of stations
-			#path_files = "D:\kk_full\*.edi" 	# Whole array 
+			#path_files = "D:\workflow_data\kk_1\*.edi"		# One station
+			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
+			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
+			path_files = "D:\workflow_data\profile_2\*.edi" 	# 2D profile 2
+
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
@@ -136,7 +138,6 @@ if __name__ == "__main__":
 			## add well object to directory of well objects
 			wells_objects.append(wl_obj)
 			count  += 1
-		
 		# Search for location of the well and add to attributes
 		for wl in wells_objects:
 			for i in range(len(wells_location)): 
@@ -181,16 +182,16 @@ if __name__ == "__main__":
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if False:
+	if True:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
-
 		start_time = time.time()
 		for sta_obj in station_objects: 
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 			## range for the parameters
 			par_range = [[1.*1e2,2*1e3],[1.*1e1,1*1e3],[1.*1e2,5.*1e3],[1.*1e-3,1.*1e4],[1.*1e1,1.*1e3]]
 			## create object mcmc_inv 
+			#mcmc_sta = mcmc_inv(sta_obj)
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', prior_input=par_range)
 			## run inversion 
 			mcmc_sta.inv()

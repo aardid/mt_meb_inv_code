@@ -131,9 +131,9 @@ class Station(object):
     # =====================
     def read_edi_file(self):
 		# Read edi file and set MT data atributes to object  
-        #[H, Z, T, Z_rot, Z_dim] = read_edi('D:\\kk_full\\'+self.name) # office
+        [H, Z, T, Z_rot, Z_dim] = read_edi('D:\\workflow_data\\kk_full\\'+self.name) # office
 		#[H, Z, T, Z_rot, Z_dim] = read_edi('C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\'+self.name) # Personal Windows
-        [H, Z, T, Z_rot, Z_dim] = read_edi('/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_sample/'+self.name) # Personal SUSE
+        #[H, Z, T, Z_rot, Z_dim] = read_edi('/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_sample/'+self.name) # Personal SUSE
         
 		## Z = [file,periods,zxxr,zxxi,zxx,zxx_var,zxyr,zxyi,zxy,zxy_var,zyxr,zyxi,zyx,zyx_var,zyyr,zyyi,zyy,zyy_var]		
 		## T = [txr, txi, txvar, tyr, tyi, tyvar, tmag]

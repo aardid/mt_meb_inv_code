@@ -20,6 +20,7 @@ import multiprocessing
 import csv
 
 textsize = 15.
+min_val = 1.e-7
 
 
 # ==============================================================================
@@ -172,12 +173,14 @@ class mcmc_inv(object):
                     self.rho_app_obs[2],self.phase_obs[2],\
                     self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs]).T
         cores = multiprocessing.cpu_count()
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores, args=[data,])
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
 		# set the initial location of the walkers
         pars = self.ini_mod  # initial guess
         p0 = np.array([pars + 0.5e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
         p0 = np.abs(p0)
         #p0 = emcee.utils.sample_ball(p0, [20., 20.,], size=nwalkers)
+
+        Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
 
         # p0_log = np.log(np.abs(p0))
 		# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
@@ -224,29 +227,32 @@ class mcmc_inv(object):
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
-                    +self.inv_dat[0]*-np.sum(((np.log10(obs[:,2]) \
-                        -np.log10(phi_est))/v_vec)**self.norm)/v \
+                    #+self.inv_dat[0]*-np.sum(((np.log10(obs[:,2]) \
+                    #    -np.log10(phi_est))/v_vec)**self.norm)/v 
+            # problem with np.log10(phi_est), (not resolved)
+
             # fitting sounding curves for TM(yx)
             TM_sc = self.inv_dat[1]*-np.sum(((np.log10(obs[:,3]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
-                    +self.inv_dat[1]*-np.sum(((np.log10(obs[:,4]) \
-                        -np.log10(phi_est))/v_vec)**self.norm)/v \
+                    #+self.inv_dat[1]*-np.sum(((np.log10(obs[:,4]) \
+                    #    -np.log10(phi_est))/v_vec)**self.norm)/v 
             # fitting maximum value of Z
             max_Z = self.inv_dat[2]*-np.sum(((np.log10(obs[:,5]) \
                         -np.log10(abs(Z_est)))/v_vec)**self.norm)/v
             # fitting determinant of Z
-            det_Z = self.inv_dat[3]*-np.sum(((-1*np.log10(obs[:,4]) \
-                        -np.log10(Z_est))/v_vec)**self.norm)/v
+            #det_Z = self.inv_dat[3]*-np.sum(((-1*np.log10(obs[:,4]) \
+            #            -np.log10(Z_est))/v_vec)**self.norm)/v
             # fitting ssq of Z
             ssq_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
                         -np.log10(Z_est*np.sqrt(2)/2))/v_vec)**self.norm)/v
             # retunr sum od probabilities
-            return TE_sc + TM_sc + max_Z + det_Z + ssq_Z
+
+            return TE_sc + TM_sc + max_Z + ssq_Z #+ det_Z 
         
         # pars = np.exp(pars)  # pars was define in log space, here we take it back to linear space
 		## Parameter constrain
         if (any(x<0 for x in pars)):
-        	return -np.Inf
+            return -np.Inf
         else:
             if self.prior: # with priors
                 if self.prior_type == 'uniform': 

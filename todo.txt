@@ -13,7 +13,11 @@ Well library
 
 ------------------------------------------------------------------------
 MCMC library
+	- Write function for plot 2D profiles result for layer boundaries
+		- Unceratin estimation of top and bottom bound. of CC 
 	- Write docstring for methods
+	- Problem eoth np.log10(phi_est) and np.log10(Z_est) (lnprob function)
+	  when is run throw station 134a and 195a.  
 
 ------------------------------------------------------------------------
 MT library
@@ -38,6 +42,11 @@ Mapping functions
 ------------------------------------------------------------------------
 Repository
 	-
+------------------------------------------------------------------------
+Profiles
+	- Add geological map to google earth of Taupo
+		- Georefereces image un ArcGIS
+		- Plot it in google earth
 ------------------------------------------------------------------------
 Questions to aboard: 
 	- Which part of Z is better to invert in this particular problem? 
