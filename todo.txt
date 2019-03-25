@@ -6,7 +6,7 @@ Main
 ------------------------------------------------------------------------
 Well library
 	- Write docstring for methods
-	- import and add MeD data 
+	- import and add MeD data (done)
 		- Check if the depth are the same in the temp profile 
 		- Develop conversion from MeB to Res 
 	- incorporate MeB priors: calculate prior for every station 
@@ -33,8 +33,9 @@ MT library
 Data
 	- 2D profile: select MT stations and wells (temp and MeB) 
 ------------------------------------------------------------------------
-Mapping functions 
-	- Functions to create files for google earth
+Mapping functions
+	- Function to calculate distance between two coordinates (done)
+	- Functions to create files for google earth (done)
 		- google earth file for wells with MeB
 		- receive list of objects with attributes: 
 			- name
@@ -53,4 +54,10 @@ Questions to aboard:
 	- Which measure is more adequate (L1, L2 or other)? 
 	- How much information is gain by the likelihood fn. (comp. to prior)?
 	- Our method is better at solving depth boundaries or rest. mag.? 
- 
+
+-------------------------------------------------------------------------
+Extras
+	- Ask for: 
+		Electrical resistivity map of the Taupo Volcanic Zone, 
+		New Zealand : nominal array spacing 1000 m, 1:250,000
+	

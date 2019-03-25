@@ -12,7 +12,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
-import math
+from math import sin, cos, sqrt, atan2, radians
 import glob
 
 # ==============================================================================
@@ -57,3 +57,52 @@ def for_google_earth(list, name_file = 'for_google_earth.txt', type_obj = None):
         elev = str(obj.elev)
         locations4gearth.write(obj.name+'\t'+lon_dec+'\t'+lat_dec+'\t'+elev+'\n')
     locations4gearth.close()
+
+def dist_two_points(coord1, coord2, type_coord = 'decimal'): 
+    # coord = [lon, lat]
+    #Rp = 6.357e3 # Ecuator: radius of earth in km  
+    #Re = 6.378e3 # Pole: radius of earth in km 
+    R = 6373. # around 39° latitud
+    lon1, lat1 = [radians(coord1[0]),radians(coord1[1])]
+    lon2, lat2 = [radians(coord2[0]),radians(coord2[1])]
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = (sin(dlat/2.))**2. + cos(lat1) * cos(lat2) * (sin(dlon/2.))**2.
+    c = 2. * atan2(np.sqrt(a), np.sqrt(1.-a))
+    return R * c # (where R is the radius of the Earth)
+
+## test for dist_two_points function
+# from Maping_functions import *
+# coord1 = [-77.037852, 38.898556]
+# coord2 = [-77.043934, 38.897147]
+# d = dist_two_points(coord1, coord2)
+# assert (d - 0.549) < 0.01 
+
+def cart2pol(x, y):
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return rho, phi
+
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return x, y
+
+# ==============================================================================
+# 2D profiles 
+# ==============================================================================
+
+def uncert_bound_cc_plot_2D(sta_objects, pref_orient = 'EW'): 
+    ## sta_objects: list of station objects
+    ## sort list by longitud (min to max - East to West)
+    sta_objects.sort(key=lambda x: x.lon_dec, reverse=True)
+    ## calculate distances from first station to the others, save in array
+    x_axis = np.zeros(len(sta_objects))
+    i = 0
+    for sta in sta_objects:
+        coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+        coord2 = [sta.lon_dec, sta.lat_dec]
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+        i+=1
+    ## plot envelopes 5% and 95% for cc boundaries
+    

@@ -26,7 +26,7 @@ import time
 from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import * 
-from Maping_functions import coord_dms2dec, for_google_earth
+from Maping_functions import *
 from matplotlib.backends.backend_pdf import PdfPages
 
 textsize = 15.
@@ -36,8 +36,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 
@@ -50,7 +50,6 @@ if __name__ == "__main__":
 			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
 			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
 			path_files = "D:\workflow_data\profile_2\*.edi" 	# 2D profile 2
-
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
@@ -112,6 +111,7 @@ if __name__ == "__main__":
 			## Create station objects and fill them
 			station_objects.append(sta_obj)
 			count  += 1
+
 		######################################################################################
 		## Create wells objects
 		# # Import wells data:
@@ -138,6 +138,7 @@ if __name__ == "__main__":
 			## add well object to directory of well objects
 			wells_objects.append(wl_obj)
 			count  += 1
+		
 		# Search for location of the well and add to attributes
 		for wl in wells_objects:
 			for i in range(len(wells_location)): 
@@ -204,7 +205,15 @@ if __name__ == "__main__":
 			plt.close("all")
 			## calculate estimate parameters
 			mcmc_sta.model_pars_est()
-			## sum one to index
+			## assign result to attributes of station object 
+			sta_obj.z1_pars = mcmc_sta.z1_pars
+			sta_obj.z2_pars = mcmc_sta.z2_pars
+			sta_obj.r1_pars = mcmc_sta.r1_pars
+			sta_obj.r2_pars = mcmc_sta.r2_pars
+			sta_obj.r3_pars = mcmc_sta.r3_pars
+		print(sta_obj.z2_pars)
+		print(sta_obj.r2_pars)
+
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed

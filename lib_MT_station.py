@@ -71,6 +71,30 @@ class Station(object):
 	tip_strike			    tipper strike
 	
 	layer_mod				1D resistivity 3 layer model [z1,z2,r1,r2,r3]
+    z1_pars                 distribution parameters for layer 1 
+                            thickness (model parameter) calculated 
+                            from mcmc chain results: [a,b,c,d,e]
+                            a: mean
+                            b: standard deviation 
+                            c: median
+                            d: percentile 5 (%)
+                            e: percentile 95 (%)
+    z2_pars                 distribution parameters for layer 2 
+                            thickness (model parameter) calculated 
+                            from mcmc chain results: [a,b,c,d,e]
+                            * See z1_pars vector description 
+    r1_pars                 distribution parameters for layer 1 
+                            resistivity (model parameter) calculated 
+                            from mcmc chain results: [a,b,c,d,e]
+                            * See z1_pars vector description 
+    r2_pars                 distribution parameters for layer 2 
+                            resistivity (model parameter) calculated 
+                            from mcmc chain results: [a,b,c,d,e]
+                            * See z1_pars vector description 
+    r3_pars                 distribution parameters for layer 3 
+                            resistivity (model parameter) calculated 
+                            from mcmc chain results: [a,b,c,d,e]
+                            * See z1_pars vector description 
 
 	temp_prof				temperaure profile
 	betas				    beta value for each layer
@@ -121,20 +145,25 @@ class Station(object):
         self.tip_strike = None	# tipper strike
 		# MT estimates
         self.layer_mod = None		# 1D resistivity 3 layer model [z0,z1,z2,r1,r2,r3]
+        self.z1_pars = None
+        self.z2_pars = None
+        self.r1_pars = None
+        self.r2_pars = None
+        self.r3_pars = None
 		# Temperature estimates
         self.temp_prof = None		# temperaure profile
         self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
+
 
     # ===================== 
     # Methods               
     # =====================
     def read_edi_file(self):
 		# Read edi file and set MT data atributes to object  
-        [H, Z, T, Z_rot, Z_dim] = read_edi('D:\\workflow_data\\kk_full\\'+self.name) # office
-		#[H, Z, T, Z_rot, Z_dim] = read_edi('C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\'+self.name) # Personal Windows
-        #[H, Z, T, Z_rot, Z_dim] = read_edi('/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_sample/'+self.name) # Personal SUSE
-        
+        pos_ast = self.path.find('*')
+        [H, Z, T, Z_rot, Z_dim] = read_edi(self.path[:pos_ast]+self.name) 
+
 		## Z = [file,periods,zxxr,zxxi,zxx,zxx_var,zxyr,zxyi,zxy,zxy_var,zyxr,zyxi,zyx,zyx_var,zyyr,zyyi,zyy,zyy_var]		
 		## T = [txr, txi, txvar, tyr, tyi, tyvar, tmag]
 		## Z_rot = [zrot]
