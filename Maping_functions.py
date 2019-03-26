@@ -14,6 +14,9 @@ from matplotlib import gridspec
 import numpy as np
 from math import sin, cos, sqrt, atan2, radians
 import glob
+import os
+import shutil
+textsize = 15.
 
 # ==============================================================================
 # Coordinates
@@ -55,7 +58,7 @@ def for_google_earth(list, name_file = 'for_google_earth.txt', type_obj = None):
         lat_dec = str(obj.lat_dec)
         lon_dec = str(obj.lon_dec)
         elev = str(obj.elev)
-        locations4gearth.write(obj.name+'\t'+lon_dec+'\t'+lat_dec+'\t'+elev+'\n')
+        locations4gearth.write(obj.name[:-4]+'\t'+lon_dec+'\t'+lat_dec+'\t'+elev+'\n')
     locations4gearth.close()
 
 def dist_two_points(coord1, coord2, type_coord = 'decimal'): 
@@ -92,17 +95,66 @@ def pol2cart(rho, phi):
 # 2D profiles 
 # ==============================================================================
 
-def uncert_bound_cc_plot_2D(sta_objects, pref_orient = 'EW'): 
+def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert'): 
     ## sta_objects: list of station objects
     ## sort list by longitud (min to max - East to West)
     sta_objects.sort(key=lambda x: x.lon_dec, reverse=True)
     ## calculate distances from first station to the others, save in array
     x_axis = np.zeros(len(sta_objects))
+    topo = np.zeros(len(sta_objects))
+    z1_med = np.zeros(len(sta_objects))
+    z1_per5 = np.zeros(len(sta_objects))
+    z1_per95 = np.zeros(len(sta_objects))
+    z2_med = np.zeros(len(sta_objects))
+    z2_per5 = np.zeros(len(sta_objects))
+    z2_per95 = np.zeros(len(sta_objects))
+
     i = 0
     for sta in sta_objects:
         coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
         coord2 = [sta.lon_dec, sta.lat_dec]
         x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+        # z1_pars                 distribution parameters for layer 1 
+        #                         thickness (model parameter) calculated 
+        #                         from mcmc chain results: [a,b,c,d,e]
+        #                         a: mean
+        #                         b: standard deviation 
+        #                         c: median
+        #                         d: percentile 5 (%)
+        #                         e: percentile 95 (%)
+        ## vectors for plotting 
+        topo[i] = sta.elev
+        z1_med[i] = topo[i] - sta.z1_pars[2]
+        z1_per5[i] = topo[i] - sta.z1_pars[3]
+        z1_per95[i] = topo[i] - sta.z1_pars[4]
+        z2_med[i] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[2])
+        z2_per5[i] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3])
+        z2_per95[i] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[4])
         i+=1
+
     ## plot envelopes 5% and 95% for cc boundaries
+    f = plt.figure(figsize=[7.5,5.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+
+    # plot using meadian a percentile
+    ax.plot(x_axis, topo,'g-')
+    ax.plot(x_axis, z2_med,'bo-', label='bottom')
+    ax.fill_between(x_axis, z2_per5, z2_per95,  alpha=.5, edgecolor='b', facecolor='b')
+    ax.plot(x_axis, z1_med,'ro-', label='top')
+    ax.fill_between(x_axis, z1_per5, z1_per95,  alpha=.5, edgecolor='r', facecolor='r')
+
+    #plt.gca().invert_yaxis() #invert axis y
+    #ax.set_xlim([ystation[0]/1.e3, ystation[-1]/1.e3])
+    ax.set_ylim([-1.0e3,700])
+    ax.set_xlabel('y [km]', size = textsize)
+    ax.set_ylabel('depth [m]', size = textsize)
+    ax.set_title('Clay cap boundaries depth  ', size = textsize)
+    ax.legend(loc=4, prop={'size': 10})	
+    #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
+    #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
+    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+    plt.close(f)
+    plt.clf()
+
     

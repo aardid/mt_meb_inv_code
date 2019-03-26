@@ -202,9 +202,12 @@ class mcmc_inv(object):
         # shutil.rmtree('.'+os.sep+str('mcmc_inversions'))
         if not os.path.exists('.'+os.sep+str('mcmc_inversions')):
             os.mkdir('.'+os.sep+str('mcmc_inversions'))
+            os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
         elif not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+self.name):
             os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
-        
+        if not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion')):
+            os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
+            
         self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
 
@@ -355,6 +358,7 @@ class mcmc_inv(object):
         np.random.seed(1)
 		# load in the posterior
         chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
+        walk_jump = chain[:,0:2]
         params = chain[:,2:-1]
 
 		# define parameter sets for forward runs
@@ -366,7 +370,8 @@ class mcmc_inv(object):
         
         while Nsamples != Nruns:
             id = np.random.randint(0,params.shape[0]-1)
-            if chain[id,7] != -np.inf: 
+            # condition for sample: prob dif than -inf and jump after 2/3 of total (~converged ones)
+            if (chain[id,7] != -np.inf and chain[id,1] > int(self.walk_jump*2/3)) : 
                 #par_new = [params[id,0], params[id,1], params[id,2], params[id,3], params[id,4]]
                 pars.append([Nsamples, params[id,0], params[id,1], params[id,2], params[id,3], \
                     params[id,4]])

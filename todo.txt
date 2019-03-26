@@ -48,6 +48,9 @@ Profiles
 	- Add geological map to google earth of Taupo
 		- Georefereces image un ArcGIS
 		- Plot it in google earth
+	- Constructing the uncertain CC profile for each station:
+		- inversion calculates thicknesses, what should be the base line 
+		  for the second layer for plotting the uncertain depths
 ------------------------------------------------------------------------
 Questions to aboard: 
 	- Which part of Z is better to invert in this particular problem? 

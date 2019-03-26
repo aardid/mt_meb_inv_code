@@ -27,6 +27,7 @@ from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import * 
 from Maping_functions import *
+from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
 
 textsize = 15.
@@ -53,10 +54,11 @@ if __name__ == "__main__":
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
-			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_1sta/*.edi" # One station
+			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_1sta/*.edi" # One station
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_sample/*.edi" # Sample of stations
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files/*.edi" # Whole array 
-		
+			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_2D/*.edi" 	# 2D profile 
+
 		## Data paths for personal's pc WINDOWS (uncommend the one to use)
 		if pc == 'personalWin':
 			path_files = "C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\1_sta\\*.edi"
@@ -205,20 +207,27 @@ if __name__ == "__main__":
 			plt.close("all")
 			## calculate estimate parameters
 			mcmc_sta.model_pars_est()
-			## assign result to attributes of station object 
-			sta_obj.z1_pars = mcmc_sta.z1_pars
-			sta_obj.z2_pars = mcmc_sta.z2_pars
-			sta_obj.r1_pars = mcmc_sta.r1_pars
-			sta_obj.r2_pars = mcmc_sta.r2_pars
-			sta_obj.r3_pars = mcmc_sta.r3_pars
-		print(sta_obj.z2_pars)
-		print(sta_obj.r2_pars)
 
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
 		print("Time consumed:\t{:.1f} min".format(enlap_time/60))
 		pp.close()
-	
-	# (3) Construct uncertain distribution of temperature 
+		# move figure fit to global results folder
+		shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
+
+		## create text file for google earth, containing names of MT stations considered 
+		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
+		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
+			+os.sep+'00_stations_4_google_earth.txt')
+	# (3) Construct uncertain distribution of temperature
+	if True:
+		# load mcmc results and assign to attributes of pars to station attributes 
+		load_sta_est_par(station_objects)
+		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
+		file_name = 'z1_z2_uncert'
+		plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name)
+		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+os.sep+file_name+'.png')
+				
+
 

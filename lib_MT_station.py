@@ -168,10 +168,10 @@ class Station(object):
 		## T = [txr, txi, txvar, tyr, tyi, tyvar, tmag]
 		## Z_rot = [zrot]
 		## Z_dim = [zskew, tstrike]
-        self.lat = H[1]
-        self.lon = H[2]
+        self.lat = H[2]
+        self.lon = H[3]
         self.lat_dec, self.lon_dec = coord_dms2dec(H)
-        self.elev = H[3]
+        self.elev = H[4]
         self.Z = Z
         self.T = Z[1]
         self.num_T = len(Z[1])
