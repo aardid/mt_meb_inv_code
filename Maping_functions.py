@@ -98,7 +98,7 @@ def pol2cart(rho, phi):
 def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert'): 
     ## sta_objects: list of station objects
     ## sort list by longitud (min to max - East to West)
-    sta_objects.sort(key=lambda x: x.lon_dec, reverse=True)
+    sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
     ## calculate distances from first station to the others, save in array
     x_axis = np.zeros(len(sta_objects))
     topo = np.zeros(len(sta_objects))

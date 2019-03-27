@@ -37,8 +37,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 			#path_files = "D:\workflow_data\kk_1\*.edi"		# One station
 			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
 			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
-			path_files = "D:\workflow_data\profile_2\*.edi" 	# 2D profile 2
+			path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 2
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if True:
+	if False:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
