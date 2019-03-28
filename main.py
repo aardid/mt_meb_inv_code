@@ -50,7 +50,9 @@ if __name__ == "__main__":
 			#path_files = "D:\workflow_data\kk_1\*.edi"		# One station
 			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
 			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
-			path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 2
+			#path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 
+			path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
+			#path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
@@ -164,13 +166,13 @@ if __name__ == "__main__":
 		#list_meb_wells = [obj for obj in wells_objects if obj.meb] 
 		#for_google_earth(list_meb_wells, name_file = 'meb_wells_google_earth.txt', type_obj = 'well')
 
-		## save to .txt names of wells with MeB content 
-		#f = open("wells_MeB_list.txt", "w") # text file to save names of meb wells 
-		#f.write('# Wells with MeB data available\n')
-		#f.write('# Total: {:}\n'.format(len(wells_meb)))
-		#for wl in wells_meb: # loop over the meb wells (objects)
-		#	f.write(wl+'\n')
-		#f.close()
+		# # save to .txt names of wells with MeB content 
+		# f = open("wells_MeB_list.txt", "w") # text file to save names of meb wells 
+		# f.write('# Wells with MeB data available\n')
+		# f.write('# Total: {:}\n'.format(len(wells_meb)))
+		# for wl in wells_meb: # loop over the meb wells (objects)
+		# 	f.write(wl+'\n')
+		# f.close()
 		## plot MeB curves 
 		# pp = PdfPages('wells_MeB.pdf') # pdf to plot the meb profiles
 		# for wl in wells_objects:

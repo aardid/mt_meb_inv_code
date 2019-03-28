@@ -145,6 +145,7 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
 
     #plt.gca().invert_yaxis() #invert axis y
     #ax.set_xlim([ystation[0]/1.e3, ystation[-1]/1.e3])
+    #ax.set_xlim([-0.2,1.2])
     ax.set_ylim([-1.0e3,700])
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('depth [m]', size = textsize)

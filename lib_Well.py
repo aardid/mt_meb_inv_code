@@ -92,7 +92,7 @@ class Wells(object):
         ax1.plot(self.meb_prof,self.meb_depth,'*-')
         ax1.set_xlim([0, 20])
         ax1.set_ylim([0,2000])
-        ax1.set_xlabel('MeB [?]', fontsize=18)
+        ax1.set_xlabel('MeB [%]', fontsize=18)
         ax1.set_ylabel('Depth [m]', fontsize=18)
         ax1.grid(True, which='both', linewidth=0.4)
         ax1.invert_yaxis()
