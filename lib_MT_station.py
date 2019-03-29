@@ -77,23 +77,22 @@ class Station(object):
                             a: mean
                             b: standard deviation 
                             c: median
-                            d: percentile 5 (%)
-                            e: percentile 95 (%)
+                            d: percentiles # [5%, 10%, ..., 95%] (19 elements)
     z2_pars                 distribution parameters for layer 2 
                             thickness (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     r1_pars                 distribution parameters for layer 1 
                             resistivity (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     r2_pars                 distribution parameters for layer 2 
                             resistivity (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     r3_pars                 distribution parameters for layer 3 
                             resistivity (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
 
 	temp_prof				temperaure profile

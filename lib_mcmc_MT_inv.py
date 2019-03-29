@@ -72,27 +72,26 @@ class mcmc_inv(object):
     ini_mod                 inicial model                               [200,100,150,50,500]
     z1_pars                 distribution parameters for layer 1 
                             thickness (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             a: mean
                             b: standard deviation 
                             c: median
-                            d: percentile 5 (%)
-                            e: percentile 95 (%)
+                            d: percentiles # [5%, 10%, ..., 95%] (19 elements)
     z2_pars                 distribution parameters for layer 2 
                             thickness (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     r1_pars                 distribution parameters for layer 1 
                             resistivity (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     r2_pars                 distribution parameters for layer 2 
                             resistivity (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     r3_pars                 distribution parameters for layer 3 
                             resistivity (model parameter) calculated 
-                            from mcmc chain results: [a,b,c,d,e]
+                            from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
 
     =====================   =================================================================
@@ -439,30 +438,52 @@ class mcmc_inv(object):
         r3_s = rest_mod_samples[0:num_samples,6]
 
         # calculate distribution parameters (for model parameters)
-        self.z1_pars = [np.mean(z1_s), np.std(z1_s), np.median(z1_s), np.percentile(z1_s,5), np.percentile(z1_s,95)]
-        self.z2_pars = [np.mean(z2_s), np.std(z2_s), np.median(z2_s), np.percentile(z2_s,5), np.percentile(z2_s,95)]
-        self.r1_pars = [np.mean(r1_s), np.std(r1_s), np.median(r1_s), np.percentile(r1_s,5), np.percentile(r1_s,95)]
-        self.r2_pars = [np.mean(r2_s), np.std(r2_s), np.median(r2_s), np.percentile(r2_s,5), np.percentile(r2_s,95)]
-        self.r3_pars = [np.mean(r3_s), np.std(r3_s), np.median(r3_s), np.percentile(r3_s,5), np.percentile(r3_s,95)]
+        percentil_range = np.arange(5,100,5) # 5%...95% (19 elements)
+        self.z1_pars = [np.mean(z1_s), np.std(z1_s), np.median(z1_s), \
+            [np.percentile(z1_s,i) for i in percentil_range]]
+        self.z2_pars = [np.mean(z2_s), np.std(z2_s), np.median(z2_s), \
+            [np.percentile(z2_s,i) for i in percentil_range]]
+        self.r1_pars = [np.mean(r1_s), np.std(r1_s), np.median(r1_s), \
+            [np.percentile(r1_s,i) for i in percentil_range]]
+        self.r2_pars = [np.mean(r2_s), np.std(r2_s), np.median(r2_s), \
+            [np.percentile(r2_s,i) for i in percentil_range]]
+        self.r3_pars = [np.mean(r3_s), np.std(r3_s), np.median(r3_s), \
+            [np.percentile(r3_s,i) for i in percentil_range]]
 
         # print a .dat with parameters estimated
         f = open("est_par.dat", "w")
-        f.write("Par\tmean\tstd\tmedian\tperc5\tperc95\n")
+        f.write("# Par\tmean\tstd\tmedian\tperc: 5%, 10%, ..., 95%\n")
         # layer 1 thickness 
-        f.write("z1:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\n"\
-            .format(self.z1_pars[0],self.z1_pars[1],self.z1_pars[2],self.z1_pars[3],self.z1_pars[4]))
+        f.write("z1:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.z1_pars[0],self.z1_pars[1],self.z1_pars[2]))
+        for per in self.z1_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
         # layer 2 thickness 
-        f.write("z2:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\n"\
-            .format(self.z2_pars[0],self.z2_pars[1],self.z2_pars[2],self.z2_pars[3],self.z2_pars[4]))
+        f.write("z2:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.z2_pars[0],self.z2_pars[1],self.z2_pars[2]))
+        for per in self.z2_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
         # layer 1 resistivity 
-        f.write("r1:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\n"\
-            .format(self.r1_pars[0],self.r1_pars[1],self.r1_pars[2],self.r1_pars[3],self.r1_pars[4]))
+        f.write("r1:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.r1_pars[0],self.r1_pars[1],self.r1_pars[2]))
+        for per in self.r1_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
         # layer 2 resistivity 
-        f.write("r2:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\n"\
-            .format(self.r2_pars[0],self.r2_pars[1],self.r2_pars[2],self.r2_pars[3],self.r2_pars[4]))
-        # layer 3 resistivity 
-        f.write("r3:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\t{:5.2f}\n"\
-            .format(self.r3_pars[0],self.r3_pars[1],self.r3_pars[2],self.r3_pars[3],self.r3_pars[4]))       	
+        f.write("r2:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.r2_pars[0],self.r2_pars[1],self.r2_pars[2]))
+        for per in self.r2_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
+        # layer 1 resistivity 
+        f.write("r3:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.r3_pars[0],self.r3_pars[1],self.r3_pars[2]))
+        for per in self.r3_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
+
         f.close()
         shutil.move('est_par.dat',path+os.sep+"est_par.dat")
 

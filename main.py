@@ -37,8 +37,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 
@@ -222,13 +222,15 @@ if __name__ == "__main__":
 		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
 		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
 			+os.sep+'00_stations_4_google_earth.txt')
+	
 	# (3) Construct uncertain distribution of temperature
 	if True:
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
-		plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name)
+		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name)
+		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name)
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+os.sep+file_name+'.png')
 				
 
