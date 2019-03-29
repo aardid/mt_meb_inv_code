@@ -225,7 +225,7 @@ class mcmc_inv(object):
 		    # log likelihood for the model, given the data
             v = 0.15
             v_vec = np.ones(len(self.T_obs))
-            #v_vec[18:] = np.inf 
+            v_vec[21:] = np.inf 
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
@@ -261,7 +261,7 @@ class mcmc_inv(object):
                     for i in range(len(pars)): # Check if parameters are inside the range
                         if (pars[i] < self.prior_input[i][0] or pars[i] > self.prior_input[i][1]): 
                             return -np.Inf  # if pars are outside range, return -inf
-                    if (pars[1]*pars[3]<1000. or pars[1]*pars[3]>5000.): # constrain correlation between rest and thick (alpha) 
+                    if (pars[1]*pars[3]<100. or pars[1]*pars[3]>500.): # constrain correlation between rest and thick (alpha) 
                         return -np.Inf  # if product between rest and thick of second layer is outside range
                     Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
                     # calculate prob without priors

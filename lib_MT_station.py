@@ -17,8 +17,8 @@ from matplotlib import gridspec
 from matplotlib.patches import Ellipse
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
-from math import sqrt
-from cmath import sqrt as csqrt
+#from math import sqrt
+#from cmath import sqrt as csqrt
 import glob
 from matplotlib.backends.backend_pdf import PdfPages
 #from mpl_toolkits.basemap import pyproj
@@ -1080,19 +1080,19 @@ def Z_plot_appres_phase_indvec_ellip(Z, T):  #Z_full_response(Z, T):
 
         if det_phi[numb] < 0:
 
-            phi_2[numb] = math.sqrt(abs(det_phi[numb]))
+            phi_2[numb] = np.sqrt(abs(det_phi[numb]))
             
             if phi_2[numb]**2 > phi_1[numb]**2 + phi_3[numb]**2: # To verify
-                phi_min[numb] = 1*(phi_1[numb]**2 + phi_3[numb]**2 - math.sqrt(abs(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2)))
-                phi_max[numb] = phi_1[numb]**2 + phi_3[numb]**2 + math.sqrt(abs(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2))
+                phi_min[numb] = 1*(phi_1[numb]**2 + phi_3[numb]**2 - np.sqrt(abs(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2)))
+                phi_max[numb] = phi_1[numb]**2 + phi_3[numb]**2 + np.sqrt(abs(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2))
             else:
-                phi_min[numb] = 1*(phi_1[numb]**2 + phi_3[numb]**2 - math.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2))
-                phi_max[numb] = phi_1[numb]**2 + phi_3[numb]**2 + math.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2)
+                phi_min[numb] = 1*(phi_1[numb]**2 + phi_3[numb]**2 - np.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2))
+                phi_max[numb] = phi_1[numb]**2 + phi_3[numb]**2 + np.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2)
         
         else: # det_phi[numb] >= 0:
-            phi_2[numb] = math.sqrt(det_phi[numb])
-            phi_min[numb] = 1*(phi_1[numb]**2 + phi_3[numb]**2 - math.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2))
-            phi_max[numb] = phi_1[numb]**2 + phi_3[numb]**2 + math.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2)
+            phi_2[numb] = np.sqrt(det_phi[numb])
+            phi_min[numb] = 1*(phi_1[numb]**2 + phi_3[numb]**2 - np.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2))
+            phi_max[numb] = phi_1[numb]**2 + phi_3[numb]**2 + np.sqrt(phi_1[numb]**2 + phi_3[numb]**2 - phi_2[numb]**2)
             
         # for ploting ellipses
         #diam_x[numb] = 2*phi_max[numb]

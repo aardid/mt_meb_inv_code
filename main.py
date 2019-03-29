@@ -187,14 +187,14 @@ if __name__ == "__main__":
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if False:
+	if True:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
 		for sta_obj in station_objects: 
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 			## range for the parameters
-			par_range = [[1.*1e2,2*1e3],[1.*1e1,1*1e3],[1.*1e2,5.*1e3],[1.*1e-3,1.*1e4],[1.*1e1,1.*1e3]]
+			par_range = [[.5*1e2,2*1e3],[1.*1e1,1*1e3],[1.*1e0,5.*1e3],[1.*1e-3,1.*1e4],[1.*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', prior_input=par_range)

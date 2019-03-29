@@ -216,8 +216,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             z1_inf.append(z1_per[i][-j-1])
             z2_sup.append(z2_per[i][j])
             z2_inf.append(z2_per[i][-j-1])
-        ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), edgecolor='r', facecolor='r')
-        ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), edgecolor='b', facecolor='b')
+        ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), facecolor='r', edgecolor='r')
+        ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), facecolor='b', edgecolor='b')
 
     # plot station names    
     i = 0
