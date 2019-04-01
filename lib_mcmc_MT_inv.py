@@ -144,7 +144,7 @@ class mcmc_inv(object):
             self.walk_jump = 5000      
         if ini_mod is None: 
             if self.num_lay == 3:
-                self.ini_mod = [800,250,300,5,200]
+                self.ini_mod = [500,200,500,5,200]
             if self.num_lay == 4:
                 self.ini_mod = [200,100,200,150,50,500,1000]    
         self.time = None  
@@ -225,7 +225,8 @@ class mcmc_inv(object):
 		    # log likelihood for the model, given the data
             v = 0.15
             v_vec = np.ones(len(self.T_obs))
-            v_vec[21:] = np.inf 
+            if (self.name == 'WT505a' or self.name == 'WT117b'):# or self.name == 'WT119a'):
+                v_vec[21:] = np.inf 
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \

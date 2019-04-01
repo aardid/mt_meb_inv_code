@@ -230,6 +230,9 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     ax.set_ylabel('depth [m]', size = textsize)
     ax.set_title('Clay cap boundaries depth  ', size = textsize)
     ax.legend(loc=4, prop={'size': 10})	
+    #ax.grid(True)
+    #(color='r', linestyle='-', linewidth=2)
+    ax.grid(color='c', linestyle='-', linewidth=.1)
     
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)

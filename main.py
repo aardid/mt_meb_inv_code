@@ -25,7 +25,8 @@ from multiprocessing import Pool
 import time
 from lib_MT_station import *
 from lib_Well import *
-from lib_mcmc_MT_inv import * 
+from lib_mcmc_MT_inv import *
+from lib_mcmc_meb import * 
 from Maping_functions import *
 from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
@@ -161,7 +162,7 @@ if __name__ == "__main__":
 				wl.meb = True
 				wl.meb_prof = wl_prof_meb[idx]
 				wl.meb_depth = wl_prof_depth_meb[idx]
-				wells_meb.append(wl.name)
+				#wells_meb.append(wl.name)
 		## create text file for google earth
 		#list_meb_wells = [obj for obj in wells_objects if obj.meb] 
 		#for_google_earth(list_meb_wells, name_file = 'meb_wells_google_earth.txt', type_obj = 'well')
@@ -182,19 +183,24 @@ if __name__ == "__main__":
 		# 		plt.close("all")
 		# pp.close()
 		
-	# (1) Calculate priors for each station (using two nearest) 
-
+	# (1) Run MCMC for MeB priors  
+	if True:
+		for wl in wells_objects:
+			if wl.meb: 
+				mcmc_meb = mcmc_meb(wl)
+				#mcmc_meb.resample_meb_prof()
+				
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if True:
+	if False:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
 		for sta_obj in station_objects: 
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 			## range for the parameters
-			par_range = [[.5*1e2,2*1e3],[1.*1e1,1*1e3],[1.*1e0,5.*1e3],[1.*1e-3,1.*1e4],[1.*1e1,1.*1e3]]
+			par_range = [[.5*1e2,.7*1e3],[1.*1e1,1*1e3],[1.*1e0,1.*1e3],[1.*1e-3,1.*1e3],[1.*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', prior_input=par_range)
@@ -224,7 +230,7 @@ if __name__ == "__main__":
 			+os.sep+'00_stations_4_google_earth.txt')
 	
 	# (3) Construct uncertain distribution of temperature
-	if True:
+	if False:
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
