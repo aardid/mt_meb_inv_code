@@ -20,6 +20,7 @@ from scipy.interpolate import interp1d
 import multiprocessing 
 import csv
 from scipy import signal
+import pandas as pd
 
 textsize = 15.
 min_val = 1.e-7
@@ -41,14 +42,14 @@ class mcmc_meb(object):
     work_dir                directory to save the inversion outputs     '.'
     type_func               type of function to model meb data          'square'
     num_cc                  number of clay caps to model                1
-    norm                    norm to measure the fit in the inversion    2.
+    norm                    norm to measure the fit in the inversion    1.
 	time				    time consumed in inversion
     max_depth               maximum depth for profile model             2000.
     delta_rs_depth          sample depth to resample the meb prof.      50.  
     meb_prof_rs             resample methylene-blue (MeB) prof. %
     meb_depth_rs            resample methylene-blue (MeB) prof. depths
     walk_jump               burn-in jumps for walkers                   2000
-    ini_mod                 inicial model [z1,z2,%]                     [200,200,20]
+    ini_mod                 inicial model [z1,z2,%]                     [200,400,20]
     z1_pars                 distribution parameters z1 in square func. 
                             (representive of top boundary of cc)
                             from mcmc chain results: [a,b,c,d]
@@ -99,10 +100,10 @@ class mcmc_meb(object):
         if norm is None: 
             self.norm = 2.     
         if walk_jump is None: 
-            self.walk_jump = 5000      
+            self.walk_jump = 2000      
         if ini_mod is None: 
             if self.num_cc == 1:
-                self.ini_mod = [400,600,20]
+                self.ini_mod = [100,200,20]
         if max_depth is None: 
             self.max_depth = 2000.
         if delta_rs_depth is None: 
@@ -114,6 +115,7 @@ class mcmc_meb(object):
         self.z1_pars = None
         self.z2_pars = None
         self.pc_pars = None
+        self.path_results = None
 
     # ===================== 
     # Methods   
@@ -139,89 +141,167 @@ class mcmc_meb(object):
         self.meb_depth_rs = z_rs
         self.meb_prof_rs = per_c_rs
 
-    def square_fn(self, pars, x):
-        # fill this        
+    def resample_meb_prof_2(self):
+        # default values
+        ini_depth = 0.
+        def_per_c = 2.
+        ## create vectors to fill
+        depths_aux = self.meb_depth
+        meb_aux = self.meb_prof
+        ## insert initial values
+        depths_aux.insert(0,ini_depth)
+        meb_aux.insert(0,def_per_c)
+        ## insert final value
+        depths_aux.insert(-1,self.max_depth)
+        meb_aux.insert(-1,def_per_c)
+        # create new z depths axis (resample)
+        z_rs = np.arange(ini_depth, self.max_depth + self.delta_rs_depth, self.delta_rs_depth) # new z axis
+        per_c_rs = np.zeros(len(z_rs))
+        # Resample profile 
+        ## fill spaces in between with NaNs
+        i = 0
+        for z in z_rs:
+            idx = np.argmin(abs(depths_aux-z))
+            if abs(z-depths_aux[idx])<20.:
+                per_c_rs[i] = meb_aux[idx] 
+            else: 
+                per_c_rs[i] = False
+            i+=1
+        ##
+        pre_per = def_per_c
+        for i in range(len(per_c_rs)):
+            if not per_c_rs[i]:
+                per_c_rs[i] = pre_per
+            pre_per = per_c_rs[i]
+            if per_c_rs[i] < 5.:
+                per_c_rs[i] = def_per_c
+            #if per_c_rs[i] > 5.:
+            #    per_c_rs[i] = 20.
+        self.meb_depth_rs = z_rs
+        self.meb_prof_rs = per_c_rs
+
+    def square_fn(self, pars, x_axis = None, y_base = None):
+        # set base value 
+        if y_base == None:
+            y_base = 0.
+        # vector to fill
+        y_axis = np.zeros(len(x_axis))
+        # pars = [x1,x2,y1]
+        # find indexs in x axis
+        idx1 = np.argmin(abs(x_axis-pars[0]))
+        idx2 = np.argmin(abs(x_axis-pars[1]))
+        # fill y axis and return 
+        y_axis[0:idx1] = y_base
+        y_axis[idx1:idx2+1] = pars[2]
+        y_axis[idx2+1:] = y_base
+        return y_axis
+
+    def prob_likelihood(self, est, obs):
+        # log likelihood for the model, given the data
+        v = 0.15
+        # fitting estimates (square function) with observation (meb profile)
+        prob = (-np.sum(abs(est - obs))**self.norm) /v 
+        return prob
 
     def lnprob(self, pars, obs):
-		## Parameter constrain
-        if (any(x<0 for x in pars)):
+		## Parameter constraints
+        if (any(x<0 for x in pars)): # positive parameters
             return -np.Inf
-        # estimate parameters by forward function 
-        per_c_est =  self.square_fn(*pars,self.meb_depth_rs)
-        # calculate prob without priors
-        
-        ---------------------------------------------------------------------
-        # calculate prob without priors
-        prob = prob_likelihood(Z_est, rho_ap_est, phi_est)
+        if pars[1] >= self.meb_depth_rs[-1]: # z2 smaller than maximum depth of meb prof
+            return -np.Inf
+        if pars[0] >= pars[1]: # z1 smaller than z1 
+            return -np.Inf
+        if pars[2] >= 100. or pars[2] <= 2.: # percentage range 
+            return -np.Inf
+        ## estimate square function of clay content given pars [z1,z2,%] 
+        sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs, y_base = 2.)
+        ## calculate prob and return  
+        prob = self.prob_likelihood(sq_prof_est,self.meb_prof_rs)
+        ## check if prob is nan
         if prob!=prob: # assign non values to -inf
             return -np.Inf
         return prob
     
     def run_mcmc(self):
-        nwalkers= 20               # number of walkers
+        nwalkers= 24               # number of walkers
         if self.num_cc == 1:
             ndim = 3               # parameter space dimensionality
 	 	## Timing inversion
         start_time = time.time()
         ## Resample the MeB profile
-        self.resample_meb_prof()
+        self.resample_meb_prof_2()
         # create the emcee object (set threads>1 for multiprocessing)
-        data = np.array([self.meb_depth_rs, self.meb_prof_rs]).T
+        data = self.meb_prof_rs.T
         cores = multiprocessing.cpu_count()
         # Create sampler
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data])
+        # set the initial location of the walkers
+        pars = self.ini_mod  # initial guess
+        p0 = np.array([pars + 0.1e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.abs(p0)
+	 	# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
+        sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs, y_base = 2.)
 
+        pos,prob,state=sampler.run_mcmc(np.abs(p0),self.walk_jump)
 
+        f = open("chain.dat", "w")
+        nk,nit,ndim=sampler.chain.shape
+        for k in range(nk):
+        	for i in range(nit):
+        		f.write("{:d} {:d} ".format(k, i))
+        		for j in range(ndim):
+        			f.write("{:15.7f} ".format(sampler.chain[k,i,j]))
+        		f.write("{:15.7f}\n".format(sampler.lnprobability[k,i]))
+        f.close()
+        # assign results to station object attributes 
+        self.time = time.time() - start_time # enlapsed time
 
-
-    #     -----------------------------------------------------------------------
-
-
-
-    #     cores = multiprocessing.cpu_count()
-    #     sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
-	# 	# set the initial location of the walkers
-    #     pars = self.ini_mod  # initial guess
-    #     p0 = np.array([pars + 0.5e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
-    #     p0 = np.abs(p0)
-    #     #p0 = emcee.utils.sample_ball(p0, [20., 20.,], size=nwalkers)
-
-    #     Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
-
-    #     # p0_log = np.log(np.abs(p0))
-	# 	# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
-    #     pos,prob,state=sampler.run_mcmc(np.abs(p0),self.walk_jump)
-	# 	# sampler.reset()
-
-    #     f = open("chain.dat", "w")
-    #     nk,nit,ndim=sampler.chain.shape
-    #     for k in range(nk):
-    #     	for i in range(nit):
-    #     		f.write("{:d} {:d} ".format(k, i))
-    #     		for j in range(ndim):
-    #     			f.write("{:15.7f} ".format(sampler.chain[k,i,j]))
-    #     		f.write("{:15.7f}\n".format(sampler.lnprobability[k,i]))
-    #     f.close()
-    #     # assign results to station object attributes 
-    #     self.time = time.time() - start_time # enlapsed time
-    #     ## move chain.dat to file directory
-    #     # shutil.rmtree('.'+os.sep+str('mcmc_inversions'))
-    #     if not os.path.exists('.'+os.sep+str('mcmc_inversions')):
-    #         os.mkdir('.'+os.sep+str('mcmc_inversions'))
-    #         os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
-    #     elif not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+self.name):
-    #         os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
-    #     if not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion')):
-    #         os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
+        ## move chain.dat to file directory
+        # shutil.rmtree('.'+os.sep+str('mcmc_meb'))
+        if not os.path.exists('.'+os.sep+str('mcmc_meb')):
+            os.mkdir('.'+os.sep+str('mcmc_meb'))
+            os.mkdir('.'+os.sep+str('mcmc_meb')+os.sep+str('00_global_inversion'))
+        if not os.path.exists('.'+os.sep+str('mcmc_meb')+os.sep+self.name):
+            os.mkdir('.'+os.sep+str('mcmc_meb')+os.sep+self.name)
+        if not os.path.exists('.'+os.sep+str('mcmc_meb')+os.sep+str('00_global_inversion')):
+            os.mkdir('.'+os.sep+str('mcmc_meb')+os.sep+str('00_global_inversion'))
             
-    #     self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
-    #     shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
+        self.path_results = '.'+os.sep+str('mcmc_meb')+os.sep+self.name
+        shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
 
-    #     # # save text file with inversion parameters
-    #     a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)"] 
-    #     b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time)]
-    #     with open('inv_par.txt', 'w') as f:
-    #         writer = csv.writer(f, delimiter='\t')
-    #         writer.writerows(zip(a,b))
-    #     f.close()
-    #     shutil.move('inv_par.txt',self.path_results+os.sep+'inv_par.txt') 
+        # # save text file with inversion parameters
+        #a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)"] 
+        #b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time)]
+        #with open('inv_par.txt', 'w') as f:
+        #    writer = csv.writer(f, delimiter='\t')
+        #    writer.writerows(zip(a,b))
+        #f.close()
+        #shutil.move('inv_par.txt',self.path_results+os.sep+'inv_par.txt') 
+
+    def plot_results_mcmc(self, corner_plt = False, walker_plt = True): 
+        chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
+        if corner_plt: 
+        # show corner plot
+            weights = chain[:,-1]
+            weights -= np.max(weights)
+            weights = np.exp(weights)
+            labels = ['z1','z2','% clay']
+            fig = corner.corner(chain[:,2:-1], labels=labels, weights=weights, smooth=1, bins=30)
+            plt.savefig(self.path_results+os.sep+'corner_plot.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            #plt.close(fig)
+        if walker_plt:
+            labels = ['z1','z2','% clay']
+            npar = int(chain.shape[1] - 3)
+            f,axs = plt.subplots(npar,1)
+            f.set_size_inches([8,8])
+            for i,ax,label in zip(range(npar),axs,labels):
+            	for j in np.unique(chain[:,0]):
+            		ind = np.where(chain[:,0] == j)
+            		it = chain[ind,1]
+            		par = chain[ind,2+i]
+            		ax.plot(it[0],par[0],'k-')
+            	ax.set_ylabel(label)
+            plt.savefig(self.path_results+os.sep+'walkers.png', dpi=300)
+        chain = None
+        plt.close('all')

@@ -179,7 +179,7 @@ class mcmc_inv(object):
         p0 = np.abs(p0)
         #p0 = emcee.utils.sample_ball(p0, [20., 20.,], size=nwalkers)
 
-        Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
+        #Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
 
         # p0_log = np.log(np.abs(p0))
 		# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
@@ -202,7 +202,7 @@ class mcmc_inv(object):
         if not os.path.exists('.'+os.sep+str('mcmc_inversions')):
             os.mkdir('.'+os.sep+str('mcmc_inversions'))
             os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
-        elif not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+self.name):
+        if not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+self.name):
             os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+self.name)
         if not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion')):
             os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
@@ -225,7 +225,7 @@ class mcmc_inv(object):
 		    # log likelihood for the model, given the data
             v = 0.15
             v_vec = np.ones(len(self.T_obs))
-            if (self.name == 'WT505a' or self.name == 'WT117b'):# or self.name == 'WT119a'):
+            if (self.name == 'WT505a' or self.name == 'WT117b' or self.name == 'WT222a'):
                 v_vec[21:] = np.inf 
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \

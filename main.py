@@ -38,8 +38,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 
@@ -185,10 +185,19 @@ if __name__ == "__main__":
 		
 	# (1) Run MCMC for MeB priors  
 	if True:
+		count = 1
 		for wl in wells_objects:
 			if wl.meb: 
-				mcmc_meb = mcmc_meb(wl)
-				#mcmc_meb.resample_meb_prof()
+				if wl.name == 'TH19':
+					print(wl.name +  ': {:}/36'.format(count))
+					mcmc_wl = mcmc_meb(wl)
+					mcmc_wl.resample_meb_prof_2()
+					print(mcmc_wl.meb_prof_rs)
+
+					mcmc_wl.run_mcmc()
+					mcmc_wl.plot_results_mcmc()
+					count += 1
+					asdf
 				
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
