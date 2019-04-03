@@ -184,20 +184,29 @@ if __name__ == "__main__":
 		# pp.close()
 		
 	# (1) Run MCMC for MeB priors  
-	if True:
+	if False:
+		pp = PdfPages('fit.pdf')
+		start_time = time.time()
 		count = 1
 		for wl in wells_objects:
 			if wl.meb: 
-				if wl.name == 'TH19':
-					print(wl.name +  ': {:}/36'.format(count))
-					mcmc_wl = mcmc_meb(wl)
-					mcmc_wl.resample_meb_prof_2()
-					print(mcmc_wl.meb_prof_rs)
+				#if wl.name == 'WK401':
+				print(wl.name +  ': {:}/36'.format(count))
+				mcmc_wl = mcmc_meb(wl)
+				mcmc_wl.run_mcmc()
+				mcmc_wl.plot_results_mcmc()
+				f = mcmc_wl.sample_post(exp_fig = True) # Figure with fit to be add in pdf 
+				pp.savefig(f)
+				plt.close("all")
+				count += 1
+	## enlapsed time for the inversion (every station in station_objects)
+		enlap_time = time.time() - start_time # enlapsed time
+		## print time consumed
+		print("Time consumed:\t{:.1f} min".format(enlap_time/60))
+		pp.close()
+		# move figure fit to global results folder
+		shutil.move('fit.pdf','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
 
-					mcmc_wl.run_mcmc()
-					mcmc_wl.plot_results_mcmc()
-					count += 1
-					asdf
 				
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model

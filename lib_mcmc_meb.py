@@ -163,20 +163,24 @@ class mcmc_meb(object):
         for z in z_rs:
             idx = np.argmin(abs(depths_aux-z))
             if abs(z-depths_aux[idx])<20.:
-                per_c_rs[i] = meb_aux[idx] 
+                per_c_rs[i] = meb_aux[idx]  
             else: 
                 per_c_rs[i] = False
             i+=1
         ##
+        # index in meb_depth_rs associated to last measurement in meb_depth
+        last_idx_obs = np.argmin(abs(z_rs - self.meb_depth[-1]))
+
         pre_per = def_per_c
         for i in range(len(per_c_rs)):
-            if not per_c_rs[i]:
-                per_c_rs[i] = pre_per
-            pre_per = per_c_rs[i]
-            if per_c_rs[i] < 5.:
+            if i > last_idx_obs:
                 per_c_rs[i] = def_per_c
-            #if per_c_rs[i] > 5.:
-            #    per_c_rs[i] = 20.
+            else:    
+                if not per_c_rs[i]:
+                    per_c_rs[i] = pre_per
+                pre_per = per_c_rs[i]
+                if per_c_rs[i] < 5.:
+                    per_c_rs[i] = def_per_c
         self.meb_depth_rs = z_rs
         self.meb_prof_rs = per_c_rs
 
@@ -305,3 +309,71 @@ class mcmc_meb(object):
             plt.savefig(self.path_results+os.sep+'walkers.png', dpi=300)
         chain = None
         plt.close('all')
+
+    def sample_post(self, plot_fit = True, exp_fig = None): 
+		######################################################################
+		# reproducability
+        np.random.seed(1)
+		# load in the posterior
+        chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
+        walk_jump = chain[:,0:2]
+        params = chain[:,2:-1]
+
+		# define parameter sets for forward runs
+        Nruns = 500
+        pars = []
+        pars_order = []
+        # generate Nruns random integers in parameter set range (as a way of sampling this dist)
+        Nsamples = 0
+        
+        while Nsamples != Nruns:
+            id = np.random.randint(0,params.shape[0]-1)
+            # condition for sample: prob dif than -inf and jump after 2/3 of total (~converged ones)
+            if (chain[id,-1] != -np.inf and chain[id,1] > int(self.walk_jump*2/3)): 
+                #par_new = [params[id,0], params[id,1], params[id,2], params[id,3], params[id,4]]
+                pars.append([Nsamples, params[id,0], params[id,1], params[id,2]])
+                pars_order.append([chain[id,0], chain[id,1],chain[id,2], chain[id,3],chain[id,4],\
+                    chain[id,5]])
+                Nsamples += 1
+
+		# Write in .dat paramateres sampled in order of fit (best fit a the top)
+        pars_order= np.asarray(pars_order)
+        pars_order = pars_order[pars_order[:,-1].argsort()[::]]        		
+        f = open(self.path_results+os.sep+"chain_sample_order.dat", "w")
+        for l in reversed(range(len(pars_order[:,1]))):
+            j= l - len(pars_order[:,1])
+            f.write("{:4.0f}\t {:4.0f}\t {:3.3f}\t {:3.3f}\t {:3.3f}\t {:3.3f}\n"\
+                .format(pars_order[j,0], pars_order[j,1], \
+                pars_order[j,2], pars_order[j,3], pars_order[j,4],\
+                pars_order[j,5]))
+        f.close()
+
+        if plot_fit: 
+            f,(ax1) = plt.subplots(1,1)
+            f.set_size_inches(6,8)
+            f.suptitle(self.name, fontsize=22)
+            ax1.set_xscale("linear")
+            ax1.set_yscale("linear") 
+            ax1.set_xlim([0, 20])
+            ax1.set_ylim([0,2000])
+            ax1.set_xlabel('MeB [%]', fontsize=18)
+            ax1.set_ylabel('Depth [m]', fontsize=18)
+            ax1.grid(True, which='both', linewidth=0.4)
+            ax1.invert_yaxis()
+
+            for par in pars:
+                if all(x > 0. for x in par):
+                    sq_prof_est =  self.square_fn(par[1:], x_axis=self.meb_depth_rs, y_base = 2.)
+                    ax1.plot(sq_prof_est, self.meb_depth_rs,'g-', lw = 1.0, alpha=0.5, zorder=0)
+            ax1.plot(sq_prof_est, self.meb_depth_rs,'g-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
+            #plot observed
+            ax1.plot(self.meb_prof, self.meb_depth,'b*', lw = 2.5, alpha=1.0, zorder=0, label = 'observed')
+            ax1.plot(self.meb_prof_rs, self.meb_depth_rs,'--', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. r-sample')
+            ax1.legend(loc='lower right', shadow=False, fontsize='small')
+            plt.savefig(self.path_results+os.sep+'fit.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        if exp_fig == None:
+            plt.close(f)
+            plt.clf()
+        if exp_fig:  # True: return figure
+           return f
