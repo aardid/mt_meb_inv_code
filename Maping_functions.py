@@ -225,7 +225,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             ax.text(x_axis[i], topo[i]+300., sta.name[:-4], rotation=90, size=8) 
             i+=1
     
-    ax.set_ylim([-1.0e3,.5e3])
+    ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
+    ax.set_ylim([-.8e3, max(topo)+500.])
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('depth [m]', size = textsize)
     ax.set_title('Clay cap boundaries depth  ', size = textsize)

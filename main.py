@@ -52,8 +52,8 @@ if __name__ == "__main__":
 			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
 			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
 			#path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 
-			path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
-			#path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
+			#path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
+			path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if False:
+	if True:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
@@ -248,7 +248,7 @@ if __name__ == "__main__":
 			+os.sep+'00_stations_4_google_earth.txt')
 	
 	# (3) Construct uncertain distribution of temperature
-	if False:
+	if True:
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
