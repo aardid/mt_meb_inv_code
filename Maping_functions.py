@@ -166,8 +166,15 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
     plt.clf()
 
     
-def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert'): 
-     ## sta_objects: list of station objects
+def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', width_ref = None): 
+    # check for correct width plot reference input 
+    if width_ref is None:
+        width_plot = False
+    else: 
+        width_plot = True
+    if [width_ref != '30%' or width_ref != '60%' or width_ref != '90%']:
+        assert 'invalid width_ref: 30%, 60%, 90%'
+    ## sta_objects: list of station objects
     ## sort list by longitud (min to max - East to West)
     sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
     # vectors to be fill and plot 
@@ -218,6 +225,46 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             z2_inf.append(z2_per[i][-j-1])
         ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), facecolor='r', edgecolor='r')
         ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), facecolor='b', edgecolor='b')
+    
+    if width_plot: 
+        ## plot 5% and 95% percetils as dotted lines 
+        if width_ref == '90%': 
+            # top boundary
+            ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5)
+            ax.text(x_axis[0],z1_per[0,0]+10,'5%',size = 8., color = 'r')
+            ax.plot(x_axis, z1_per[:,-1],'r--',linewidth=.5)
+            ax.text(x_axis[0],z1_per[0,-1]+10,'95%',size = 8.,color = 'r')
+            # bottom boundary
+            ax.plot(x_axis, z2_per[:,0],'b--',linewidth=.5)
+            ax.text(x_axis[-1],z2_per[-1,0],'5%',size = 8., color = 'b')
+            ax.plot(x_axis, z2_per[:,-1],'b--',linewidth=.5)
+            ax.text(x_axis[-1],z2_per[-1,-1],'95%',size = 8.,color = 'b')
+
+        ## plot 20% and 80% percetils as dotted lines
+        if width_ref == '60%': 
+            # top boundary
+            ax.plot(x_axis, z1_per[:,3],'r--',linewidth=.5)
+            ax.text(x_axis[0],z1_per[0,3]+10,'20%',size = 8., color = 'r')
+            ax.plot(x_axis, z1_per[:,-4],'r--',linewidth=.5)
+            ax.text(x_axis[0],z1_per[0,-4]+10,'80%',size = 8.,color = 'r')
+            # bottom boundary
+            ax.plot(x_axis, z2_per[:,3],'b--',linewidth=.5)
+            ax.text(x_axis[-1],z2_per[-1,3],'20%',size = 8., color = 'b')
+            ax.plot(x_axis, z2_per[:,-4],'b--',linewidth=.5)
+            ax.text(x_axis[-1],z2_per[-1,-4],'80%',size = 8.,color = 'b')
+
+        ## plot 45% and 65% percetils as dotted lines
+        if width_ref == '30%': 
+            # top boundary
+            ax.plot(x_axis, z1_per[:,8],'r--',linewidth=.5)
+            ax.text(x_axis[0],z1_per[0,8]+10,'45%',size = 8., color = 'r')
+            ax.plot(x_axis, z1_per[:,12],'r--',linewidth=.5)
+            ax.text(x_axis[0],z1_per[0,12]+10,'65%',size = 8.,color = 'r')
+            # bottom boundary
+            ax.plot(x_axis, z2_per[:,8],'b--',linewidth=.5)
+            ax.text(x_axis[-1],z2_per[-1,8],'20%',size = 8., color = 'b')
+            ax.plot(x_axis, z2_per[:,12],'b--',linewidth=.5)
+            ax.text(x_axis[-1],z2_per[-1,12],'80%',size = 8.,color = 'b')
 
     # plot station names    
     i = 0

@@ -42,9 +42,13 @@ if __name__ == "__main__":
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
+	set_up = True
+	mcmc_meb_inv = True
+	mcmc_MT_inv = False
+	prof_2D_MT = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
-	if True:
+	if set_up:
 		#### Import data: MT from edi files and wells from spreadsheet files
 		#########  MT data
 		if pc == 'office': 
@@ -52,8 +56,8 @@ if __name__ == "__main__":
 			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
 			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
 			#path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 
-			#path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
-			path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
+			path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
+			#path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
@@ -83,9 +87,11 @@ if __name__ == "__main__":
 			path_wells_temp = " "
 
 		####### MeB data in wells 
-		## Temperature in wells 
+		## 
 		if pc == 'office': 
-			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
+			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
+			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"
+			
 			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
 		## Personal Suse
 		if pc == 'personalSuse':
@@ -156,12 +162,14 @@ if __name__ == "__main__":
 		## Loop wells_objects (list) to assing data attributes from MeB files 
 		# list of wells with MeB (names)
 		wells_meb = []
+		count_meb_wl = 0
 		for wl in wells_objects: 
 			if wl.name in wl_name_meb:
 				idx = wl_name_meb.index(wl.name)
 				wl.meb = True
 				wl.meb_prof = wl_prof_meb[idx]
 				wl.meb_depth = wl_prof_depth_meb[idx]
+				count_meb_wl+=1
 				#wells_meb.append(wl.name)
 		## create text file for google earth
 		#list_meb_wells = [obj for obj in wells_objects if obj.meb] 
@@ -184,14 +192,14 @@ if __name__ == "__main__":
 		# pp.close()
 		
 	# (1) Run MCMC for MeB priors  
-	if False:
+	if mcmc_meb_inv:
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
 		count = 1
 		for wl in wells_objects:
 			if wl.meb: 
 				#if wl.name == 'WK401':
-				print(wl.name +  ': {:}/36'.format(count))
+				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
 				mcmc_wl = mcmc_meb(wl)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
@@ -199,19 +207,17 @@ if __name__ == "__main__":
 				pp.savefig(f)
 				plt.close("all")
 				count += 1
-	## enlapsed time for the inversion (every station in station_objects)
+		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
 		print("Time consumed:\t{:.1f} min".format(enlap_time/60))
 		pp.close()
 		# move figure fit to global results folder
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
-
-				
 	
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
-	if True:
+	if mcmc_MT_inv:
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
@@ -248,13 +254,13 @@ if __name__ == "__main__":
 			+os.sep+'00_stations_4_google_earth.txt')
 	
 	# (3) Construct uncertain distribution of temperature
-	if True:
+	if prof_2D_MT:
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name)
-		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name)
+		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, width_ref = '60%')
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+os.sep+file_name+'.png')
 				
 

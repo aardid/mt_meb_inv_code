@@ -226,7 +226,7 @@ class mcmc_inv(object):
             v = 0.15
             v_vec = np.ones(len(self.T_obs))
             #if (self.name == 'WT505a' or self.name == 'WT117b' or self.name == 'WT222a' or self.name == 'WT048a'):
-            #v_vec[21:] = np.inf 
+            v_vec[21:] = np.inf 
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \

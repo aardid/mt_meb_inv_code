@@ -21,6 +21,7 @@ import multiprocessing
 import csv
 from scipy import signal
 import pandas as pd
+from misc_functios import *
 
 textsize = 15.
 min_val = 1.e-7
@@ -100,10 +101,10 @@ class mcmc_meb(object):
         if norm is None: 
             self.norm = 2.     
         if walk_jump is None: 
-            self.walk_jump = 2000      
+            self.walk_jump = 5000      
         if ini_mod is None: 
             if self.num_cc == 1:
-                self.ini_mod = [100,200,20]
+                self.ini_mod = [200,150,10]
         if max_depth is None: 
             self.max_depth = 2000.
         if delta_rs_depth is None: 
@@ -184,6 +185,28 @@ class mcmc_meb(object):
         self.meb_depth_rs = z_rs
         self.meb_prof_rs = per_c_rs
 
+    def resample_meb_prof_3(self):
+        # default values
+        ini_depth = 0.
+        def_per_c = 2.
+        ## create vectors to fill
+        depths_aux = self.meb_depth
+        meb_aux = self.meb_prof
+        ## insert initial values
+        depths_aux.insert(0,ini_depth)
+        meb_aux.insert(0,def_per_c)
+        ## insert final value
+        depths_aux.insert(len(depths_aux),self.max_depth)
+        meb_aux.insert(len(meb_aux),def_per_c)
+        # create new z depths axis (resample)
+        z_rs = np.arange(ini_depth, self.max_depth + self.delta_rs_depth, self.delta_rs_depth) # new z axis
+        per_c_rs = np.zeros(len(z_rs))
+        # Resample profile 
+        per_c_rs = piecewise_interpolation(depths_aux, meb_aux, z_rs)
+        per_c_rs.insert(-1,def_per_c)
+        self.meb_depth_rs = z_rs
+        self.meb_prof_rs = np.asarray(per_c_rs)
+
     def square_fn(self, pars, x_axis = None, y_base = None):
         # set base value 
         if y_base == None:
@@ -203,8 +226,13 @@ class mcmc_meb(object):
     def prob_likelihood(self, est, obs):
         # log likelihood for the model, given the data
         v = 0.15
+        ## fit only measure points 
+        # find indexes of measure points in resample
+        v_vec = np.ones(len(self.meb_depth_rs))
+        inds = np.where(self.meb_depth == self.meb_depth_rs)
+        v_vec[inds] = np.inf
         # fitting estimates (square function) with observation (meb profile)
-        prob = (-np.sum(abs(est - obs))**self.norm) /v 
+        prob = (-np.sum(abs(est - obs)/v_vec)**self.norm) 
         return prob
 
     def lnprob(self, pars, obs):
@@ -215,8 +243,13 @@ class mcmc_meb(object):
             return -np.Inf
         if pars[0] >= pars[1]: # z1 smaller than z1 
             return -np.Inf
-        if pars[2] >= 100. or pars[2] <= 2.: # percentage range 
+        if pars[2] >= max(self.meb_prof) or pars[2] <= 2.: # percentage range 
             return -np.Inf
+        #idx = np.where(self.meb_prof_rs > 2.)
+        #idx = int(idx[0][0])
+        #if pars[0] > self.meb_depth_rs[idx+1]:
+        #    return -np.Inf
+ 
         ## estimate square function of clay content given pars [z1,z2,%] 
         sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs, y_base = 2.)
         ## calculate prob and return  
@@ -227,13 +260,20 @@ class mcmc_meb(object):
         return prob
     
     def run_mcmc(self):
+
         nwalkers= 24               # number of walkers
         if self.num_cc == 1:
             ndim = 3               # parameter space dimensionality
 	 	## Timing inversion
         start_time = time.time()
-        ## Resample the MeB profile
-        self.resample_meb_prof_2()
+        ## Set data for inversion 
+        for i in range(len(self.meb_prof)):
+            if self.meb_prof[i] < 2.:
+                self.meb_prof[i] = 2.
+
+        ##Resample the MeB profile
+        self.resample_meb_prof_3()
+
         # create the emcee object (set threads>1 for multiprocessing)
         data = self.meb_prof_rs.T
         cores = multiprocessing.cpu_count()
@@ -241,11 +281,10 @@ class mcmc_meb(object):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data])
         # set the initial location of the walkers
         pars = self.ini_mod  # initial guess
-        p0 = np.array([pars + 0.1e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.array([pars + 10.*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
         p0 = np.abs(p0)
 	 	# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
         sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs, y_base = 2.)
-
         pos,prob,state=sampler.run_mcmc(np.abs(p0),self.walk_jump)
 
         f = open("chain.dat", "w")
@@ -355,7 +394,8 @@ class mcmc_meb(object):
             ax1.set_xscale("linear")
             ax1.set_yscale("linear") 
             ax1.set_xlim([0, 20])
-            ax1.set_ylim([0,2000])
+            #ax1.set_ylim([250,270])
+            ax1.set_ylim([self.meb_depth[1],self.meb_depth[-2]])
             ax1.set_xlabel('MeB [%]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)
