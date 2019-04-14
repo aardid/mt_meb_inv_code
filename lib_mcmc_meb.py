@@ -20,7 +20,7 @@ from scipy.interpolate import interp1d
 import multiprocessing 
 import csv
 from scipy import signal
-import pandas as pd
+# import pandas as pd
 from misc_functios import *
 
 textsize = 15.
@@ -99,16 +99,16 @@ class mcmc_meb(object):
         if num_cc is None: 
             self.num_cc = 1
         if norm is None: 
-            self.norm = 2.     
+            self.norm = 1.     
         if walk_jump is None: 
             self.walk_jump = 5000      
         if ini_mod is None: 
             if self.num_cc == 1:
                 self.ini_mod = [200,150,10]
         if max_depth is None: 
-            self.max_depth = 2000.
+            self.max_depth = 3000.
         if delta_rs_depth is None: 
-            self.delta_rs_depth = 20.
+            self.delta_rs_depth = 1.
         self.meb_prof_rs = None
         self.meb_depth_rs = None   
         self.time = None  
@@ -192,12 +192,27 @@ class mcmc_meb(object):
         ## create vectors to fill
         depths_aux = self.meb_depth
         meb_aux = self.meb_prof
-        ## insert initial values
+        ## check if first observation is bigger than 2%. if is it, instert a previus 2% point,
+        # separate by the typical sample rate of 50m
+        if meb_aux[0] > 2.:
+            if depths_aux[0] < 50.:
+                depths_aux.insert(0,depths_aux[0]-50.)
+                meb_aux.insert(0,def_per_c)
+            else:
+                depths_aux.insert(0,depths_aux[0]-25.)
+                meb_aux.insert(0,def_per_c)
+        ## check if last observation is bigger than 2%. if is it, instert a last 2% point 
+        if meb_aux[len(meb_aux)-1] > 2.:
+            depths_aux.insert(len(depths_aux),depths_aux[-1]+50.)
+            meb_aux.insert(len(meb_aux),def_per_c)
+
+        ## insert initial values (depth 0)
         depths_aux.insert(0,ini_depth)
         meb_aux.insert(0,def_per_c)
-        ## insert final value
+        ## insert final value (depth self.max_depth)
         depths_aux.insert(len(depths_aux),self.max_depth)
         meb_aux.insert(len(meb_aux),def_per_c)
+
         # create new z depths axis (resample)
         z_rs = np.arange(ini_depth, self.max_depth + self.delta_rs_depth, self.delta_rs_depth) # new z axis
         per_c_rs = np.zeros(len(z_rs))
@@ -226,34 +241,29 @@ class mcmc_meb(object):
     def prob_likelihood(self, est, obs):
         # log likelihood for the model, given the data
         v = 0.15
-        ## fit only measure points 
-        # find indexes of measure points in resample
-        v_vec = np.ones(len(self.meb_depth_rs))
-        inds = np.where(self.meb_depth == self.meb_depth_rs)
-        v_vec[inds] = np.inf
         # fitting estimates (square function) with observation (meb profile)
-        prob = (-np.sum(abs(est - obs)/v_vec)**self.norm) 
+        fit = abs(est - obs)
+        prob = (-np.sum(fit)**self.norm)/v 
+        #log_fit = abs(np.log10(est) - np.log10(obs))
+        #prob = (-np.sum(log_fit)**self.norm)/v
         return prob
 
     def lnprob(self, pars, obs):
 		## Parameter constraints
         if (any(x<0 for x in pars)): # positive parameters
             return -np.Inf
-        if pars[1] >= self.meb_depth_rs[-1]: # z2 smaller than maximum depth of meb prof
+        if (pars[0] >= self.meb_depth_rs[self.inds[-2]]): # z2 smaller than maximum depth of meb prof
+            return -np.Inf
+        if (pars[1] >= self.meb_depth_rs[self.inds[-2]]): # z2 smaller than maximum depth of meb prof
             return -np.Inf
         if pars[0] >= pars[1]: # z1 smaller than z1 
             return -np.Inf
-        if pars[2] >= max(self.meb_prof) or pars[2] <= 2.: # percentage range 
+        if pars[2] >= 35.:# max(self.meb_prof)+5.: # percentage range 
             return -np.Inf
-        #idx = np.where(self.meb_prof_rs > 2.)
-        #idx = int(idx[0][0])
-        #if pars[0] > self.meb_depth_rs[idx+1]:
-        #    return -np.Inf
- 
         ## estimate square function of clay content given pars [z1,z2,%] 
-        sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs, y_base = 2.)
+        sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs[self.inds], y_base = 2.)
         ## calculate prob and return  
-        prob = self.prob_likelihood(sq_prof_est,self.meb_prof_rs)
+        prob = self.prob_likelihood(sq_prof_est,self.meb_prof_rs[self.inds])
         ## check if prob is nan
         if prob!=prob: # assign non values to -inf
             return -np.Inf
@@ -273,7 +283,13 @@ class mcmc_meb(object):
 
         ##Resample the MeB profile
         self.resample_meb_prof_3()
-
+        ##extract index of observes in the resample vector 
+        self.inds = []
+        for i in range(len(self.meb_depth_rs)):
+            for j in range(len(self.meb_depth)):
+                 if self.meb_depth_rs[i] == np.floor(self.meb_depth[j]):
+                    if i not in self.inds:
+                        self.inds.append(i)
         # create the emcee object (set threads>1 for multiprocessing)
         data = self.meb_prof_rs.T
         cores = multiprocessing.cpu_count()
@@ -395,7 +411,8 @@ class mcmc_meb(object):
             ax1.set_yscale("linear") 
             ax1.set_xlim([0, 20])
             #ax1.set_ylim([250,270])
-            ax1.set_ylim([self.meb_depth[1],self.meb_depth[-2]])
+            #ax1.set_ylim([self.meb_depth[1],self.meb_depth[-2]])
+            ax1.set_ylim([0,self.meb_depth[-2]+200.])
             ax1.set_xlabel('MeB [%]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)

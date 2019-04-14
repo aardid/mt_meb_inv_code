@@ -38,8 +38,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
@@ -96,6 +96,7 @@ if __name__ == "__main__":
 		## Personal Suse
 		if pc == 'personalSuse':
 			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
+			#path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data_sample_4.txt"
 		## Personal Win
 		if pc == 'personalWin':
 			path_wells_meb = " "
