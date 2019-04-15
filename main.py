@@ -207,6 +207,8 @@ if __name__ == "__main__":
 				f = mcmc_wl.sample_post(exp_fig = True) # Figure with fit to be add in pdf 
 				pp.savefig(f)
 				plt.close("all")
+				## calculate estimate parameters (percentiels)
+				mcmc_wl.model_pars_est()
 				count += 1
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time

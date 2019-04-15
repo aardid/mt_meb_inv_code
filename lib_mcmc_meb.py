@@ -16,7 +16,8 @@ from cmath import exp, sqrt
 import os, shutil, time, math, cmath
 import corner, emcee
 from matplotlib import pyplot as plt
-from scipy.interpolate import interp1d
+#from scipy.interpolate import interp1d
+import scipy.stats as stats
 import multiprocessing 
 import csv
 from scipy import signal
@@ -101,7 +102,7 @@ class mcmc_meb(object):
         if norm is None: 
             self.norm = 1.     
         if walk_jump is None: 
-            self.walk_jump = 5000      
+            self.walk_jump = 4000      
         if ini_mod is None: 
             if self.num_cc == 1:
                 self.ini_mod = [200,150,10]
@@ -242,10 +243,10 @@ class mcmc_meb(object):
         # log likelihood for the model, given the data
         v = 0.15
         # fitting estimates (square function) with observation (meb profile)
-        fit = abs(est - obs)
-        prob = (-np.sum(fit)**self.norm)/v 
-        #log_fit = abs(np.log10(est) - np.log10(obs))
-        #prob = (-np.sum(log_fit)**self.norm)/v
+        #fit = abs(est - obs)
+        #prob = (-np.sum(fit)**self.norm)/v 
+        log_fit = abs(np.log10(est) - np.log10(obs))
+        prob = (-np.sum(log_fit)**self.norm)/v
         return prob
 
     def lnprob(self, pars, obs):
@@ -406,7 +407,7 @@ class mcmc_meb(object):
         if plot_fit: 
             f,(ax1) = plt.subplots(1,1)
             f.set_size_inches(6,8)
-            f.suptitle(self.name, fontsize=22)
+            f.suptitle(self.name, fontsize=20)
             ax1.set_xscale("linear")
             ax1.set_yscale("linear") 
             ax1.set_xlim([0, 20])
@@ -434,3 +435,91 @@ class mcmc_meb(object):
             plt.clf()
         if exp_fig:  # True: return figure
            return f
+
+    def model_pars_est(self, path = None, plot_dist = True):
+
+        if path is None: 
+            path =  self.path_results
+        # import chain and estimated model parameters
+        meb_mod_samples = np.genfromtxt(path+os.sep+"chain_sample_order.dat")
+        num_samples = len(meb_mod_samples[0:,1])
+        ## CC boundary parameters
+        z1_s = meb_mod_samples[0:num_samples,2]
+        z2_s = meb_mod_samples[0:num_samples,3]
+        p1_s = meb_mod_samples[0:num_samples,4]
+
+        # calculate distribution parameters (for model parameters)
+        percentil_range = np.arange(5,100,5) # 5%...95% (19 elements)
+        self.z1_pars = [np.mean(z1_s), np.std(z1_s), np.median(z1_s), \
+            [np.percentile(z1_s,i) for i in percentil_range]]
+        self.z2_pars = [np.mean(z2_s), np.std(z2_s), np.median(z2_s), \
+            [np.percentile(z2_s,i) for i in percentil_range]]
+        self.p1_pars = [np.mean(p1_s), np.std(p1_s), np.median(p1_s), \
+            [np.percentile(p1_s,i) for i in percentil_range]]
+
+        # print a .dat with parameters estimated
+        f = open("est_par.dat", "w")
+        f.write("# Par\tmean\tstd\tmedian\tperc: 5%, 10%, ..., 95%\n")
+        # depth of first boundary: z1 
+        f.write("z1:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.z1_pars[0],self.z1_pars[1],self.z1_pars[2]))
+        for per in self.z1_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
+        # depth of second boundary: z2  
+        f.write("z2:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.z2_pars[0],self.z2_pars[1],self.z2_pars[2]))
+        for per in self.z2_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
+        # percetage of clay (second layer) 
+        f.write("pC:\t{:5.2f}\t{:5.2f}\t{:5.2f}\t"\
+            .format(self.p1_pars[0],self.p1_pars[1],self.p1_pars[2]))
+        for per in self.p1_pars[3]:
+            f.write("{:5.2f}\t".format(per))
+        f.write("\n")
+
+        f.close()
+        shutil.move('est_par.dat',path+os.sep+"est_par.dat")
+
+        if plot_dist: 
+            f,(ax1,ax2,ax3) = plt.subplots(1,3)
+            f.set_size_inches(12,4)
+            f.suptitle(self.name, fontsize=12, y=.995)
+            f.tight_layout()
+
+            #hist = np.histogram(z1_s)
+            #ax1.plot(self.z1_pars[3][:],,'b-', lw = 2.5, alpha=1.0, zorder=0, label = '')
+            
+            y_axis = np.arange(5,55,5) # 5%...50% (9 elements)
+            y_axis = np.append(y_axis,np.arange(45,0,-5)) # 50%...95% (10 elements)
+            y_axis = 100/np.sum(y_axis) * y_axis 
+            
+            #y_axis_r1 = y_axis/(self.z1_pars[3][:] - np.min(self.z1_pars[3][:]))  
+            #y_axis_r2 = y_axis/(self.z2_pars[3][:] - np.min(self.z2_pars[3][:])) 
+            #y_axis_p1 = y_axis/(self.p1_pars[3][:] - np.min(self.p1_pars[3][:]))  
+  
+            #y_axis_r1 = 100/(y_axis*y_axis_r1)
+
+            ax1.plot(self.z1_pars[3][:], y_axis,'b*', lw = 1.5, alpha=1.0, zorder=0, label = '')
+            ax1.plot(self.z1_pars[3][:], y_axis,'k--', lw = 0.5, alpha=1.0, zorder=0, label = '')
+            ax1.set_xlabel('z1 [m]', fontsize=10)
+            ax1.set_ylabel('~ Prob', fontsize=10)
+            ax1.grid(True, which='both', linewidth=0.1)
+
+            ax2.plot(self.z2_pars[3][:], y_axis,'b*', lw = 1.5, alpha=1.0, zorder=0, label = '')
+            ax2.plot(self.z2_pars[3][:], y_axis,'k--', lw = 0.5, alpha=1.0, zorder=0, label = '')
+            ax2.set_xlabel('z2 [m]', fontsize=10)
+            ax2.set_ylabel('~ Prob', fontsize=10)
+            ax2.grid(True, which='both', linewidth=0.1)
+
+            ax3.plot(self.p1_pars[3][:], y_axis,'b*', lw = 1.5, alpha=1.0, zorder=0, label = '')
+            ax3.plot(self.p1_pars[3][:], y_axis,'k--', lw = 0.5, alpha=1.0, zorder=0, label = '')
+            ax3.set_xlabel('clay content [%]', fontsize=10)
+            ax3.set_ylabel('~ Prob', fontsize=10)
+            ax3.grid(True, which='both', linewidth=0.1)
+            plt.tight_layout()
+            plt.savefig(self.path_results+os.sep+'par_dist.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            plt.close(f)
+            plt.clf()
