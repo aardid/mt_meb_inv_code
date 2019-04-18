@@ -38,12 +38,13 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
-	mcmc_meb_inv = True
+	mcmc_meb_inv = False
+	MT_priors = True
 	mcmc_MT_inv = False
 	prof_2D_MT = False
 
@@ -89,8 +90,8 @@ if __name__ == "__main__":
 		####### MeB data in wells 
 		## 
 		if pc == 'office': 
-			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
-			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"
+			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
+			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"
 			
 			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
 		## Personal Suse
@@ -218,6 +219,131 @@ if __name__ == "__main__":
 		# move figure fit to global results folder
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
 	
+	# (2) Construct priors for MT stations
+	if MT_priors: 
+		# attribute in meb wells for path to mcmc results 
+		for wl in wells_objects:
+			if wl.meb:
+				wl.path_mcmc_meb = '.'+os.sep+str('mcmc_meb')+os.sep+wl.name
+
+		# find the names of nearest meb wells, save in sta_obj.prior_meb_wl_names 
+		# move to a function (misc_function lib)
+		for sta_obj in station_objects:
+			dist_pre_q1 = []
+			dist_pre_q2 = []
+			dist_pre_q3 = []
+			dist_pre_q4 = []
+			#
+			name_aux_q1 = [] 
+			name_aux_q2 = []
+			name_aux_q3 = []
+			name_aux_q4 = []
+			wl_q1 = []
+			wl_q2 = []
+			wl_q3 = []
+			wl_q4 = []
+			for wl in wells_objects:
+				if wl.meb:
+					# search for nearest well to MT station in quadrant 1 (Q1)
+					if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+						# distance between station and well
+						dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+						if not dist_pre_q1:
+							dist_pre_q1 = dist
+						# check if distance is longer than the previous wel 
+						if dist <= dist_pre_q1: 
+							name_aux_q1 = wl.name
+							wl_q1 = wl
+							dist_pre_q1 = dist
+					# search for nearest well to MT station in quadrant 2 (Q2)
+					if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+						# distance between station and well
+						dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+						if not dist_pre_q2:
+							dist_pre_q2 = dist
+						# check if distance is longer than the previous wel 
+						if dist <= dist_pre_q2: 
+							name_aux_q2 = wl.name
+							wl_q2 = wl
+							dist_pre_q2 = dist
+					# search for nearest well to MT station in quadrant 3 (Q3)
+					if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+						# distance between station and well
+						dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+						if not dist_pre_q3:
+							dist_pre_q3 = dist
+						# check if distance is longer than the previous wel 
+						if dist <= dist_pre_q3: 
+							name_aux_q3 = wl.name
+							wl_q3 = wl
+							dist_pre_q3 = dist
+					# search for nearest well to MT station in quadrant 4 (Q4)
+					if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+						# distance between station and well
+						dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+						if not dist_pre_q4:
+							dist_pre_q4 = dist
+						# check if distance is longer than the previous wel 
+						if dist <= dist_pre_q4: 
+							name_aux_q4 = wl.name
+							wl_q4 = wl
+							dist_pre_q4 = dist
+
+			# save names of nearest wells to be used for prior
+			sta_obj.prior_meb_wl_names = [name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+			sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
+			near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
+			near_wls = list(filter(None, near_wls))
+			dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
+			dist_wels = list(filter(None, dist_wels))
+
+			# Calculate prior values for boundaries of the cc in station
+			# prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+			# z1
+			z1_mean_prior = np.zeros(len(near_wls))
+			z1_std_prior = np.zeros(len(near_wls))
+			z2_mean_prior = np.zeros(len(near_wls))
+			z2_std_prior = np.zeros(len(near_wls))
+			count = 0
+			# extract meb mcmc results from nearest wells 
+			for wl in near_wls:
+				# extract meb mcmc results from file 
+				meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+				# values for mean a std for normal distribution representing the prior
+				z1_mean_prior[count] = meb_mcmc_results[0,1] # mean z1
+				z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+				z2_mean_prior[count] = meb_mcmc_results[1,1] # mean z2
+				z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
+				count+=1
+			# calculete z1 normal prior parameters
+
+			z1_mean = np.dot(z1_mean_prior,dist_wels)/np.sum(dist_wels)
+			z1_std = np.dot(z1_std_prior,dist_wels)/np.sum(dist_wels)
+			# calculete z2 normal prior parameters
+			# change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+			#z2_mean_prior = z2_mean_prior - z1_mean_prior
+			z2_mean = np.dot(z2_mean_prior,dist_wels)/np.sum(dist_wels)
+			z2_std = np.dot(z2_std_prior,dist_wels)/np.sum(dist_wels)
+			
+			sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean,z2_std]]
+			print(sta_obj.name)
+			print(sta_obj.prior_meb)
+
+		# Calculate prior values for boundaries of the cc in station 
+		# for sta_obj in station_objects:
+		# 	# prior for z1 (top bound of cc)
+		# 	print(sta_obj.prior_meb_wl_names[0].name)		
+		# 	asdf
+
+
+
+
+
+
+
+
+
+
 	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
 	if mcmc_MT_inv:

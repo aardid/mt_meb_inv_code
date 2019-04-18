@@ -100,7 +100,7 @@ class mcmc_meb(object):
         if num_cc is None: 
             self.num_cc = 1
         if norm is None: 
-            self.norm = 1.     
+            self.norm = 2.     
         if walk_jump is None: 
             self.walk_jump = 4000      
         if ini_mod is None: 
@@ -113,7 +113,6 @@ class mcmc_meb(object):
         self.meb_prof_rs = None
         self.meb_depth_rs = None   
         self.time = None  
-        self.path_results = None
         self.z1_pars = None
         self.z2_pars = None
         self.pc_pars = None

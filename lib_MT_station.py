@@ -69,6 +69,8 @@ class Station(object):
 	tip_phase				tipper phase
 	tip_skew				tipper skew
 	tip_strike			    tipper strike
+
+    prior_meb_wl_names      names of nearest meb wells used for meb prior
 	
 	layer_mod				1D resistivity 3 layer model [z1,z2,r1,r2,r3]
     z1_pars                 distribution parameters for layer 1 
@@ -153,6 +155,8 @@ class Station(object):
         self.temp_prof = None		# temperaure profile
         self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
+        # MeB prior
+        self.prior_meb_wl_names = None
 
 
     # ===================== 
