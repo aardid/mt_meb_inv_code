@@ -13,6 +13,7 @@ from matplotlib import gridspec
 import numpy as np
 import math
 import glob
+import os
 from matplotlib.backends.backend_pdf import PdfPages
 
 # ==============================================================================
@@ -21,36 +22,50 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 class Wells(object):
     """
-    # This class is for wells
-    # ===================== =====================================================
-    # Methods               Description
-    # ===================== =====================================================
-	# 	                           
-	# ==================== ========================================== ==========
-    # Attributes            Description                                default
-    # ===================== ========================================== ==========
-	# name				    extracted from the name of the edi file
-    # ref		 			reference number in the code
-	# path					path to the edi file
-	#
-	# lat					latitud	in dd:mm:ss
-    # lon					longitud in dd:mm:ss
-	# lat_dec				latitud	in decimal
-    # lon_dec				longitud in decimal	
-	# elev					topography (elevation of the station)
-	#
-	# depth				 	depths for temperature profile
-	# red_depth				reduced depths for temperature profile
-	# depth_dev				depths deviation
-	# temp_prof_true		temperature profile 
-	#
-	# temp_prof				resample true temperaure profile
-	# betas					beta value for each layer
-	# slopes				slopes values for each layer
-	#
-    # meb                   Methylene-blue (MeB) data available         False
-	# meb_prof				methylene-blue (MeB) profiles
-	# meb_depth				methylene-blue (MeB) depths (samples)
+    This class is for wells
+    ===================== =====================================================
+    Methods               Description
+    ===================== =====================================================
+		                           
+	==================== ========================================== ==========
+    Attributes            Description                                default
+    ===================== ========================================== ==========
+	name				    extracted from the name of the edi file
+    ref		 			reference number in the code
+	path					path to the edi file
+	
+	lat					latitud	in dd:mm:ss
+    lon					longitud in dd:mm:ss
+	lat_dec				latitud	in decimal
+    lon_dec				longitud in decimal	
+	elev					topography (elevation of the station)
+	
+	depth				 	depths for temperature profile
+	red_depth				reduced depths for temperature profile
+	depth_dev				depths deviation
+	temp_prof_true		temperature profile 
+	
+	temp_prof				resample true temperaure profile
+	betas					beta value for each layer
+	slopes				slopes values for each layer
+	
+    meb                   Methylene-blue (MeB) data available         False
+	meb_prof				methylene-blue (MeB) profiles
+	meb_depth				methylene-blue (MeB) depths (samples)
+    meb_z1_pars                 distribution parameters z1 in square func. 
+                            (representive of top boundary of cc)
+                            from mcmc chain results: [a,b,c,d]
+                            a: mean
+                            b: standard deviation 
+                            c: median
+                            d: percentiles # [5%, 10%, ..., 95%] (19 elements)
+    meb_z2_pars                 distribution parameters z2 in square func. 
+                            (representive of bottom boundary of cc)
+                            from mcmc chain results: [a,b,c,d]
+                            a: mean
+                            b: standard deviation 
+                            c: median
+                            d: percentiles # [5%, 10%, ..., 95%] (19 elements)
     """
     def __init__(self, name, ref):  						
         self.name = name # name: extracted from the name of the file
@@ -79,6 +94,8 @@ class Wells(object):
         self.meb = False            # Methylene-blue (MeB) data available
         self.meb_prof = None		# methylene-blue (MeB) profile
         self.meb_depth = None		# methylene-blue (MeB) depths (samples)
+        self.meb_z1_pars = None     #  
+        self.meb_z2_pars = None     #  
     # ===================== 
     # Methods               
     # =====================
@@ -97,6 +114,17 @@ class Wells(object):
         ax1.grid(True, which='both', linewidth=0.4)
         ax1.invert_yaxis()
         return f
+
+    def read_meb_mcmc_results(self):
+        # extract meb mcmc results from file 
+        meb_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+self.name+os.sep+"est_par.dat")
+        # values for mean a std for normal distribution representing the prior
+        z1_mean_prior = meb_mcmc_results[0,1] # mean z1
+        z1_std_prior =  meb_mcmc_results[0,2] # std z1
+        z2_mean_prior = meb_mcmc_results[1,1] # mean z2
+        z2_std_prior =  meb_mcmc_results[1,2] # std z2
+        self.meb_z1_pars = [z1_mean_prior, z1_std_prior]
+        self.meb_z2_pars = [z2_mean_prior, z2_std_prior]
 
 
 # ==============================================================================

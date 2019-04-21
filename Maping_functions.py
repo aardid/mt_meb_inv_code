@@ -166,7 +166,13 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
     plt.clf()
 
     
-def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', width_ref = None): 
+def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', width_ref = None, prior_meb = None, plot_some_wells = None): 
+    """
+    width_ref: width of percetil of reference as dotted line centered at 50%. ex: '60%'
+    prior_meb: full list of wells objects
+    plot_some_wells: list of names of wells with MeB data to be plotted in the profile. ex: ['TH13','TH19']
+
+    """
     # check for correct width plot reference input 
     if width_ref is None:
         width_plot = False
@@ -174,6 +180,10 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         width_plot = True
     if [width_ref != '30%' or width_ref != '60%' or width_ref != '90%']:
         assert 'invalid width_ref: 30%, 60%, 90%'
+    if prior_meb is None:
+        prior_meb = False
+    else: 
+        wells_objects = prior_meb
     ## sta_objects: list of station objects
     ## sort list by longitud (min to max - East to West)
     sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
@@ -208,8 +218,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-')
-    ax.plot(x_axis, z2_med,'bo-', label='bottom')
-    ax.plot(x_axis, z1_med,'ro-', label='top')
+    ax.plot(x_axis, z2_med,'b.-', label='bottom')
+    ax.plot(x_axis, z1_med,'r.-', label='top')
     # plot percentils
     n_env = 9 # len(sta.z1_pars[3])/2 +1
     #for i in range(len(sta_objects)):
@@ -265,19 +275,77 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             ax.text(x_axis[-1],z2_per[-1,8],'20%',size = 8., color = 'b')
             ax.plot(x_axis, z2_per[:,12],'b--',linewidth=.5)
             ax.text(x_axis[-1],z2_per[-1,12],'80%',size = 8.,color = 'b')
-
     # plot station names    
     i = 0
     for sta in sta_objects:
-            ax.text(x_axis[i], topo[i]+300., sta.name[:-4], rotation=90, size=8) 
+            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
             i+=1
-    
+
+    if prior_meb:
+        if plot_some_wells is None: 
+            plot_some_wells = False
+        wl_names = []
+        wls_obj = []
+        # collect nearest wells names employed in every station for MeB priors
+        if plot_some_wells: # for well names given 
+            wl_names = plot_some_wells
+        else: # for every well considered in priors
+            for sta in sta_objects:
+                aux_names = sta.prior_meb_wl_names
+                for wln in aux_names: 
+                    if wln in wl_names:
+                        pass
+                    else: 
+                        wl_names.append(wln)
+        for wl in wells_objects: 
+            for wln in wl_names: 
+                if wl.name == wln: 
+                    wls_obj.append(wl)
+
+        ## wls_obj: list of wells used for MeB prior in profile stations 
+        ## sort list by longitud (min to max - East to West)
+        wls_obj.sort(key=lambda x: x.lon_dec, reverse=False)
+        # vectors to be fill and plot 
+        x_axis_wl = np.zeros(len(wls_obj))
+        topo_wl = np.zeros(len(wls_obj))
+        i = 0
+        for wl in wls_obj:
+            coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+            coord2 = [wl.lon_dec, wl.lat_dec]
+            ## calculate distances from first well to the others, save in array
+            x_axis_wl[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+            ## vectors for plotting 
+            topo_wl[i] = wl.elev
+            i+=1
+
+        i = 0
+        for wl in wls_obj: 
+            # plot well names 
+            ax.text(x_axis_wl[i], topo_wl[i]-1000., wl.name, rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
+            # import and plot MeB mcmc result
+            wl.read_meb_mcmc_results()
+            ## vectors for plotting 
+            top = wl.elev # elevation os the well
+            x = x_axis_wl[i]
+            # plot top bound. C
+            y = top - wl.meb_z1_pars[0] # [z1_mean_prior, z1_std_prior]
+            e = wl.meb_z1_pars[1] # [z1_mean_prior, z1_std_prior]
+            ax.errorbar(x, y, e, color='lime',linestyle='-',zorder=3)#, marker='.')
+            # plot bottom bound. CC
+            y = top - wl.meb_z2_pars[0] # [z1_mean_prior, z1_std_prior]
+            e = wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior]
+            ax.errorbar(x, y, e, color='cyan', linestyle='-',zorder=3)#, marker='.')
+            i+=1
+
     ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
-    ax.set_ylim([-.8e3, max(topo)+500.])
+    if prior_meb:
+        ax.set_ylim([-1.2e3, max(topo)+600.])
+    else:
+        ax.set_ylim([-1.2e3, max(topo)+600.])
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('depth [m]', size = textsize)
     ax.set_title('Clay cap boundaries depth  ', size = textsize)
-    ax.legend(loc=4, prop={'size': 10})	
+    ax.legend(loc=4, prop={'size': 8})	
     #ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
     ax.grid(color='c', linestyle='-', linewidth=.1)

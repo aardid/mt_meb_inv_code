@@ -70,8 +70,13 @@ class Station(object):
 	tip_skew				tipper skew
 	tip_strike			    tipper strike
 
-    prior_meb_wl_names      names of nearest meb wells used for meb prior
-	
+    prior_meb_wl_names      names of nearest MeB wells consired in MeB prior
+                            ['well 1', ..., 'well 4']
+    prior_meb               mean and std for normal prior in station (for z1 and z2)
+                            [[mean_z1, std_z1], [mean_z2, std_z2]
+    prior_meb_wl_dist       distance to each wells to be consired in MeB prior
+                            [dist well 1, ..., dist well 4']
+
 	layer_mod				1D resistivity 3 layer model [z1,z2,r1,r2,r3]
     z1_pars                 distribution parameters for layer 1 
                             thickness (model parameter) calculated 
@@ -156,8 +161,9 @@ class Station(object):
         self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
         # MeB prior
-        self.prior_meb_wl_names = None
-
+        self.prior_meb_wl_names = None  # name of wells to be consired in MeB prior ()
+        self.prior_meb = None           # distance to each wells to be consired in MeB prior
+        self.prior_meb_wl_dist = None   # mean and std for normal prior in station (for z1 and z2) [ unit]
 
     # ===================== 
     # Methods               

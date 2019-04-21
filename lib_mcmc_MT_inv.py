@@ -16,6 +16,7 @@ import os, shutil, time, math, cmath
 import corner, emcee
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
+from Maping_functions import *
 import multiprocessing 
 import csv
 
@@ -100,7 +101,7 @@ class mcmc_inv(object):
 
     """
     def __init__(self, sta_obj, name= None, work_dir = None, num_lay = None , norm = None, \
-        inv_dat = None, prior = None, prior_input = None, walk_jump = None, ini_mod = None):
+        inv_dat = None, prior = None, prior_input = None, prior_meb = None, walk_jump = None, ini_mod = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -123,7 +124,7 @@ class mcmc_inv(object):
         if prior is None: 
             self.prior = False
         else: 
-            if (prior is not 'uniform' and prior is not 'normal'): 
+            if (prior is not 'uniform' and prior is not 'meb'): 
                 raise 'invalid prior type' 
             if prior == 'uniform': 
                 self.prior = True
@@ -136,15 +137,18 @@ class mcmc_inv(object):
                 for i in range(len(prior_input)): 
                     if len(prior_input[i]) != 2: 
                         raise 'incorrect input format: min and max for each range'
-            if prior == 'normal': 
-                self.prior = True
-                self.prior_type = prior
-                self.prior_input = prior_input
+        if prior_meb is None:
+            self.prior_meb = False
+        else:  
+            self.prior_meb = True
+            self.prior_meb_pars = sta_obj.prior_meb  # = [[z1_mean,z1_std],[z2_mean,z2_std]]
         if walk_jump is None: 
-            self.walk_jump = 5000      
+            self.walk_jump = 3000
+        else: 
+            self.walk_jump = walk_jump        
         if ini_mod is None: 
             if self.num_lay == 3:
-                self.ini_mod = [500,200,500,5,200]
+                self.ini_mod = [300,200,500,5,200]
             if self.num_lay == 4:
                 self.ini_mod = [200,100,200,150,50,500,1000]    
         self.time = None  
@@ -158,7 +162,7 @@ class mcmc_inv(object):
     # Methods               
     # =====================
     def inv(self):
-        nwalkers= 30               # number of walkers
+        nwalkers= 40               # number of walkers
         # Create chain.dat
         if self.num_lay == 3:
             ndim = 5               # parameter space dimensionality
@@ -226,7 +230,7 @@ class mcmc_inv(object):
             v = 0.15
             v_vec = np.ones(len(self.T_obs))
             #if (self.name == 'WT505a' or self.name == 'WT117b' or self.name == 'WT222a' or self.name == 'WT048a'):
-            v_vec[21:] = np.inf 
+            #v_vec[21:] = np.inf 
             # fitting sounding curves for TE(xy)
             TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
@@ -248,7 +252,6 @@ class mcmc_inv(object):
             # fitting ssq of Z
             ssq_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
                         -np.log10(Z_est*np.sqrt(2)/2))/v_vec)**self.norm)/v
-            # retunr sum od probabilities
 
             return TE_sc + TM_sc + max_Z + ssq_Z #+ det_Z 
         
@@ -262,11 +265,20 @@ class mcmc_inv(object):
                     for i in range(len(pars)): # Check if parameters are inside the range
                         if (pars[i] < self.prior_input[i][0] or pars[i] > self.prior_input[i][1]): 
                             return -np.Inf  # if pars are outside range, return -inf
-                    if (pars[1]*pars[3]<100. or pars[1]*pars[3]>500.): # constrain correlation between rest and thick (alpha) 
-                        return -np.Inf  # if product between rest and thick of second layer is outside range
+                    #if (pars[1]*pars[3]<500. or pars[1]*pars[3]>2000.): # constrain correlation between rest and thick (alpha) 
+                    #    return -np.Inf  # if product between rest and thick of second layer is outside range
                     Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
                     # calculate prob without priors
                     prob = prob_likelihood(Z_est, rho_ap_est, phi_est)
+
+                    if self.prior_meb: 
+                        prob = prob
+                        #v = 0.15
+                        # prior over z1 (thickness layer 1)
+                        #prob += -((self.prior_meb_pars[0][0]) - pars[0])**self.norm /self.prior_meb_pars[0][1]**2 
+                        # prior over z2 (thickness layer 2)
+                        #prob += -((self.prior_meb_pars[0][0] - self.prior_meb_pars[1][0]) - pars[1])**self.norm /self.prior_meb_pars[1][1]**2
+
             else: # without priors
                 # estimate parameters
                 Z_est, rho_ap_est, phi_est = self.MT1D_fwd_3layers(*pars,self.T_obs)
@@ -362,7 +374,7 @@ class mcmc_inv(object):
         params = chain[:,2:-1]
 
 		# define parameter sets for forward runs
-        Nruns = 500
+        Nruns = 300
         pars = []
         pars_order = []
         # generate Nruns random integers in parameter set range (as a way of sampling this dist)
@@ -487,6 +499,136 @@ class mcmc_inv(object):
 
         f.close()
         shutil.move('est_par.dat',path+os.sep+"est_par.dat")
+
+
+    # ===================== 
+    # Functions               
+    # =====================
+
+def calc_prior_meb_quadrant(station_objects, wells_objects): 
+    """
+    Function that calculate MeB prior for each MT station based on MeB mcmc results. 
+    First, for each quadrant around the station, the nearest well with MeB data is found. 
+    Second, using the MeB mcmcm results, the prior is calculated as a weigthed average of the nearest wells. 
+    Thirg, the results are assigned as attributes to the MT objects. 
+    Attributes generated:
+    sta_obj.prior_meb_wl_names      : list of names of nearest wells with MeB 
+                                    ['well 1',... , 'ẃell 4']
+    sta_obj.prior_meb               : values of normal prior for boundaries of clay cap (top and boundarie)
+                                    [[z1_mean,z1_std],[z2_mean,z2_std]]
+    .. conventions::
+	: z1 and z2 in MT object refer to thickness of two first layers
+    : z1 and z2 in results of MeB mcmc inversion refer to depth of the top and bottom boundaries of CC (second layer)
+    : cc clay cap
+    : distances in meters
+    : MeB methylene blue
+    """
+
+    for sta_obj in station_objects:
+        dist_pre_q1 = []
+        dist_pre_q2 = []
+        dist_pre_q3 = []
+        dist_pre_q4 = []
+        #
+        name_aux_q1 = [] 
+        name_aux_q2 = []
+        name_aux_q3 = []
+        name_aux_q4 = []
+        wl_q1 = []
+        wl_q2 = []
+        wl_q3 = []
+        wl_q4 = []
+        for wl in wells_objects:
+            if wl.meb:
+                # search for nearest well to MT station in quadrant 1 (Q1)
+                if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+                    # distance between station and well
+                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                    if not dist_pre_q1:
+                        dist_pre_q1 = dist
+                    # check if distance is longer than the previous wel 
+                    if dist <= dist_pre_q1: 
+                        name_aux_q1 = wl.name
+                        wl_q1 = wl
+                        dist_pre_q1 = dist
+                # search for nearest well to MT station in quadrant 2 (Q2)
+                if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+                    # distance between station and well
+                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                    if not dist_pre_q2:
+                        dist_pre_q2 = dist
+                    # check if distance is longer than the previous wel 
+                    if dist <= dist_pre_q2: 
+                        name_aux_q2 = wl.name
+                        wl_q2 = wl
+                        dist_pre_q2 = dist
+                # search for nearest well to MT station in quadrant 3 (Q3)
+                if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+                    # distance between station and well
+                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                    if not dist_pre_q3:
+                        dist_pre_q3 = dist
+                    # check if distance is longer than the previous wel 
+                    if dist <= dist_pre_q3: 
+                        name_aux_q3 = wl.name
+                        wl_q3 = wl
+                        dist_pre_q3 = dist
+                # search for nearest well to MT station in quadrant 4 (Q4)
+                if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+                    # distance between station and well
+                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                    if not dist_pre_q4:
+                        dist_pre_q4 = dist
+                    # check if distance is longer than the previous wel 
+                    if dist <= dist_pre_q4: 
+                        name_aux_q4 = wl.name
+                        wl_q4 = wl
+                        dist_pre_q4 = dist
+
+        # save names of nearest wells to be used for prior
+        sta_obj.prior_meb_wl_names = [name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+        sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
+        near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
+        near_wls = list(filter(None, near_wls))
+        dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
+        dist_wels = list(filter(None, dist_wels))
+        sta_obj.prior_meb_wl_dist = dist_wels
+
+        # Calculate prior values for boundaries of the cc in station
+        # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+        # z1
+        z1_mean_prior = np.zeros(len(near_wls))
+        z1_std_prior = np.zeros(len(near_wls))
+        z2_mean_prior = np.zeros(len(near_wls))
+        z2_std_prior = np.zeros(len(near_wls))
+        count = 0
+        # extract meb mcmc results from nearest wells 
+        for wl in near_wls:
+            # extract meb mcmc results from file 
+            meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+            # values for mean a std for normal distribution representing the prior
+            z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+            z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+            z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+            z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
+            count+=1
+        # calculete z1 normal prior parameters
+
+        z1_mean = np.dot(z1_mean_prior,dist_wels)/np.sum(dist_wels)
+        z1_std = np.dot(z1_std_prior,dist_wels)/np.sum(dist_wels)
+        # calculete z2 normal prior parameters
+        # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+        #z2_mean_prior = z2_mean_prior - z1_mean_prior
+        z2_mean = np.dot(z2_mean_prior,dist_wels)/np.sum(dist_wels)
+        z2_mean = z2_mean -  z1_mean
+        if z2_mean < 0.:
+            raise ValueError
+        z2_std = np.dot(z2_std_prior,dist_wels)/np.sum(dist_wels)
+        # assign result to attribute
+        sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean,z2_std]]
+
+
+
 
 
 

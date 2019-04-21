@@ -100,9 +100,11 @@ class mcmc_meb(object):
         if num_cc is None: 
             self.num_cc = 1
         if norm is None: 
-            self.norm = 2.     
+            self.norm = 1.     
         if walk_jump is None: 
-            self.walk_jump = 4000      
+            self.walk_jump = 3000
+        else: 
+            self.walk_jump = walk_jump   
         if ini_mod is None: 
             if self.num_cc == 1:
                 self.ini_mod = [200,150,10]
