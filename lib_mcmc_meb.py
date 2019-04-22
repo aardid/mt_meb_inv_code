@@ -123,69 +123,6 @@ class mcmc_meb(object):
     # ===================== 
     # Methods   
     # =====================            
-    
-    def resample_meb_prof(self):
-        # default values
-        ini_depth = 0.
-        def_per_c = 2.
-        # create new z depths axis (resample)
-        z_rs = np.arange(ini_depth, self.max_depth + self.delta_rs_depth, self.delta_rs_depth) # new z axis
-        per_c_rs = np.zeros(len(z_rs))
-        # Resample profile 
-        i = 0
-        for z in z_rs:
-            idx = np.argmin(abs(self.meb_depth-z))
-            if abs(z-self.meb_depth[idx])<20.:
-                per_c_rs[i] = self.meb_prof[idx] 
-            else: 
-                per_c_rs[i] = def_per_c
-            i+=1
-        # add new profile to object attributes
-        self.meb_depth_rs = z_rs
-        self.meb_prof_rs = per_c_rs
-
-    def resample_meb_prof_2(self):
-        # default values
-        ini_depth = 0.
-        def_per_c = 2.
-        ## create vectors to fill
-        depths_aux = self.meb_depth
-        meb_aux = self.meb_prof
-        ## insert initial values
-        depths_aux.insert(0,ini_depth)
-        meb_aux.insert(0,def_per_c)
-        ## insert final value
-        depths_aux.insert(-1,self.max_depth)
-        meb_aux.insert(-1,def_per_c)
-        # create new z depths axis (resample)
-        z_rs = np.arange(ini_depth, self.max_depth + self.delta_rs_depth, self.delta_rs_depth) # new z axis
-        per_c_rs = np.zeros(len(z_rs))
-        # Resample profile 
-        ## fill spaces in between with NaNs
-        i = 0
-        for z in z_rs:
-            idx = np.argmin(abs(depths_aux-z))
-            if abs(z-depths_aux[idx])<20.:
-                per_c_rs[i] = meb_aux[idx]  
-            else: 
-                per_c_rs[i] = False
-            i+=1
-        ##
-        # index in meb_depth_rs associated to last measurement in meb_depth
-        last_idx_obs = np.argmin(abs(z_rs - self.meb_depth[-1]))
-
-        pre_per = def_per_c
-        for i in range(len(per_c_rs)):
-            if i > last_idx_obs:
-                per_c_rs[i] = def_per_c
-            else:    
-                if not per_c_rs[i]:
-                    per_c_rs[i] = pre_per
-                pre_per = per_c_rs[i]
-                if per_c_rs[i] < 5.:
-                    per_c_rs[i] = def_per_c
-        self.meb_depth_rs = z_rs
-        self.meb_prof_rs = per_c_rs
 
     def resample_meb_prof_3(self):
         # default values
@@ -437,7 +374,7 @@ class mcmc_meb(object):
         if exp_fig:  # True: return figure
            return f
 
-    def model_pars_est(self, path = None, plot_dist = True):
+    def model_pars_est(self, path = None, plot_dist = False, plot_hist = True):
 
         if path is None: 
             path =  self.path_results
@@ -521,6 +458,45 @@ class mcmc_meb(object):
             ax3.grid(True, which='both', linewidth=0.1)
             plt.tight_layout()
             plt.savefig(self.path_results+os.sep+'par_dist.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            plt.close(f)
+            plt.clf()
+        
+        if plot_hist:
+
+            f,(ax1,ax2,ax3) = plt.subplots(1,3)
+            f.set_size_inches(12,4)
+            f.suptitle(self.name, fontsize=12, y=.995)
+            f.tight_layout() 
+
+            n,id,z1,z2,mb,llk = np.genfromtxt(path+os.sep+'chain_sample_order.dat').T
+            # z1
+            bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(n))))
+            h,e = np.histogram(z1, bins)
+            m = 0.5*(e[:-1]+e[1:])
+            ax1.bar(e[:-1], h, e[1]-e[0])
+            ax1.set_xlabel('z1 [m]', fontsize=10)
+            ax1.set_ylabel('freq.', fontsize=10)
+            ax1.grid(True, which='both', linewidth=0.1)
+            # z2
+            bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(n))))    
+            h,e = np.histogram(z2, bins) 
+            m = 0.5*(e[:-1]+e[1:])
+            ax2.bar(e[:-1], h, e[1]-e[0])
+            ax2.set_xlabel('z2 [m]', fontsize=10)
+            ax2.set_ylabel('freq.', fontsize=10)
+            ax2.grid(True, which='both', linewidth=0.1)
+            # mb
+            bins = np.linspace(np.min(mb), np.max(mb), int(np.sqrt(len(n))))
+            h,e = np.histogram(mb, bins)
+            m = 0.5*(e[:-1]+e[1:])
+            ax3.bar(e[:-1], h, e[1]-e[0])
+            ax3.set_xlabel('mb [%]', fontsize=10)
+            ax3.set_ylabel('freq.', fontsize=10)
+            ax3.grid(True, which='both', linewidth=0.1)
+
+            plt.tight_layout()
+            plt.savefig(self.path_results+os.sep+'par_hist.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             plt.close(f)
             plt.clf()

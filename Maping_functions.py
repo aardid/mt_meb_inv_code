@@ -321,7 +321,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         i = 0
         for wl in wls_obj: 
             # plot well names 
-            ax.text(x_axis_wl[i], topo_wl[i]-1000., wl.name, rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
+            ax.text(x_axis_wl[i], topo_wl[i]-800., wl.name, rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
@@ -330,18 +330,18 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             # plot top bound. C
             y = top - wl.meb_z1_pars[0] # [z1_mean_prior, z1_std_prior]
             e = wl.meb_z1_pars[1] # [z1_mean_prior, z1_std_prior]
-            ax.errorbar(x, y, e, color='lime',linestyle='-',zorder=3)#, marker='.')
+            ax.errorbar(x, y, e, color='lime',linestyle='--',zorder=3, marker='_')
             # plot bottom bound. CC
             y = top - wl.meb_z2_pars[0] # [z1_mean_prior, z1_std_prior]
             e = wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior]
-            ax.errorbar(x, y, e, color='cyan', linestyle='-',zorder=3)#, marker='.')
+            ax.errorbar(x, y, e, color='cyan', linestyle='--',zorder=3, marker='_')
             i+=1
 
     ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
     if prior_meb:
-        ax.set_ylim([-1.2e3, max(topo)+600.])
+        ax.set_ylim([-1.0e3, max(topo)+600.])
     else:
-        ax.set_ylim([-1.2e3, max(topo)+600.])
+        ax.set_ylim([-1.0e3, max(topo)+600.])
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('depth [m]', size = textsize)
     ax.set_title('Clay cap boundaries depth  ', size = textsize)
