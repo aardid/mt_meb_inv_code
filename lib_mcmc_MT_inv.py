@@ -94,7 +94,14 @@ class mcmc_inv(object):
                             resistivity (model parameter) calculated 
                             from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
-
+    prior_meb               consider MeB priors (boolean), for z1 and       False
+                            z2 pars                   
+    prior_meb_pars          mean and std of normal dist. priors for 
+                            pars z1 and z2 based on MeB data mcmc inv.
+                            [[z1_mean,z1_std],[z2_mean,z2_std]]
+    prior_meb_wl_dist       distant to nearest wells consider for 
+                            prior_meb_pars
+                            [float1, ..., float2]
     =====================   =================================================================
     Methods                 Description
     =====================   =================================================================
@@ -136,12 +143,13 @@ class mcmc_inv(object):
                     raise 'incorrect input format: 5 ranges'
                 for i in range(len(prior_input)): 
                     if len(prior_input[i]) != 2: 
-                        raise 'incorrect input format: min and max for each range'
+                        raise 'incorrect input format:  = [[z1_mean,z1_std],[z2_mean,z2_std]]min and max for each range'
         if prior_meb is None:
             self.prior_meb = False
         else:  
             self.prior_meb = True
-            self.prior_meb_pars = sta_obj.prior_meb  # = [[z1_mean,z1_std],[z2_mean,z2_std]]
+            self.prior_meb_pars = sta_obj.prior_meb  #
+            self.prior_meb_wl_dist = sta_obj.prior_meb_wl_dist
         if walk_jump is None: 
             self.walk_jump = 3000
         else: 
@@ -272,12 +280,14 @@ class mcmc_inv(object):
                     prob = prob_likelihood(Z_est, rho_ap_est, phi_est)
 
                     if self.prior_meb: 
-                        prob = prob
-                        #v = 0.15
+                        #prob = prob
+                        v = 0.15
+                        dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
+                        weight = np.exp(-dist)
                         # prior over z1 (thickness layer 1)
-                        #prob += -((self.prior_meb_pars[0][0]) - pars[0])**self.norm /self.prior_meb_pars[0][1]**2 
+                        prob += weight**12 *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm /v #self.prior_meb_pars[0][1]**2 
                         # prior over z2 (thickness layer 2)
-                        #prob += -((self.prior_meb_pars[0][0] - self.prior_meb_pars[1][0]) - pars[1])**self.norm /self.prior_meb_pars[1][1]**2
+                        prob += weight**12 *-((self.prior_meb_pars[0][0] - self.prior_meb_pars[1][0]) - pars[1])**self.norm /v #/self.prior_meb_pars[1][1]**2
 
             else: # without priors
                 # estimate parameters

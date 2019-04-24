@@ -45,7 +45,7 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
+	mcmc_MT_inv = True
 	prof_2D_MT = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
