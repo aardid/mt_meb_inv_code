@@ -67,6 +67,7 @@ if __name__ == "__main__":
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files/*.edi" # Whole array 
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_2D/*.edi" 	# 2D profile 
 			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_WRKNW6/*.edi" 	# 2D profile 
+			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_WRKNW6_short/*.edi" 	# 2D profile 
 
 		## Data paths for personal's pc WINDOWS (uncommend the one to use)
 		if pc == 'personalWin':
@@ -242,15 +243,20 @@ if __name__ == "__main__":
 		prior_meb = True
 		for sta_obj in station_objects: 
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
+
 			## range for the parameters
 			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[1.*1e0,1.*1e3],[1.*1e-3,1.*1e3],[1.*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
-			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', prior_input=par_range, walk_jump = 5000, prior_meb = prior_meb)
+  			# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
+
+			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0],prior_input=par_range, \
+				walk_jump = 10000,prior_meb = prior_meb)
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
-				print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
-				print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
+				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
+				#print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
+	
 			## run inversion 
 			mcmc_sta.inv()
 			## plot results (save in .png)

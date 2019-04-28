@@ -41,12 +41,14 @@ class mcmc_inv(object):
     work_dir                directory to save the inversion outputs     '.'
                             Station class (see lib_MT_station.py).
     num_lay                 number of layers in the inversion           3
-    inv_dat		 			weighted data to invert [a,b,c,d,e]         [1,1,0,0,0]
-                            a: app. res. and phase TE mode 
-                            b: app. res. and phase TM mode
-                            c: maximum value in Z
-                            d: determinat of Z
-                            e: sum of squares elements of Z
+    inv_dat		 			weighted data to invert [a,b,c,d,e,f,g]     [1,0,1,0,0,0,0]
+                            a: app. res. TE mode (Zxy)
+                            b: phase of TE mode (Zxy) 
+                            c: app. res. TE mode (Zyx)
+                            d: phase of TE mode (Zyx)
+                            e: maximum value in Z
+                            f: determinat of Z
+                            g: sum of squares elements of Z
     norm                    norm to measure the fit in the inversion    2.
 	time				    time consumed in inversion 
     prior                   consider priors (boolean). For uniform      False
@@ -95,7 +97,8 @@ class mcmc_inv(object):
                             from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
     prior_meb               consider MeB priors (boolean), for z1 and       False
-                            z2 pars                   
+                            z2 pars
+    prior_meb_wl_names      wells considered for MeB prior            
     prior_meb_pars          mean and std of normal dist. priors for 
                             pars z1 and z2 based on MeB data mcmc inv.
                             [[z1_mean,z1_std],[z2_mean,z2_std]]
@@ -108,7 +111,7 @@ class mcmc_inv(object):
 
     """
     def __init__(self, sta_obj, name= None, work_dir = None, num_lay = None , norm = None, \
-        inv_dat = None, prior = None, prior_input = None, prior_meb = None, walk_jump = None, ini_mod = None):
+        prior = None, prior_input = None, prior_meb = None, walk_jump = None, inv_dat = None, ini_mod = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -125,7 +128,9 @@ class mcmc_inv(object):
         if num_lay is None: 
             self.num_lay = 3
         if inv_dat is None: 
-            self.inv_dat = [1,1,0,0,0] 
+            self.inv_dat = [1,0,1,0,0,0,0]
+        else:
+            self.inv_dat = inv_dat
         if norm is None: 
             self.norm = 2.     
         if prior is None: 
@@ -148,6 +153,7 @@ class mcmc_inv(object):
             self.prior_meb = False
         else:  
             self.prior_meb = True
+            self.prior_meb_wl_names = sta_obj.prior_meb_wl_names
             self.prior_meb_pars = sta_obj.prior_meb  #
             self.prior_meb_wl_dist = sta_obj.prior_meb_wl_dist
         if walk_jump is None: 
@@ -223,8 +229,13 @@ class mcmc_inv(object):
         shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
 
         # # save text file with inversion parameters
-        a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)"] 
-        b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time)]
+        if self.prior:
+            a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)","MeB wells for prior", "Dist. (km) to MeB wells"] 
+            b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time),self.prior_meb_wl_names, self.prior_meb_wl_dist] 
+        else:
+            a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)"] 
+            b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time)]
+        
         with open('inv_par.txt', 'w') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerows(zip(a,b))
@@ -240,28 +251,35 @@ class mcmc_inv(object):
             #if (self.name == 'WT505a' or self.name == 'WT117b' or self.name == 'WT222a' or self.name == 'WT048a'):
             #v_vec[21:] = np.inf 
             # fitting sounding curves for TE(xy)
-            TE_sc = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
-                    #+self.inv_dat[0]*-np.sum(((np.log10(obs[:,2]) \
-                    #    -np.log10(phi_est))/v_vec)**self.norm)/v 
-            # problem with np.log10(phi_est), (not resolved)
 
+            TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
+                        -np.log10(rho_ap_est))/v_vec)**self.norm)/v 
+            TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
+                        -phi_est)/v_vec)**self.norm)/v 
+            
             # fitting sounding curves for TM(yx)
-            TM_sc = self.inv_dat[1]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm)/v \
-                    #+self.inv_dat[1]*-np.sum(((np.log10(obs[:,4]) \
-                    #    -np.log10(phi_est))/v_vec)**self.norm)/v 
-            # fitting maximum value of Z
-            max_Z = self.inv_dat[2]*-np.sum(((np.log10(obs[:,5]) \
-                        -np.log10(abs(Z_est)))/v_vec)**self.norm)/v
-            # fitting determinant of Z
-            #det_Z = self.inv_dat[3]*-np.sum(((-1*np.log10(obs[:,4]) \
-            #            -np.log10(Z_est))/v_vec)**self.norm)/v
-            # fitting ssq of Z
-            ssq_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
-                        -np.log10(Z_est*np.sqrt(2)/2))/v_vec)**self.norm)/v
+            TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
+                        -np.log10(rho_ap_est))/v_vec)**self.norm)/v 
+            TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
+                        -phi_est)/v_vec)**self.norm)/v 
 
-            return TE_sc + TM_sc + max_Z + ssq_Z #+ det_Z 
+            # fitting maximum value of Z
+            max_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
+                        -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+
+            # fitting determinant of Z
+            det_Z = self.inv_dat[5]*-np.sum(((np.log10(obs[:,6]) \
+                        -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+
+            # fitting ssq of Z
+            ssq_Z = self.inv_dat[6]*-np.sum(((np.log10(obs[:,7]) \
+                        -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+
+            #print(obs[:,7])
+            #print(np.absolute(Z_est)*np.sqrt(2)/2)
+            #print('\n')
+
+            return TE_apres + TE_phase +  TM_apres + TM_phase + max_Z + ssq_Z + det_Z 
         
         # pars = np.exp(pars)  # pars was define in log space, here we take it back to linear space
 		## Parameter constrain
@@ -285,9 +303,9 @@ class mcmc_inv(object):
                         dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
                         weight = np.exp(-dist)
                         # prior over z1 (thickness layer 1)
-                        prob += weight**12 *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm /v #self.prior_meb_pars[0][1]**2 
+                        prob += weight**20 *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm /self.prior_meb_pars[0][1]**2 
                         # prior over z2 (thickness layer 2)
-                        prob += weight**12 *-((self.prior_meb_pars[0][0] - self.prior_meb_pars[1][0]) - pars[1])**self.norm /v #/self.prior_meb_pars[1][1]**2
+                        prob += weight**20 *-((self.prior_meb_pars[0][0] - self.prior_meb_pars[1][0]) - pars[1])**self.norm /self.prior_meb_pars[1][1]**2
 
             else: # without priors
                 # estimate parameters
@@ -375,6 +393,8 @@ class mcmc_inv(object):
         plt.close('all')
 
     def sample_post(self, plot_fit = True, exp_fig = None): 
+        if plot_fit is None:
+            plot_fit = ['appres', 'phase']
 		######################################################################
 		# reproducability
         np.random.seed(1)
@@ -415,28 +435,49 @@ class mcmc_inv(object):
 
         
         if plot_fit: 
-            f,ax = plt.subplots(1,1)
-            f.set_size_inches(8,4) 
-            f.suptitle(self.name, size = textsize)
+            f,(ax, ax1) = plt.subplots(2,1)
+            f.set_size_inches(8,8) 
+            f.suptitle(self.name, size = textsize)#, y=1.08)
+
+            ### ax: apparent resistivity
             ax.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
             ax.set_xlim([1E-3,1e3])
             ax.set_ylim([1e0,1e3])
             ax.set_xlabel('period [s]', size = textsize)
             ax.set_ylabel('app. res. [Ohm m]', size = textsize)
-            #ax.set_title('Apparent Resistivity: MCMC posterior samples', size = textsize)
-				
+            #ax.set_title('Apparent Resistivity (TM and TE)', size = textsize)
+            # plot samples
             for par in pars:
                 if all(x > 0. for x in par):
                     Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
                         self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
                     ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
             ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0, label = 'sample')
-
             #plot observed
-            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. XY')
-            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. YX')
+            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TE (xy)')
+            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TM (yx)')
             ax.legend(loc='lower right', shadow=False, fontsize='small')
-            plt.tight_layout()
+            ### ax: phase
+            ax1.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
+            ax1.set_xlim([1E-3,1e3])
+            ax1.set_ylim([0.e0,.9e2])
+            ax1.set_xlabel('period [s]', size = textsize)
+            ax1.set_ylabel('phase [°]', size = textsize)
+            #ax1.set_title('Phase (TM and TE)', size = textsize)
+            # plot samples
+            for par in pars:
+                if all(x > 0. for x in par):
+                    Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
+                        self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
+                    ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
+            ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0, label = 'sample')
+            #plot observed
+            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TE (xy)')
+            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TM (yx)')
+            ax1.legend(loc='lower right', shadow=False, fontsize='small')
+            ax1.set_xscale('log')
+            ### layout figure
+            #plt.tight_layout()
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
         if exp_fig == None:

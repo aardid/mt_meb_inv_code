@@ -12,12 +12,20 @@ Well library
 	- incorporate MeB priors: calculate prior for every station 
 
 ------------------------------------------------------------------------
-MCMC library
+MCMC MT library
 	- Write function for plot 2D profiles result for layer boundaries
 		- Unceratin estimation of top and bottom bound. of CC 
 	- Write docstring for methods
 	- Problem eoth np.log10(phi_est) and np.log10(Z_est) (lnprob function)
 	  when is run throw station 134a and 195a.  
+
+	- When calculating the meb prior in the station, replace quadrant 
+	  approach for trilinear interpolation. 
+		- replace function calc_prior_meb_quadrant 
+	
+	- Assigning diferent weigths in the likelihood function: 
+		- Focus on the weigth betwenn apparent resistivity and phase 
+			(the fitting operates in diferente magnitudes)
 
 ------------------------------------------------------------------------
 MT library

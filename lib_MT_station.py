@@ -773,7 +773,7 @@ def calc_app_res_phase(Z):
 	phase_de_xx = (360/(2*np.pi)) * phase_ra_xx
 	## Zxy
 	app_res_xy = p/5 * np.square(abs(zxy))
-	phase_ra_xy = np.arctan(zyxi/zyxr)      	# radians
+	phase_ra_xy = np.arctan(zxyi/zxyr)      	# radians
 	phase_de_xy = (360/(2*np.pi)) * phase_ra_xy # degrees
 	## Zyx
 	app_res_yx = p/5 * np.square(abs(zyx))
