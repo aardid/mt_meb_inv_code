@@ -561,7 +561,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
     Function that calculate MeB prior for each MT station based on MeB mcmc results. 
     First, for each quadrant around the station, the nearest well with MeB data is found. 
     Second, using the MeB mcmcm results, the prior is calculated as a weigthed average of the nearest wells. 
-    Thirg, the results are assigned as attributes to the MT objects. 
+    Third, the results are assigned as attributes to the MT objects. 
     Attributes generated:
     sta_obj.prior_meb_wl_names      : list of names of nearest wells with MeB 
                                     ['well 1',... , 'ẃell 4']

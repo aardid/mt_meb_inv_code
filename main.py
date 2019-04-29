@@ -44,66 +44,53 @@ if __name__ == "__main__":
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
+	prior_MT_meb_read = False
+	mcmc_MT_inv = False
+	prof_2D_MT = False
+	wells_layer_model=True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
 		#### Import data: MT from edi files and wells from spreadsheet files
 		#########  MT data
 		if pc == 'office': 
+			
+			#########  MT data
 			#path_files = "D:\workflow_data\kk_1\*.edi"		# One station
 			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
 			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
 			#path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 
 			path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
 			#path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
+			
+			####### Temperature in wells data
+			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
+			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt" 
+			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
+			
+			####### MeB data in wells 
+			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
+			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
+			
+			#########  MT data
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_1sta/*.edi" # One station
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_sample/*.edi" # Sample of stations
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files/*.edi" # Whole array 
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_2D/*.edi" 	# 2D profile 
 			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_WRKNW6/*.edi" 	# 2D profile 
 			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_WRKNW6_short/*.edi" 	# 2D profile 
-
-		## Data paths for personal's pc WINDOWS (uncommend the one to use)
-		if pc == 'personalWin':
-			path_files = "C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\1_sta\\*.edi"
-			#path_files = "C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\sample\\*.edi"
-			#path_files = "C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\*.edi"
-
-		####### Temperature in wells data
-		if pc == 'office':
-			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
-			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt" 
-			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
-		## Personal Suse
-		if pc == 'personalSuse':
+			
+			####### Temperature in wells data
 			path_wells_loc = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/wells_loc.txt"
 			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp.txt"
-		## Personal Windows	
-		if pc == 'personalWin':
-			path_wells_loc = " "
-			path_wells_temp = " "
-
-		####### MeB data in wells 
-		## 
-		if pc == 'office': 
-			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
-			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
 			
-			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
-		## Personal Suse
-		if pc == 'personalSuse':
+			####### MeB data in wells 
 			#path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
 			#path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data_sample_4.txt"
 			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data_prof_WRKNW6.txt"
-		## Personal Win
-		if pc == 'personalWin':
-			path_wells_meb = " "
 
 		## Create a directory of the name of the files of the stations
 		pos_ast = path_files.find('*')
@@ -234,7 +221,7 @@ if __name__ == "__main__":
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb_quadrant(station_objects, wells_objects)
 
-	# (2) Run MCMC inversion for each staion, obtaning 1D 3L res. model
+	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
 	if mcmc_MT_inv:
 		## create pdf file to save the fit results for the whole inversion 
@@ -282,7 +269,7 @@ if __name__ == "__main__":
 		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
 			+os.sep+'00_stations_4_google_earth.txt')
 	
-	# (3) Construct uncertain distribution of temperature
+	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects)
@@ -292,6 +279,17 @@ if __name__ == "__main__":
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
 			width_ref = '60%', prior_meb = wells_objects)#, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+os.sep+file_name+'.png')
+
+	# (5) Calculate 3-layer model in wells and alpha parameter for each well
+	if wells_layer_model: 
+		# Calculate normal dist. pars. [mean, std] for layer boundaries (z1 znd z2) in well position. 
+		# Function assign results as attributes for wells in wells_objects (list of objects).
+		calc_layer_mod_quadrant(station_objects, wells_objects)
+
+
+		
+
+
 				
 
 
