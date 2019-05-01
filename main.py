@@ -38,110 +38,123 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
+
+	## Set of data to work with 
+	full_dataset = True
+	prof_WRKNW6 = False
+	prof_NEMT2 = False
+
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	prof_2D_MT = False
-	wells_layer_model=True
+	wells_layer_model=False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
 		#### Import data: MT from edi files and wells from spreadsheet files
 		#########  MT data
 		if pc == 'office': 
-			
 			#########  MT data
-			#path_files = "D:\workflow_data\kk_1\*.edi"		# One station
-			#path_files = "D:\workflow_data\kk_sample\*.edi"  # Sample of stations
-			#path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
-			#path_files = "D:\workflow_data\profile_2_ext\*.edi" 	# 2D profile 
-			path_files = "D:\workflow_data\profile_WRKNW6\*.edi" 	# 2D profile 
-			#path_files = "D:\workflow_data\MT_near_well_WK317\*.edi" 	# Stations near well WK317
-			
+			path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
 			####### Temperature in wells data
 			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
 			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt" 
 			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
-			
 			####### MeB data in wells 
 			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
 			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
-			
 			#########  MT data
-			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_1sta/*.edi" # One station
-			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files_sample/*.edi" # Sample of stations
-			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files/*.edi" # Whole array 
-			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_2D/*.edi" 	# 2D profile 
-			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_WRKNW6/*.edi" 	# 2D profile 
-			#path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/profile_WRKNW6_short/*.edi" 	# 2D profile 
-			
+			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files/*.edi" # Whole array 			
 			####### Temperature in wells data
 			path_wells_loc = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/wells_loc.txt"
 			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp.txt"
-			
 			####### MeB data in wells 
-			#path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
-			#path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data_sample_4.txt"
-			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data_prof_WRKNW6.txt"
+			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
 
 		## Create a directory of the name of the files of the stations
 		pos_ast = path_files.find('*')
 		file_dir = glob.glob(path_files)
 
-		######################################################################################
+		#########################################################################################
+		#########################################################################################
 		## Create station objects 
+		# Defined lists of MT station 
+		if full_dataset:
+			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
+		if prof_WRKNW6:
+			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
+		if prof_NEMT2:
+			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
+
+		#########################################################################################
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
 		count  = 0
-		for file_aux in file_dir:
-			file = file_aux[pos_ast:] # name on the file
-			
-			## 1. read edi file: H contains location and Z the impedanse tensor
-			#[H, Z, T, Z_rot] = read_edi('C:\\Users\\ajara\\Desktop\\EDI_Files_WT\\'+file) # Personal
-			#[H, Z, T, Z_rot] = read_edi('D:\\kk_full\\'+file) # office
-			sta_obj = Station(file, count, path_files)
-			sta_obj.read_edi_file() 
-			sta_obj.rotate_Z()
-			sta_obj.app_res_phase()
-			## Create station objects and fill them
-			station_objects.append(sta_obj)
-			count  += 1
 
-		######################################################################################
-		## Create wells objects
+		for file_aux in file_dir:
+			if file_aux[pos_ast:-4] in sta2work:
+				file = file_aux[pos_ast:] # name on the file
+				sta_obj = Station(file, count, path_files)
+				sta_obj.read_edi_file() 
+				sta_obj.rotate_Z()
+				sta_obj.app_res_phase()
+				## Create station objects and fill them
+				station_objects.append(sta_obj)
+				count  += 1
+
+		#########################################################################################
+		#########################################################################################
 		# # Import wells data:
 		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
 		 	read_well_temperature(path_wells_temp)
 		# # Note: dir_no_depth_red contain a list of wells with no information of reduced depth
-	
 		# ## Recover location for wells from path_wells_loc
 		wells_location = read_well_location(path_wells_loc)
 		# # Note: wells_location = [[wl_name1,lat1,lon1,elev1],...] list of arrays
-
 		# ## Recover MeB data for wells from path_wells_meb
 		wl_name_meb, wl_prof_depth_meb, wl_prof_meb = read_well_meb(path_wells_meb)
-
+		#########################################################################################
+		## Create wells objects
+		# Defined lists of wells
+		if full_dataset:
+			wl2work = wl_name 
+		if prof_WRKNW6:
+			wl2work = ['TH19','TH16','TH04','TH08','TH07','WK404','WK408','WK224','WK684','WK686']
+		if prof_NEMT2:
+			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
+		#########################################################################################
 		# ## Loop over the wells to create objects and assing data attributes 
 		wells_objects = []   # list to be fill with station objects
 		count  = 0
-		for wl in wl_name: 
-			wl_obj = Wells(wl, count)
-			# load data attributes
-			wl_obj.depth = wl_prof_depth[count]
-			wl_obj.red_depth = wl_prof_depth_red[count]
-			wl_obj.temp_prof_true = wl_prof_temp[count]
-			## add well object to directory of well objects
-			wells_objects.append(wl_obj)
-			count  += 1
-		
+		for wl in wl_name:
+			if wl in wl2work:
+				wl_obj = Wells(wl, count)
+				# load data attributes
+				wl_obj.depth = wl_prof_depth[count]
+				wl_obj.red_depth = wl_prof_depth_red[count]
+				wl_obj.temp_prof_true = wl_prof_temp[count]
+				## add well object to directory of well objects
+				wells_objects.append(wl_obj)
+				count  += 1
+
+		## plot temp profile for wells
+		# pp = PdfPages('wells_temp_prof.pdf')
+		# for wl in wells_objects: 
+		# 	f = wl.plot_temp_profile()
+		# 	pp.savefig(f)
+		# 	plt.close(f)
+		# pp.close()
+		# shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
+
 		# Search for location of the well and add to attributes
 		for wl in wells_objects:
 			for i in range(len(wells_location)): 
@@ -163,6 +176,7 @@ if __name__ == "__main__":
 				wl.meb_depth = wl_prof_depth_meb[idx]
 				count_meb_wl+=1
 				#wells_meb.append(wl.name)
+	
 		## create text file for google earth
 		#list_meb_wells = [obj for obj in wells_objects if obj.meb] 
 		#for_google_earth(list_meb_wells, name_file = 'meb_wells_google_earth.txt', type_obj = 'well')

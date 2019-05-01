@@ -147,6 +147,25 @@ class Wells(object):
         self.meb_z1_pars = [z1_mean_prior, z1_std_prior]
         self.meb_z2_pars = [z2_mean_prior, z2_std_prior]
 
+    def plot_temp_profile(self):
+        f,(ax1) = plt.subplots(1,1)
+        f.set_size_inches(6,8)
+        #f.suptitle(self.name, fontsize=22, y=1.08)
+    
+        ax1.set_xscale("linear")
+        ax1.set_yscale("linear")    
+        ax1.plot(self.temp_prof_true,self.red_depth,'o')
+        #ax1.plot(temp_aux,depth_aux,'b--', linewidth=0.05)
+        #ax1.set_xlim([np.min(periods), np.max(periods)])
+        #ax1.set_xlim([0, 340])
+        #ax1.set_ylim([0,3000])
+        ax1.set_xlabel('Temperature [deg C]', fontsize=18)
+        ax1.set_ylabel('Depth [m]', fontsize=18)
+        ax1.grid(True, which='both', linewidth=0.4)
+        ax1.invert_yaxis()
+        plt.title(self.name, fontsize=22,)
+        plt.tight_layout()
+        return f
 
 # ==============================================================================
 # Read files
