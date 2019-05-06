@@ -472,7 +472,7 @@ class mcmc_meb(object):
             n,id,z1,z2,mb,llk = np.genfromtxt(path+os.sep+'chain_sample_order.dat').T
             # z1
             bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(n))))
-            h,e = np.histogram(z1, bins)
+            h,e = np.histogram(z1, bins, density = True)
             m = 0.5*(e[:-1]+e[1:])
             ax1.bar(e[:-1], h, e[1]-e[0])
             ax1.set_xlabel('z1 [m]', fontsize=10)
@@ -480,7 +480,7 @@ class mcmc_meb(object):
             ax1.grid(True, which='both', linewidth=0.1)
             # z2
             bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(n))))    
-            h,e = np.histogram(z2, bins) 
+            h,e = np.histogram(z2, bins,density = True) 
             m = 0.5*(e[:-1]+e[1:])
             ax2.bar(e[:-1], h, e[1]-e[0])
             ax2.set_xlabel('z2 [m]', fontsize=10)
@@ -488,7 +488,7 @@ class mcmc_meb(object):
             ax2.grid(True, which='both', linewidth=0.1)
             # mb
             bins = np.linspace(np.min(mb), np.max(mb), int(np.sqrt(len(n))))
-            h,e = np.histogram(mb, bins)
+            h,e = np.histogram(mb, bins,density = True)
             m = 0.5*(e[:-1]+e[1:])
             ax3.bar(e[:-1], h, e[1]-e[0])
             ax3.set_xlabel('mb [%]', fontsize=10)

@@ -37,7 +37,9 @@ class mcmc_inv(object):
 	obj                     MT stations to inverted. It's an objec of
     T_obs                   periods recorded
     rho_app_obs             apparent resistivity observed (4 comp.)
+    rho_app_obs_er          error of apparent resistivity observed (4 comp.)
     phase_obs               phase (degree) observed (4 comp.)
+    phase_obs_er            error of phase (degree) observed (4 comp.)
     work_dir                directory to save the inversion outputs     '.'
                             Station class (see lib_MT_station.py).
     num_lay                 number of layers in the inversion           3
@@ -118,7 +120,9 @@ class mcmc_inv(object):
         self.name = sta_obj.name[:-4]
         self.T_obs = sta_obj.T
         self.rho_app_obs = sta_obj.rho_app
+        self.rho_app_obs_er = sta_obj.rho_app_er
         self.phase_obs = sta_obj.phase_deg
+        self.phase_obs_er = sta_obj.phase_deg_er
         self.max_Z_obs = sta_obj.max_Z
         self.det_Z_obs = sta_obj.det_Z
         self.ssq_Z_obs = sta_obj.ssq_Z
@@ -246,22 +250,25 @@ class mcmc_inv(object):
         ## function to calculate likelihood probability
         def prob_likelihood(Z_est, rho_ap_est, phi_est):
 		    # log likelihood for the model, given the data
-            v = 0.15
             v_vec = np.ones(len(self.T_obs))
-            #if (self.name == 'WT505a' or self.name == 'WT117b' or self.name == 'WT222a' or self.name == 'WT048a'):
             #v_vec[21:] = np.inf 
+            v = 0.15            
+            
             # fitting sounding curves for TE(xy)
-
             TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm)/v 
+                        -np.log10(rho_ap_est))/v_vec)**self.norm) /v
+            #v = self.phase_obs_er[1]**2             
             TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                        -phi_est)/v_vec)**self.norm)/v 
+                        -phi_est)/v_vec)**self.norm )/v 
             
             # fitting sounding curves for TM(yx)
+            #v = self.rho_app_obs_er[2]**2
+            v = 0.15
             TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm)/v 
+                        -np.log10(rho_ap_est))/v_vec)**self.norm )/v 
+            #v = self.phase_obs_er[2]**2
             TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
-                        -phi_est)/v_vec)**self.norm)/v 
+                        -phi_est)/v_vec)**self.norm )/v 
 
             # fitting maximum value of Z
             max_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
@@ -299,7 +306,7 @@ class mcmc_inv(object):
 
                     if self.prior_meb: 
                         #prob = prob
-                        v = 0.15
+                        #v = 0.15
                         dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
                         weight = np.exp(-dist)
                         # prior over z1 (thickness layer 1)
@@ -486,7 +493,6 @@ class mcmc_inv(object):
         if exp_fig:  # True: return figure
             return f
 
-
     def model_pars_est(self, path = None):
 
         if path is None: 
@@ -550,7 +556,6 @@ class mcmc_inv(object):
 
         f.close()
         shutil.move('est_par.dat',path+os.sep+"est_par.dat")
-
 
     # ===================== 
     # Functions               
