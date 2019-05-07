@@ -26,6 +26,8 @@ MCMC MT library
 	- Assigning diferent weigths in the likelihood function: 
 		- Focus on the weigth betwenn apparent resistivity and phase 
 			(the fitting operates in diferente magnitudes)
+	
+	- Add variance in objective function. Variance also need to be rotated. 
 
 ------------------------------------------------------------------------
 MT library

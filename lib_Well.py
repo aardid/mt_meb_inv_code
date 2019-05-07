@@ -15,6 +15,7 @@ import math
 import glob
 import os
 from matplotlib.backends.backend_pdf import PdfPages
+from scipy.optimize import curve_fit
 from Maping_functions import*
 
 # ==============================================================================
@@ -32,8 +33,8 @@ class Wells(object):
     Attributes            Description                                default
     ===================== ========================================== ==========
 	name				    extracted from the name of the edi file
-    ref		 			reference number in the code
-	path					path to the edi file
+    ref		 			    reference number in the code
+	path				    path to the edi file
 	
 	lat					latitud	in dd:mm:ss
     lon					longitud in dd:mm:ss
@@ -103,7 +104,9 @@ class Wells(object):
         self.depth_dev = None		 # Depths deviation
         self.temp_prof_true = None 	 # Temperature profile 
 		# Temperature estimates
-        self.temp_prof = None		# True temperaure profile resample
+        self.path_temp_est = None   # path to temp. profiles estimation results, where sample profiles are (path to file?)
+        self.temp_prof_rs = None	# True temperaure profile resample
+        self.red_depth_rs = None	# Reduced depths for temperature profile resample
         self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
 		# MeB profile
@@ -147,14 +150,16 @@ class Wells(object):
         self.meb_z1_pars = [z1_mean_prior, z1_std_prior]
         self.meb_z2_pars = [z2_mean_prior, z2_std_prior]
 
-    def plot_temp_profile(self):
+    def plot_temp_profile(self, rs = None):
         f,(ax1) = plt.subplots(1,1)
         f.set_size_inches(6,8)
         #f.suptitle(self.name, fontsize=22, y=1.08)
     
         ax1.set_xscale("linear")
         ax1.set_yscale("linear")    
-        ax1.plot(self.temp_prof_true,self.red_depth,'o')
+        ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'data') # plot true data
+        if rs:
+            ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'SC interpolation')
         #ax1.plot(temp_aux,depth_aux,'b--', linewidth=0.05)
         #ax1.set_xlim([np.min(periods), np.max(periods)])
         #ax1.set_xlim([0, 340])
@@ -162,11 +167,62 @@ class Wells(object):
         ax1.set_xlabel('Temperature [deg C]', fontsize=18)
         ax1.set_ylabel('Depth [m]', fontsize=18)
         ax1.grid(True, which='both', linewidth=0.4)
-        ax1.invert_yaxis()
+        #ax1.invert_yaxis()
+        ax1.legend()
         plt.title(self.name, fontsize=22,)
         plt.tight_layout()
         return f
 
+    def temp_prof_est(self):
+        """
+        Calculate estimated temperature profiles by fitting heat equation by layer. 
+        As the boundaries of three layer model are distributions, here a distributions
+        of profiles are calculated. 
+        Beta parameters (See Bredehoeft, J. D., and I. S. Papadopulos (1965)) are fit
+        for each layer (3) layers in a temperature profile. 
+        
+        Attributes assigned:
+        - self.T_est : temperature profile
+        - self.beta_3l: array of beta for three layers [b1,b2,b3]
+        - self.Tmin_3l
+        - self.Tmax_3l
+        - self.slop_3l
+        """
+        # directory to save results
+        self.path_temp_est = '.'+os.sep+'temp_prof'+os.sep+'wells'+os.sep+self.name
+        if self.path_temp_est: 
+            pass
+        else:
+            os.mkdir(self.path_temp_est)
+        ## number of samples 
+        Ns = 300
+        ## figure of Test samples
+        # f,(ax1,ax2,ax3) = plt.subplots(1,3)
+        # f.set_size_inches(12,4)
+        # f.suptitle(self.name, fontsize=12, y=.995)
+        # f.tight_layout()
+        ## text file of Test samples 
+        #t = open(self.path_temp_est+os.sep+"temp_est_samples.dat", "w")
+        ## create sample of z1 (boundary 1) and z2 (boundary 2) for well position
+        ## z1 and z2 are thicknesses of layer one ans two
+        s_z1 = np.random.normal(self.z1_pars[0], self.z1_pars[1], Ns) # 
+        s_z2 = np.random.normal(self.z2_pars[0], self.z2_pars[1], Ns) # 
+        for z1,z2 in zip(s_z1,s_z2):
+            # for each sample: 
+            # define spatial boundary conditions for heat equation: [z1_min, z2_min, z3_min]
+            Zmin = [self.elev, self.elev - z1 , self.elev - (z1+z2)]
+            Zmax = [Zmin[1] , Zmin[2], self.red_depth[-1]]
+            # Calculate beta and estimated temp profile
+
+            #### This function needs to operate with a resample temp. profile version:
+            #   - Next step: cubic interpolation of temp. profiles. 
+            Test, beta, Tmin, Tmax, slopes = T_beta_est(self.temp_prof_true, self.depth_dev, Zmin, Zmax) # 
+            print(beta)
+            asdf
+            # add output parameters to a text file
+             
+
+        # 
 # ==============================================================================
 # Read files
 # ==============================================================================
@@ -418,8 +474,129 @@ def calc_layer_mod_quadrant(station_objects, wells_objects):
         wl.z1_pars = [z1_mean,z1_std]
         wl.z2_pars = [z2_mean,z2_std]
         
+def find_nearest(array, value):
+    """
+    Find nearest to value in an array
+    
+    Input:
+    - array: numpy array to look in
+    - value: value to search
+    
+    Output:
+    - array[idx]: closest element in array to value
 
+    """
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
 
-        
+def Texp2(z,Zmax,Zmin,Tmin,Tmax,beta): 
+    """
+    Calculate temp. profile based on model 1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965))
+
+    Input:
+    - z: depths to calculate
+    - Zmax,Zmin,Tmin,Tmax: boundary conditions
+    - beta: beta coeficient for the model 
+
+    Output:
+    - Test: estimated temperature profile (array)
+
+    """
+    Test = (Tmax - Tmin)*(np.exp(beta*(z-Zmin)/(Zmax-Zmin))-1)/(np.exp(beta)-1) + Tmin
+    return Test
+
+def T_beta_est(Tw, z, Zmin, Zmax):
+    """
+    Calculate estimated temperature profile by fitting heat equation by layer. 
+    A beta parameter (See Bredehoeft, J. D., and I. S. Papadopulos (1965)) is fit
+    for each layer (3) layers in a temperature profile. 
+    
+    Inputs: 
+    - Tw: temperature profile to fit
+    - z : z values for Tw 
+    - Zmin : Minimim depths of layers 
+        [z1_min, z2_min, z3_min]
+    - Zmax : Maximum depths of layers 
+        [z1_max, z2_max, z3_max]
+
+    Outputs: 
+    - Test: Tempeature profile estimated (by fit)
+    - beta: betas fit per layer 
+        [beta1, beta1, beta3]
+    - Tmin: top temperature boundary conditions for each layer 
+        [T1_min, T2_min, T3_min]
+    - Tmax: temperature boundary condition for each 
+        [T1_max, T2_max, T3_max]
+    - slopes : slope calculate between [Zmin,Tmin] Zmax and [Zmax,Tax]
+        [sl1, sl2, sl3]
+    Example:
+
+    Notes:
+    """
+    #z = np.asarray(z)			
+    # Search for index of ccboud in depth profile
+    # Tmin y T max for layer 1
+    inds_z = np.where(z == find_nearest(z, Zmin[0]))
+    inds_z_l1_top = int(inds_z[0][0])
+    Tmin_l1 = Tw[inds_z_l1_top]
+    
+    inds_z = np.where(z == find_nearest(z, Zmax[0]))
+    inds_z_l1_bot = int(inds_z[0][0])
+    Tmax_l1 = Tw[inds_z_l1_bot]
+    
+    # Tmin y T max for layer 2
+    inds_z = np.where(z == find_nearest(z, Zmin[1]))
+    inds_z_l2_top = int(inds_z[0][0])
+    Tmin_l2 = Tw[inds_z_l2_top]
+    
+    inds_z = np.where(z == find_nearest(z, Zmax[1]))
+    inds_z_l2_bot = int(inds_z[0][0])
+    Tmax_l2 = Tw[inds_z_l2_bot]
+    
+    # Tmin y T max for hs
+    inds_z = np.where(z == find_nearest(z, Zmin[2]))
+    inds_z_l3_top = int(inds_z[0][0])
+    Tmin_l3 = Tw[inds_z_l3_top]
+    inds_z = np.where(z == find_nearest(z, Zmax[2]))
+    inds_z_l3_bot = int(inds_z[0][0])
+    Tmax_l3 = Tw[inds_z_l3_bot]
+    
+    # T boundary condition 
+    Tmin = [Tmin_l1, Tmin_l2, Tmin_l3]
+    Tmax = [Tmax_l1, Tmax_l2, Tmax_l3]
+
+    # Fit Twell with Texp
+    beta_range = np.arange(-30.0, 30.0, 0.5)
+    beta_def = -2.5
+    #print(beta_range)
+    
+    ### Layer 1
+    # Calculate beta that best fot the true temp profile 
+    popt, pcov = curve_fit(Texp2, z[inds_z_l1_bot:inds_z_l1_top+1], Tw[inds_z_l1_bot:inds_z_l1_top+1], p0=[Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def], bounds=([Zmax[0]-1.,Zmin[0]-1.,Tmin[0]-1,Tmax[0]-1., beta_range[0]], [Zmax[0]+1.,Zmin[0]+1.,Tmin[0]+1.,Tmax[0]+1,beta_range[-1]]))
+    
+    beta_opt_l1 = popt[-1]
+    Test_l1 = Texp2(z[inds_z_l1_bot:inds_z_l1_top+1],Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_opt_l1)
+
+    ### Layer 2
+    # Calculate beta that best fot the true temp profile 
+    popt, pcov = curve_fit(Texp2, z[inds_z_l2_bot:inds_z_l2_top+1], Tw[inds_z_l2_bot:inds_z_l2_top+1], p0=[Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta_def], bounds=([Zmax[1]-1.,Zmin[1]-1.,Tmin[1]-1,Tmax[1]-1., beta_range[0]], [Zmax[1]+1.,Zmin[1]+1.,Tmin[1]+1.,Tmax[1]+1,beta_range[-1]]))
+    
+    beta_opt_l2 = popt[-1]
+    Test_l2 = Texp2(z[inds_z_l2_bot:inds_z_l2_top+1],Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta_opt_l2)
+
+    # layer 3
+    # Calculate beta that best fot the true temp profile 
+    popt, pcov = curve_fit(Texp2, z[inds_z_l3_bot:inds_z_l3_top+1], Tw[inds_z_l3_bot:inds_z_l3_top+1], p0=[Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta_def], bounds=([Zmax[2]-1.,Zmin[2]-1.,Tmin[2]-1,Tmax[2]-1., beta_range[0]], [Zmax[2]+1.,Zmin[2]+1.,Tmin[2]+1.,Tmax[2]+1,beta_range[-1]]))
+    
+    beta_opt_l3 = popt[-1]
+    Test_l3 = Texp2(z[inds_z_l3_bot:inds_z_l3_top+1],Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta_opt_l3)
+    
+    # concatenate the estimated curves
+    Test = np.concatenate((Test_l3[:,], Test_l2[1:], Test_l1[1:]),axis=0) 
+    beta = [beta_opt_l1, beta_opt_l2, beta_opt_l3]
+    slopes = [(Tmax_l1-Tmin_l1)/(Zmax[0]-Zmin[0]),(Tmax_l2-Tmin_l2)/(Zmax[1]-Zmin[1]),(Tmax_l3-Tmin_l3)/(Zmax[2]-Zmin[2])]		
+    
+    return Test, beta, Tmin, Tmax, slopes
 
             

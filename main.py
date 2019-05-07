@@ -27,6 +27,7 @@ from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import *
 from lib_mcmc_meb import * 
+from lib_sample_data import*
 from Maping_functions import *
 from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
@@ -43,8 +44,8 @@ if __name__ == "__main__":
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = True
-	prof_WRKNW6 = False
+	full_dataset = False
+	prof_WRKNW6 = True
 	prof_NEMT2 = False
 
 	## Folder to be used (1 edi, sample of edis, full array)
@@ -53,7 +54,7 @@ if __name__ == "__main__":
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	prof_2D_MT = False
-	wells_layer_model=False
+	wells_temp_fit = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -73,7 +74,7 @@ if __name__ == "__main__":
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalSuse':
 			#########  MT data
-			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_files/*.edi" # Whole array 			
+			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_Files/*.edi" # Whole array 			
 			####### Temperature in wells data
 			path_wells_loc = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/wells_loc.txt"
 			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp.txt"
@@ -92,6 +93,7 @@ if __name__ == "__main__":
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
+			sta2work = ['WT091a','WT102a','WT111a','WT222a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 
@@ -99,9 +101,8 @@ if __name__ == "__main__":
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
 		count  = 0
-
 		for file_aux in file_dir:
-			if file_aux[pos_ast:-4] in sta2work:
+			if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
 				file = file_aux[pos_ast:] # name on the file
 				sta_obj = Station(file, count, path_files)
 				sta_obj.read_edi_file() 
@@ -128,7 +129,7 @@ if __name__ == "__main__":
 		if full_dataset:
 			wl2work = wl_name 
 		if prof_WRKNW6:
-			wl2work = ['TH19','TH16','TH04','TH08','TH07','WK404','WK408','WK224','WK684','WK686']
+			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 		#########################################################################################
@@ -142,18 +143,28 @@ if __name__ == "__main__":
 				wl_obj.depth = wl_prof_depth[count]
 				wl_obj.red_depth = wl_prof_depth_red[count]
 				wl_obj.temp_prof_true = wl_prof_temp[count]
+				# resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
+				# method of interpolation : Cubic spline interpolation 
+				# inverse order: wl_obj.red_depth start at the higuer value (elev)
+				xi = wl_obj.red_depth
+				yi = wl_obj.temp_prof_true
+				xj = np.linspace(xi[0],xi[-1],100)	
+				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
+				# add attributes
+				wl_obj.red_depth_rs = xj
+				wl_obj.temp_prof_rs = yj
 				## add well object to directory of well objects
 				wells_objects.append(wl_obj)
 				count  += 1
 
-		## plot temp profile for wells
-		# pp = PdfPages('wells_temp_prof.pdf')
-		# for wl in wells_objects: 
-		# 	f = wl.plot_temp_profile()
-		# 	pp.savefig(f)
-		# 	plt.close(f)
-		# pp.close()
-		# shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
+		# plot temp profile for wells
+		pp = PdfPages('wells_temp_prof.pdf')
+		for wl in wells_objects: 
+			f = wl.plot_temp_profile(rs = True)
+			pp.savefig(f)
+			plt.close(f)
+		pp.close()
+		shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
 
 		# Search for location of the well and add to attributes
 		for wl in wells_objects:
@@ -246,18 +257,17 @@ if __name__ == "__main__":
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 
 			## range for the parameters
-			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[1.*1e0,1.*1e3],[1.*1e-3,1.*1e3],[1.*1e1,1.*1e3]]
+			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[1.*1e0,1.*1e3],[1.*1e-3,.5*1e2],[1.*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
 
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0],prior_input=par_range, \
-				walk_jump = 10000,prior_meb = prior_meb)
+				walk_jump = 10000, prior_meb = prior_meb)
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
 				#print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
-	
 			## run inversion 
 			mcmc_sta.inv()
 			## plot results (save in .png)
@@ -294,11 +304,19 @@ if __name__ == "__main__":
 			width_ref = '60%', prior_meb = wells_objects)#, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+os.sep+file_name+'.png')
 
-	# (5) Calculate 3-layer model in wells and alpha parameter for each well
-	if wells_layer_model: 
+	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
+	if wells_temp_fit: 
+		## Calculate 3-layer model in wells. Fit temperature profiles and calculate beta for each layer. 
 		# Calculate normal dist. pars. [mean, std] for layer boundaries (z1 znd z2) in well position. 
 		# Function assign results as attributes for wells in wells_objects (list of objects).
 		calc_layer_mod_quadrant(station_objects, wells_objects)
+		# loop over wells to fit temp. profiles ad calc. betas
+		for wl in wells_objects:
+			# calculate Test and beta values 
+			wl.temp_prof_est() # method of well object
+			#Test, beta, Tmin, Tmax, slopes = T_beta_est(well_obj.temp_profile[1], well_obj.temp_profile[0], Zmin, Zmax) # 
+
+
 
 
 		
