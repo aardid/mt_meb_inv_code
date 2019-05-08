@@ -51,10 +51,10 @@ if __name__ == "__main__":
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
+	prior_MT_meb_read = True
 	mcmc_MT_inv = False
 	prof_2D_MT = False
-	wells_temp_fit = False
+	wells_temp_fit = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:

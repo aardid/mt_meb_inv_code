@@ -211,14 +211,12 @@ class Wells(object):
             # for each sample: 
             # define spatial boundary conditions for heat equation: [z1_min, z2_min, z3_min]
             Zmin = [self.elev, self.elev - z1 , self.elev - (z1+z2)]
-            Zmax = [Zmin[1] , Zmin[2], self.red_depth[-1]]
+            Zmax = [Zmin[1] , Zmin[2], self.red_depth_rs[-1]]
             # Calculate beta and estimated temp profile
 
             #### This function needs to operate with a resample temp. profile version:
             #   - Next step: cubic interpolation of temp. profiles. 
-            Test, beta, Tmin, Tmax, slopes = T_beta_est(self.temp_prof_true, self.depth_dev, Zmin, Zmax) # 
-            print(beta)
-            asdf
+            Test, beta, Tmin, Tmax, slopes = T_beta_est(self.temp_prof_rs, self.red_depth_rs, Zmin, Zmax) # 
             # add output parameters to a text file
              
 
@@ -540,12 +538,11 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     inds_z = np.where(z == find_nearest(z, Zmin[0]))
     inds_z_l1_top = int(inds_z[0][0])
     Tmin_l1 = Tw[inds_z_l1_top]
-    
+
     inds_z = np.where(z == find_nearest(z, Zmax[0]))
     inds_z_l1_bot = int(inds_z[0][0])
     Tmax_l1 = Tw[inds_z_l1_bot]
-    
-    # Tmin y T max for layer 2
+    # Tmin y Tmax for layer 2
     inds_z = np.where(z == find_nearest(z, Zmin[1]))
     inds_z_l2_top = int(inds_z[0][0])
     Tmin_l2 = Tw[inds_z_l2_top]
@@ -570,11 +567,21 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     beta_range = np.arange(-30.0, 30.0, 0.5)
     beta_def = -2.5
     #print(beta_range)
-    
+    print(inds_z_l1_bot)
+    print(inds_z_l1_top+1)
+    zv = z[inds_z_l1_top:inds_z_l1_bot+1]
+    print(zv)
+    count=0
+    for i in reversed(z[inds_z_l1_bot:inds_z_l1_top+1]):
+        zv[count] = i
+    print(zv)
+    Test_l1 = Texp2(zv,Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def)
+    print(Test_l1)
+    asdf
+
     ### Layer 1
     # Calculate beta that best fot the true temp profile 
     popt, pcov = curve_fit(Texp2, z[inds_z_l1_bot:inds_z_l1_top+1], Tw[inds_z_l1_bot:inds_z_l1_top+1], p0=[Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def], bounds=([Zmax[0]-1.,Zmin[0]-1.,Tmin[0]-1,Tmax[0]-1., beta_range[0]], [Zmax[0]+1.,Zmin[0]+1.,Tmin[0]+1.,Tmax[0]+1,beta_range[-1]]))
-    
     beta_opt_l1 = popt[-1]
     Test_l1 = Texp2(z[inds_z_l1_bot:inds_z_l1_top+1],Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_opt_l1)
 

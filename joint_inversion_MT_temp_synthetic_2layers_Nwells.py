@@ -3100,7 +3100,7 @@ if __name__ == "__main__":
 					beta_range = np.arange(-30.0, 30.0, 0.5)
 					beta_def = -2.5
 					#print(beta_range)
-					
+
 					### Layer 1
 					# Calculate beta that best fot the true temp profile 
 					popt, pcov = curve_fit(Texp2, z[inds_z_l1_bot:inds_z_l1_top+1], Tw[inds_z_l1_bot:inds_z_l1_top+1], p0=[Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def], bounds=([Zmax[0]-1.,Zmin[0]-1.,Tmin[0]-1,Tmax[0]-1., beta_range[0]], [Zmax[0]+1.,Zmin[0]+1.,Tmin[0]+1.,Tmax[0]+1,beta_range[-1]]))
