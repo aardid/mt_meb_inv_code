@@ -16,6 +16,7 @@ from cmath import exp, sqrt
 import os, shutil, time, math, cmath
 import corner, emcee
 from matplotlib import pyplot as plt
+import matplotlib.gridspec as gridspec
 #from scipy.interpolate import interp1d
 import scipy.stats as stats
 import multiprocessing 
@@ -23,6 +24,7 @@ import csv
 from scipy import signal
 # import pandas as pd
 from misc_functios import *
+
 
 textsize = 15.
 min_val = 1.e-7
@@ -304,7 +306,7 @@ class mcmc_meb(object):
         chain = None
         plt.close('all')
 
-    def sample_post(self, plot_fit = True, exp_fig = None): 
+    def sample_post(self, plot_fit = None, plot_fit_temp = None, exp_fig = None, wl_obj = None): 
 		######################################################################
 		# reproducability
         np.random.seed(1)
@@ -368,11 +370,161 @@ class mcmc_meb(object):
             ax1.legend(loc='lower right', shadow=False, fontsize='small')
             plt.savefig(self.path_results+os.sep+'fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        
+        if plot_fit_temp: 
+            f = plt.figure(figsize=(7, 9))
+            gs = gridspec.GridSpec(nrows=3, ncols=2, height_ratios=[1, 1, 1])
+            
+            #  fit sample with data
+            ax1 = f.add_subplot(gs[0, :])
+            if True: # ax1: meb data fitting 
+                ax1.set_xscale("linear")
+                ax1.set_yscale("linear") 
+                ax1.set_ylim([0, 20])
+                #ax1.set_ylim([250,270])
+                #ax1.set_ylim([self.meb_depth[1],self.meb_depth[-2]])
+                #ax1.set_xlim([0,self.meb_depth[-2]+200.])
+                ax1.set_xlim([0,100.])
+                ax1.set_ylabel('MeB [%]', fontsize=18)
+                ax1.set_xlabel('Depth [m]', fontsize=18)
+                ax1.grid(True, which='both', linewidth=0.4)
+                ax1.invert_yaxis()
+
+                for par in pars:
+                    if all(x > 0. for x in par):
+                        sq_prof_est =  self.square_fn(par[1:], x_axis=self.meb_depth_rs, y_base = 2.)
+                        ax1.plot(self.meb_depth_rs, sq_prof_est,'g-', lw = 1.0, alpha=0.5, zorder=0)
+                ax1.plot(self.meb_depth_rs, sq_prof_est,'g-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
+                #plot observed
+                ax1.plot(self.meb_depth,self.meb_prof,'b*', lw = 2.5, alpha=1.0, zorder=0, label = 'observed')
+                ax1.plot(self.meb_depth_rs,self.meb_prof_rs,'--', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. r-sample')
+                ax1.legend(loc='lower right', shadow=False, fontsize='small')
+
+            # import samples of z1 and z2 to be used in next plots
+            n,id,z1,z2,mb,llk = np.genfromtxt(self.path_results+os.sep+'chain_sample_order.dat').T
+
+            ax2 = f.add_subplot(gs[1, 0])
+            ax3 = f.add_subplot(gs[1, 1])
+            if True: # ax2 and ax3
+                n,id,z1,z2,mb,llk = np.genfromtxt(self.path_results+os.sep+'chain_sample_order.dat').T
+                # z1
+                bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(n))))
+                h,e = np.histogram(z1, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax2.bar(e[:-1], h, e[1]-e[0])
+                ax2.set_xlabel('z1 [m]', fontsize=10)
+                ax2.set_ylabel('freq.', fontsize=10)
+                ax2.grid(True, which='both', linewidth=0.1)
+                # z2
+                bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(n)))) 
+                h,e = np.histogram(z2, bins,density = True) 
+                m = 0.5*(e[:-1]+e[1:])
+                ax3.bar(e[:-1], h, e[1]-e[0])
+                ax3.set_xlabel('z2 [m]', fontsize=10)
+                ax3.set_ylabel('freq.', fontsize=10)
+                ax3.grid(True, which='both', linewidth=0.1)
+
+            ax4 = f.add_subplot(gs[2, 0])
+            ax5 = f.add_subplot(gs[2, 1])
+            if True: # ax4 and ax5
+                # 
+                def find_nearest(array, value):
+                    """
+                    Find nearest to value in an array
+                    
+                    Input:
+                    - array: numpy array to look in
+                    - value: value to search
+                    
+                    Output:
+                    - array[idx]: closest element in array to value
+
+                    """
+                    array = np.asarray(array)
+                    idx = (np.abs(array - value)).argmin()
+                    return array[idx], idx
+                # list of temps for z1 samples
+                ls_T_z1 = []
+                ls_T_z1_full = []
+                # list of temps for z2 samples
+                ls_T_z2 = []
+                ls_T_z2_full = []
+                # for each sample of z1 and z2, find the closest temp value in the temp curve 
+                for z1_sam, z2_sam  in zip(z1,z2): 
+                    # samples are thickness: take to topography reference
+                    z1_sam = wl_obj.elev - z1_sam
+                    z2_sam = wl_obj.elev - (z1_sam + z2_sam)
+                    # find index of z1_sam in  wl_obj.depth (need to be change to the resample version)
+
+                    [zval, idx_tval] = find_nearest(wl_obj.red_depth, z1_sam)
+                    tval = wl_obj.temp_prof_true[idx_tval]
+                    # add temp. value to list
+                    ls_T_z1.append(tval)
+                    ls_T_z1_full.append(tval)
+
+                    # find index of z2_sam in  wl_obj.depth (need to be change to the resample version)
+                    [zval, idx_tval] = find_nearest(wl_obj.red_depth, z1_sam + z2_sam)
+                    tval = wl_obj.temp_prof_true[idx_tval]
+                    # add temp. value to list
+                    ls_T_z2.append(tval)
+                    ls_T_z2_full.append(tval)
+                # covert lists to numpy arrays
+                ls_T_z1 = np.asarray(ls_T_z1)
+                ls_T_z2 = np.asarray(ls_T_z2)
+                # plot results as histograms 
+                # z1
+                bins = np.linspace(np.min(ls_T_z1), np.max(ls_T_z1), int(np.sqrt(len(ls_T_z1))))
+                h,e = np.histogram(ls_T_z1, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax4.bar(e[:-1], h, e[1]-e[0])
+                ax4.set_xlabel('Temp z1 [°C]', fontsize=10)
+                ax4.set_ylabel('freq.', fontsize=10)
+                ax4.grid(True, which='both', linewidth=0.1)
+                # z2
+                bins = np.linspace(np.min(ls_T_z2), np.max(ls_T_z2), int(np.sqrt(len(ls_T_z2))))
+                h,e = np.histogram(ls_T_z2, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax5.bar(e[:-1], h, e[1]-e[0])
+                ax5.set_xlabel('Temp z1 [°C]', fontsize=10)
+                ax5.set_ylabel('freq.', fontsize=10)
+                ax5.grid(True, which='both', linewidth=0.1)
+            f.tight_layout()
+
+            plt.savefig(self.path_results+os.sep+'fit_temp_hist.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+            # # create a figure  of temp of z1 and z2 for the full net
+            # g,(ax1,ax2) = plt.subplots(1,2)
+            # g.set_size_inches(10,15)
+            # g.suptitle('Temps. for top and bottom boundaries of CC (MeB data)', fontsize=20)
+            # # covert lists to numpy arrays
+            # ls_T_z1_full = np.asarray(ls_T_z1_full)
+            # ls_T_z2_full = np.asarray(ls_T_z2_full)
+            # # z1
+            # bins = np.linspace(np.min(ls_T_z1_full), np.max(ls_T_z1_full), int(np.sqrt(len(ls_T_z1_full))))
+            # h,e = np.histogram(ls_T_z1_full, bins, density = True)
+            # m = 0.5*(e[:-1]+e[1:])
+            # ax1.bar(e[:-1], h, e[1]-e[0])
+            # ax1.set_xlabel('Temp z1 [°C]', fontsize=10)
+            # ax1.set_ylabel('freq.', fontsize=10)
+            # ax1.grid(True, which='both', linewidth=0.1)
+            # # z2
+            # bins = np.linspace(np.min(ls_T_z2_full), np.max(ls_T_z2_full), int(np.sqrt(len(ls_T_z2_full))))
+            # h,e = np.histogram(ls_T_z2_full, bins, density = True)
+            # m = 0.5*(e[:-1]+e[1:])
+            # ax2.bar(e[:-1], h, e[1]-e[0])
+            # ax2.set_xlabel('Temp z1 [°C]', fontsize=10)
+            # ax2.set_ylabel('freq.', fontsize=10)
+            # ax2.grid(True, which='both', linewidth=0.1)
+            
+
+        #####################################################################3        
         if exp_fig == None:
             plt.close(f)
             plt.clf()
         if exp_fig:  # True: return figure
            return f
+
 
     def model_pars_est(self, path = None, plot_dist = False, plot_hist = True):
 
@@ -500,3 +652,4 @@ class mcmc_meb(object):
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             plt.close(f)
             plt.clf()
+
