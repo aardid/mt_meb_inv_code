@@ -27,6 +27,7 @@ from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import *
 from lib_mcmc_meb import * 
+from lib_sample_data import*
 from Maping_functions import *
 from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
@@ -49,11 +50,19 @@ if __name__ == "__main__":
 
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
+<<<<<<< HEAD
 	mcmc_meb_inv = True
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	prof_2D_MT = False
 	wells_temp_fit = False
+=======
+	mcmc_meb_inv = False
+	prior_MT_meb_read = True
+	mcmc_MT_inv = False
+	prof_2D_MT = False
+	wells_temp_fit = True
+>>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -128,8 +137,12 @@ if __name__ == "__main__":
 		if full_dataset:
 			wl2work = wl_name 
 		if prof_WRKNW6:
+<<<<<<< HEAD
 			wl2work = ['TH19']#,'TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 			wl2work = ['WK408']
+=======
+			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
+>>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 		#########################################################################################
@@ -144,19 +157,32 @@ if __name__ == "__main__":
 				wl_obj.red_depth = wl_prof_depth_red[count]
 				wl_obj.temp_prof_true = wl_prof_temp[count]
 				# resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
+<<<<<<< HEAD
 
+=======
+				# method of interpolation : Cubic spline interpolation 
+				# inverse order: wl_obj.red_depth start at the higuer value (elev)
+				xi = wl_obj.red_depth
+				yi = wl_obj.temp_prof_true
+				N_rs = 500 # number of resample points data
+				xj = np.linspace(xi[0],xi[-1],N_rs)	
+				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
+				# add attributes
+				wl_obj.red_depth_rs = xj
+				wl_obj.temp_prof_rs = yj
+>>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
 				## add well object to directory of well objects
 				wells_objects.append(wl_obj)
 				count  += 1
 
-		## plot temp profile for wells
-		# pp = PdfPages('wells_temp_prof.pdf')
-		# for wl in wells_objects: 
-		# 	f = wl.plot_temp_profile()
-		# 	pp.savefig(f)
-		# 	plt.close(f)
-		# pp.close()
-		# shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
+		# plot temp profile for wells
+		pp = PdfPages('wells_temp_prof.pdf')
+		for wl in wells_objects: 
+			f = wl.plot_temp_profile(rs = True)
+			pp.savefig(f)
+			plt.close(f)
+		pp.close()
+		shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
 
 		# Search for location of the well and add to attributes
 		for wl in wells_objects:
