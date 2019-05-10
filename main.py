@@ -148,7 +148,8 @@ if __name__ == "__main__":
 				# inverse order: wl_obj.red_depth start at the higuer value (elev)
 				xi = wl_obj.red_depth
 				yi = wl_obj.temp_prof_true
-				xj = np.linspace(xi[0],xi[-1],100)	
+				N_rs = 500 # number of resample points data
+				xj = np.linspace(xi[0],xi[-1],N_rs)	
 				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
 				# add attributes
 				wl_obj.red_depth_rs = xj

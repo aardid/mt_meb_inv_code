@@ -188,26 +188,46 @@ class Wells(object):
         - self.Tmax_3l
         - self.slop_3l
         """
-        # directory to save results
-        self.path_temp_est = '.'+os.sep+'temp_prof'+os.sep+'wells'+os.sep+self.name
-        if self.path_temp_est: 
+        if os.path.isdir( '.'+os.sep+'temp_prof_samples'):
             pass
         else:
-            os.mkdir(self.path_temp_est)
+            os.mkdir('.'+os.sep+'temp_prof_samples')
+
+        if os.path.isdir('.'+os.sep+'temp_prof_samples'+os.sep+'wells'):
+            pass
+        else:
+            os.mkdir('.'+os.sep+'temp_prof_samples'+os.sep+'wells')
+
+        # directory to save results
+        if os.path.isdir( '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name):
+            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
+        else:
+            os.mkdir('.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name)
+            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
+
         ## number of samples 
-        Ns = 300
+        Ns = 30
         ## figure of Test samples
         # f,(ax1,ax2,ax3) = plt.subplots(1,3)
         # f.set_size_inches(12,4)
         # f.suptitle(self.name, fontsize=12, y=.995)
         # f.tight_layout()
         ## text file of Test samples 
-        #t = open(self.path_temp_est+os.sep+"temp_est_samples.dat", "w")
+        t = open(self.path_temp_est+os.sep+'temp_est_samples.txt', 'w')
+        b = open(self.path_temp_est+os.sep+'betas.txt', 'w')
+        s = open(self.path_temp_est+os.sep+'slopes.txt', 'w')
         ## create sample of z1 (boundary 1) and z2 (boundary 2) for well position
-        ## z1 and z2 are thicknesses of layer one ans two
-        s_z1 = np.random.normal(self.z1_pars[0], self.z1_pars[1], Ns) # 
-        s_z2 = np.random.normal(self.z2_pars[0], self.z2_pars[1], Ns) # 
+        ## z1 and z2 are thicknesses of layers one and two
+        s_z1 = np.abs(np.random.normal(self.z1_pars[0], self.z1_pars[1], Ns))+1. # 
+        s_z2 = np.abs(np.random.normal(self.z2_pars[0], self.z2_pars[1], Ns))+1. #
+        count = 0
         for z1,z2 in zip(s_z1,s_z2):
+            print(count)
+            print(z1,z2)
+            #while (z2 >= 0. and z1>= 0.):
+            #    z1 = np.random.normal(self.z1_pars[0], self.z1_pars[1], 1) # 
+            #    z2 = np.random.normal(self.z2_pars[0], self.z2_pars[1], 1) #
+            count+=1
             # for each sample: 
             # define spatial boundary conditions for heat equation: [z1_min, z2_min, z3_min]
             Zmin = [self.elev, self.elev - z1 , self.elev - (z1+z2)]
@@ -217,6 +237,19 @@ class Wells(object):
             #### This function needs to operate with a resample temp. profile version:
             #   - Next step: cubic interpolation of temp. profiles. 
             Test, beta, Tmin, Tmax, slopes = T_beta_est(self.temp_prof_rs, self.red_depth_rs, Zmin, Zmax) # 
+
+            for item in Test:
+                t.write('{}\t'.format(item))
+            for item in beta:
+                b.write('{}\t'.format(item))
+            for item in slopes:
+                s.write('{}\t'.format(item))
+            t.write('\n')
+            b.write('\n')
+            s.write('\n')
+        t.close()
+        b.close()
+        s.close()
             # add output parameters to a text file
              
 
@@ -488,13 +521,13 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-def Texp2(z,Zmax,Zmin,Tmin,Tmax,beta): 
+def Texp2(z,Zmin,Zmax,Tmin,Tmax,beta): 
     """
     Calculate temp. profile based on model 1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965))
 
     Input:
     - z: depths to calculate
-    - Zmax,Zmin,Tmin,Tmax: boundary conditions
+    - Zmin,Zmax,Tmin,Tmax: boundary conditions
     - beta: beta coeficient for the model 
 
     Output:
@@ -564,43 +597,64 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     Tmax = [Tmax_l1, Tmax_l2, Tmax_l3]
 
     # Fit Twell with Texp
-    beta_range = np.arange(-30.0, 30.0, 0.5)
-    beta_def = -2.5
-    #print(beta_range)
-    print(inds_z_l1_bot)
-    print(inds_z_l1_top+1)
-    zv = z[inds_z_l1_top:inds_z_l1_bot+1]
-    print(zv)
+    beta_range = np.arange(-10.0, 10.0, 0.5)
+    beta_def = -0.5
+
+    ########## Layer 1 ##############
+    # flip (reversed) depth and temperature vectors in the layer (to be solved by curvefit)
+    zv_aux = z[inds_z_l1_top:inds_z_l1_bot+1]
+    Tv_aux = Tw[inds_z_l1_top:inds_z_l1_bot+1]
+    zv = np.zeros(len(zv_aux))
+    Tv = np.zeros(len(Tv_aux))
     count=0
-    for i in reversed(z[inds_z_l1_bot:inds_z_l1_top+1]):
+    for i,j in zip(reversed(zv_aux),reversed(Tv_aux)):
         zv[count] = i
-    print(zv)
-    Test_l1 = Texp2(zv,Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def)
-    print(Test_l1)
-    asdf
-
-    ### Layer 1
+        Tv[count] = j
+        count+=1
     # Calculate beta that best fot the true temp profile 
-    popt, pcov = curve_fit(Texp2, z[inds_z_l1_bot:inds_z_l1_top+1], Tw[inds_z_l1_bot:inds_z_l1_top+1], p0=[Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def], bounds=([Zmax[0]-1.,Zmin[0]-1.,Tmin[0]-1,Tmax[0]-1., beta_range[0]], [Zmax[0]+1.,Zmin[0]+1.,Tmin[0]+1.,Tmax[0]+1,beta_range[-1]]))
+    pars = [zv[0],zv[-1],Tv[0],Tv[-1],beta_def]
+    popt, pcov = curve_fit(Texp2, zv, Tv, p0= pars, bounds=([zv[0]-1.,zv[-1]-1.,Tv[0]-1,Tv[-1]-1., beta_range[0]], [zv[0]+1.,zv[-1]+1.,Tv[0]+1.,Tv[-1]+1,beta_range[-1]]))
     beta_opt_l1 = popt[-1]
-    Test_l1 = Texp2(z[inds_z_l1_bot:inds_z_l1_top+1],Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_opt_l1)
+    Test_l1 = Texp2(zv,zv[0],zv[-1],Tv[0],Tv[-1],beta_opt_l1)
 
-    ### Layer 2
+    ########## Layer 2 ##############
+    # flip (reversed) depth and temperature vectors in the layer (to be solved by curvefit)
+    zv_aux = z[inds_z_l2_top:inds_z_l2_bot+1]
+    Tv_aux = Tw[inds_z_l2_top:inds_z_l2_bot+1]
+    zv = np.zeros(len(zv_aux))
+    Tv = np.zeros(len(Tv_aux))
+    count=0
+    for i,j in zip(reversed(zv_aux),reversed(Tv_aux)):
+        zv[count] = i
+        Tv[count] = j
+        count+=1
     # Calculate beta that best fot the true temp profile 
-    popt, pcov = curve_fit(Texp2, z[inds_z_l2_bot:inds_z_l2_top+1], Tw[inds_z_l2_bot:inds_z_l2_top+1], p0=[Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta_def], bounds=([Zmax[1]-1.,Zmin[1]-1.,Tmin[1]-1,Tmax[1]-1., beta_range[0]], [Zmax[1]+1.,Zmin[1]+1.,Tmin[1]+1.,Tmax[1]+1,beta_range[-1]]))
-    
+    pars = [zv[0],zv[-1],Tv[0],Tv[-1],beta_def]
+    popt, pcov = curve_fit(Texp2, zv, Tv, p0= pars, bounds=([zv[0]-1.,zv[-1]-1.,Tv[0]-1,Tv[-1]-1., beta_range[0]], [zv[0]+1.,zv[-1]+1.,Tv[0]+1.,Tv[-1]+1,beta_range[-1]]))
     beta_opt_l2 = popt[-1]
-    Test_l2 = Texp2(z[inds_z_l2_bot:inds_z_l2_top+1],Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta_opt_l2)
+    Test_l2 = Texp2(zv,zv[0],zv[-1],Tv[0],Tv[-1],beta_opt_l2)
 
-    # layer 3
+    ########## Layer 3 ##############
+    # flip (reversed) depth and temperature vectors in the layer (to be solved by curvefit)
+    zv_aux = z[inds_z_l3_top:inds_z_l3_bot+1]
+    Tv_aux = Tw[inds_z_l3_top:inds_z_l3_bot+1]
+    zv = np.zeros(len(zv_aux))
+    Tv = np.zeros(len(Tv_aux))
+    count=0
+    for i,j in zip(reversed(zv_aux),reversed(Tv_aux)):
+        zv[count] = i
+        Tv[count] = j
+        count+=1
     # Calculate beta that best fot the true temp profile 
-    popt, pcov = curve_fit(Texp2, z[inds_z_l3_bot:inds_z_l3_top+1], Tw[inds_z_l3_bot:inds_z_l3_top+1], p0=[Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta_def], bounds=([Zmax[2]-1.,Zmin[2]-1.,Tmin[2]-1,Tmax[2]-1., beta_range[0]], [Zmax[2]+1.,Zmin[2]+1.,Tmin[2]+1.,Tmax[2]+1,beta_range[-1]]))
-    
+    pars = [zv[0],zv[-1],Tv[0],Tv[-1],beta_def]
+    popt, pcov = curve_fit(Texp2, zv, Tv, p0= pars, bounds=([zv[0]-1.,zv[-1]-1.,Tv[0]-1,Tv[-1]-1., beta_range[0]], [zv[0]+1.,zv[-1]+1.,Tv[0]+1.,Tv[-1]+1,beta_range[-1]]))
     beta_opt_l3 = popt[-1]
-    Test_l3 = Texp2(z[inds_z_l3_bot:inds_z_l3_top+1],Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta_opt_l3)
-    
+    Test_l3 = Texp2(zv,zv[0],zv[-1],Tv[0],Tv[-1],beta_opt_l3)
+
     # concatenate the estimated curves
-    Test = np.concatenate((Test_l3[:,], Test_l2[1:], Test_l1[1:]),axis=0) 
+    Test = np.concatenate((list(reversed(Test_l1)), list(reversed(Test_l2)),list(reversed(Test_l3))),axis=0)
+
+    #Test = np.concatenate((Test_l3[:,], Test_l2[1:], Test_l1[1:]),axis=0) 
     beta = [beta_opt_l1, beta_opt_l2, beta_opt_l3]
     slopes = [(Tmax_l1-Tmin_l1)/(Zmax[0]-Zmin[0]),(Tmax_l2-Tmin_l2)/(Zmax[1]-Zmin[1]),(Tmax_l3-Tmin_l3)/(Zmax[2]-Zmin[2])]		
     
