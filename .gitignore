@@ -3,3 +3,6 @@ __pycache__
 mcmc_inversions
 mcmc_meb
 meb_info
+temp_prof_est
+temp_prof_samples
+wells_info

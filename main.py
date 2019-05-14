@@ -296,7 +296,7 @@ if __name__ == "__main__":
 		with open('corr_z1_z1_temp_glob.txt', 'w') as f:
 			for f1, f2 in zip(temp_full_list_z1, temp_full_list_z2):
 				print(f1, f2, file=f)	
-		#shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_z1_z1_temp_glob.txt')
+		shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_z1_z1_temp_glob.txt')
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
