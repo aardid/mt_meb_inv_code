@@ -32,6 +32,7 @@ from Maping_functions import *
 from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
 
+
 textsize = 15.
 
 # ==============================================================================
@@ -44,25 +45,17 @@ if __name__ == "__main__":
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = False
-	prof_WRKNW6 = True
+	full_dataset = True
+	prof_WRKNW6 = False
 	prof_NEMT2 = False
 
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
-<<<<<<< HEAD
 	mcmc_meb_inv = True
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	prof_2D_MT = False
 	wells_temp_fit = False
-=======
-	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	prof_2D_MT = False
-	wells_temp_fit = True
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -85,7 +78,8 @@ if __name__ == "__main__":
 			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_Files/*.edi" # Whole array 			
 			####### Temperature in wells data
 			path_wells_loc = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/wells_loc.txt"
-			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp.txt"
+			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt"
+			path_wells_temp_date = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_date_fxTH12-2016rm_fxWK2019-81m-rm.txt"
 			####### MeB data in wells 
 			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
 
@@ -122,9 +116,11 @@ if __name__ == "__main__":
 
 		#########################################################################################
 		#########################################################################################
-		# # Import wells data:
-		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
-		 	read_well_temperature(path_wells_temp)
+		## Import wells data:
+		#wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
+		# 	read_well_temperature(path_wells_temp_date)
+		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red, wl_prof_date = \
+		 	read_well_temperature_date(path_wells_temp_date)
 		# # Note: dir_no_depth_red contain a list of wells with no information of reduced depth
 		# ## Recover location for wells from path_wells_loc
 		wells_location = read_well_location(path_wells_loc)
@@ -135,63 +131,108 @@ if __name__ == "__main__":
 		## Create wells objects
 		# Defined lists of wells
 		if full_dataset:
-			wl2work = wl_name 
+			wl2work = wl_name
+			#wl2work = ['TH01']
 		if prof_WRKNW6:
-<<<<<<< HEAD
-			wl2work = ['TH19']#,'TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
-			wl2work = ['WK408']
-=======
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 		#########################################################################################
 		# ## Loop over the wells to create objects and assing data attributes 
 		wells_objects = []   # list to be fill with station objects
 		count  = 0
+		count2 = 0
 		for wl in wl_name:
-			if wl in wl2work:
+			if wl in wl2work and wl != 'THM24':
+				# create well object
 				wl_obj = Wells(wl, count)
-				# load data attributes
-				wl_obj.depth = wl_prof_depth[count]
-				wl_obj.red_depth = wl_prof_depth_red[count]
-				wl_obj.temp_prof_true = wl_prof_temp[count]
-				# resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
-<<<<<<< HEAD
+				# Search for location of the well and add to attributes	
+				for i in range(len(wells_location)): 
+					wl_name = wells_location[i][0]
+					if wl_obj.name == wl_name: 
+						wl_obj.lat_dec = wells_location[i][2]
+						wl_obj.lon_dec = wells_location[i][1]
+						wl_obj.elev = wells_location[i][3]
+				## load data attributes
+				## filter the data to the most recent one (well has overlap data cooresponding to reintepretations)
+				filter_by_date = True
+				if filter_by_date:
+					#year = max(wl_prof_date[count2]) # last year of interpretation 
+					wl_prof_date[count2].sort() # last year of interpretation
+					idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x == wl_prof_date[count2][-1]]  # great
+					if len(idx_year) < 2: 
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if (x == wl_prof_date[count2][-1] or x == wl_prof_date[count2][-2])]  # great
+					# condition for data in part. wells
+					if wl == 'WK047':
+						idx_year = [0,2,-1]
+					if wl == 'WK028':
+						idx_year = [-1]
+					if wl == 'WK401':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2])]  
+					if wl == 'WK045':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2])]  
+					if wl == 'WK005':
+						wdata = [1,2]
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i not in wdata] 
+					wl_obj.depth = [wl_prof_depth[count2][i] for i in idx_year]
+					wl_obj.red_depth = [wl_prof_depth_red[count2][i] for i in idx_year]
+					wl_obj.temp_prof_true = [wl_prof_temp[count2][i] for i in idx_year]
+				else:	
+					wl_obj.depth = wl_prof_depth[count2]	
+					wl_obj.red_depth = wl_prof_depth_red[count2]
+					wl_obj.temp_prof_true = wl_prof_temp[count2]	
+				
+				wl_obj.depth_raw = wl_prof_depth[count2]	
+				wl_obj.red_depth_raw = wl_prof_depth_red[count2]
+				wl_obj.temp_prof_true_raw = wl_prof_temp[count2]	
 
-=======
-				# method of interpolation : Cubic spline interpolation 
-				# inverse order: wl_obj.red_depth start at the higuer value (elev)
-				xi = wl_obj.red_depth
-				yi = wl_obj.temp_prof_true
+				# check if measure points are too close
+				# find indexes of repeat values in red_depth and create vectors with no repetitions (ex. wel WK401)
+				wl_obj.red_depth, rep_idx= np.unique(wl_obj.red_depth, return_index = True)
+				temp_aux = [wl_obj.temp_prof_true[i] for i in rep_idx]
+				wl_obj.temp_prof_true = temp_aux 
+				## add a initial point to temp (20°C) profile at 0 depth (elevation of the well)
+				if wl_obj.red_depth[-1] != wl_obj.elev:
+					wl_obj.red_depth = np.append(wl_obj.red_depth, wl_obj.elev)
+					if wl_obj.temp_prof_true[-1] < 20.:
+						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, wl_obj.temp_prof_true[-1] - 5.)
+					else:
+						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, 20.0)
+				## sort depth and temp based on depth (from max to min)
+				wl_obj.red_depth, wl_obj.temp_prof_true = zip(*sorted(zip(wl_obj.red_depth, wl_obj.temp_prof_true), reverse = True))
+				## resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
+				## method of interpolation : Cubic spline interpolation 
+				## inverse order: wl_obj.red_depth start at the higuer value (elev)
+				xi = np.asarray(wl_obj.red_depth)
+				yi = np.asarray(wl_obj.temp_prof_true)
 				N_rs = 500 # number of resample points data
 				xj = np.linspace(xi[0],xi[-1],N_rs)	
 				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
 				# add attributes
 				wl_obj.red_depth_rs = xj
 				wl_obj.temp_prof_rs = yj
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
 				## add well object to directory of well objects
 				wells_objects.append(wl_obj)
 				count  += 1
+			count2 +=1
 
-		# plot temp profile for wells
-		pp = PdfPages('wells_temp_prof.pdf')
-		for wl in wells_objects: 
-			f = wl.plot_temp_profile(rs = True)
-			pp.savefig(f)
-			plt.close(f)
-		pp.close()
-		shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
+		## plot temp profile for wells
+		# pp = PdfPages('wells_temp_prof.pdf')
+		# for wl in wells_objects: 
+		# 	f = wl.plot_temp_profile(rs = True, raw = True)
+		# 	pp.savefig(f)
+		# 	plt.close(f)
+		# pp.close()
+		# shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
 
-		# Search for location of the well and add to attributes
-		for wl in wells_objects:
-			for i in range(len(wells_location)): 
-				wl_name = wells_location[i][0]
-				if wl.name == wl_name: 
-					wl.lat_dec = wells_location[i][2]
-					wl.lon_dec = wells_location[i][1]
-					wl.elev = wells_location[i][3]
+		# # Search for location of the well and add to attributes
+		# for wl in wells_objects:
+		# 	for i in range(len(wells_location)): 
+		# 		wl_name = wells_location[i][0]
+		# 		if wl.name == wl_name: 
+		# 			wl.lat_dec = wells_location[i][2]
+		# 			wl.lon_dec = wells_location[i][1]
+		# 			wl.elev = wells_location[i][3]
 
 		## Loop wells_objects (list) to assing data attributes from MeB files 
 		# list of wells with MeB (names)
@@ -231,6 +272,8 @@ if __name__ == "__main__":
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
 		count = 1
+		temp_full_list_z1 = []
+		temp_full_list_z2 = []
 		print("(1) Run MCMC for MeB priors")
 		for wl in wells_objects:
 			if wl.meb: 
@@ -239,13 +282,21 @@ if __name__ == "__main__":
 				mcmc_wl = mcmc_meb(wl)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
-				f = mcmc_wl.sample_post(exp_fig = False, plot_fit_temp = True, wl_obj = wl) # Figure with fit to be add in pdf pp
+				#
+				f = mcmc_wl.sample_post(exp_fig = False, plot_fit_temp = True, wl_obj = wl, \
+					temp_full_list_z1 = temp_full_list_z1, temp_full_list_z2 = temp_full_list_z2) # Figure with fit to be add in pdf pp
 				#f = mcmc_wl.sample_post_temp(exp_fig = True) # Figure with fit to be add in pdf 
 				pp.savefig(f)
 				plt.close("all")
 				## calculate estimate parameters (percentiels)
 				mcmc_wl.model_pars_est()
 				count += 1
+
+		# save lists: temp_full_list_z1, temp_full_list_z2
+		with open('corr_z1_z1_temp_glob.txt', 'w') as f:
+			for f1, f2 in zip(temp_full_list_z1, temp_full_list_z2):
+				print(f1, f2, file=f)	
+		#shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_z1_z1_temp_glob.txt')
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
@@ -253,7 +304,16 @@ if __name__ == "__main__":
 		pp.close()
 		# move figure fit to global results folder
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
+		# print histogram of temperatures of z1 and z2 for the whole net
+		#g = plot_fit_temp_full(temp_full_list_z1,temp_full_list_z2) 
+		g = hist_z1_z1_temp_full()
+		g.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'01_temp_z1_z2_full_net.png')   # save the figure to file
+		plt.close(g)    # close the figure
 	
+	# (1.1) Correlation temperature in z1 and z2 positions calc from meb inversion 
+	#  
+
+
 	# (2) Construct priors for MT stations
 	if prior_MT_meb_read:
 		# attribute in meb wells for path to mcmc results 

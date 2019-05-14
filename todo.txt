@@ -11,6 +11,8 @@ Well library
 		- Develop conversion from MeB to Res 
 	- incorporate MeB priors: calculate prior for every station 
 
+	- function to read the .xlsx file to import the temp data (filtered). Use Pandas library. 
+
 ------------------------------------------------------------------------
 MCMC MT library
 	- Write function for plot 2D profiles result for layer boundaries

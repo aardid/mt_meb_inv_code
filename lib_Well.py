@@ -45,7 +45,12 @@ class Wells(object):
 	depth				 	depths for temperature profile
 	red_depth				reduced depths for temperature profile
 	depth_dev				depths deviation
-	temp_prof_true		temperature profile 
+	temp_prof_true		    temperature profile 
+
+	depth_raw				 	no filtered depths for temperature profile
+	red_depth_raw				no filtered reduced depths for temperature profile
+	depth_dev_raw				no filtered depths deviation
+	temp_prof_true_raw		    no filtered temperature profile 
 	
 	temp_prof				resample true temperaure profile
 	betas					beta value for each layer
@@ -102,14 +107,16 @@ class Wells(object):
         self.depth = None		     # Depths for temperature profile
         self.red_depth = None		 # Reduced depths for temperature profile
         self.depth_dev = None		 # Depths deviation
-        self.temp_prof_true = None 	 # Temperature profile 
+        self.temp_prof_true = None 	 # Temperature profile
+        # Temp data raw
+        self.depth_raw = None		     # Depths for temperature profile
+        self.red_depth_raw = None		 # Reduced depths for temperature profile
+        self.depth_dev_raw = None		 # Depths deviation
+        self.temp_prof_true_raw = None 	 # Temperature profile  
 		# Temperature estimates
         self.path_temp_est = None   # path to temp. profiles estimation results, where sample profiles are (path to file?)
         self.temp_prof_rs = None	# True temperaure profile resample
-<<<<<<< HEAD
-=======
         self.red_depth_rs = None	# Reduced depths for temperature profile resample
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
         self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
 		# MeB profile
@@ -153,14 +160,16 @@ class Wells(object):
         self.meb_z1_pars = [z1_mean_prior, z1_std_prior]
         self.meb_z2_pars = [z2_mean_prior, z2_std_prior]
 
-    def plot_temp_profile(self, rs = None):
+    def plot_temp_profile(self, rs = None, raw = None):
         f,(ax1) = plt.subplots(1,1)
         f.set_size_inches(6,8)
         #f.suptitle(self.name, fontsize=22, y=1.08)
     
         ax1.set_xscale("linear")
         ax1.set_yscale("linear")    
-        ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'data') # plot true data
+        if raw: 
+            ax1.plot(self.temp_prof_true_raw,self.red_depth_raw,'+', label = 'raw data') # plot true data
+        ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'filt. data') # plot true data
         if rs:
             ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'SC interpolation')
         #ax1.plot(temp_aux,depth_aux,'b--', linewidth=0.05)
@@ -171,10 +180,7 @@ class Wells(object):
         ax1.set_ylabel('Depth [m]', fontsize=18)
         ax1.grid(True, which='both', linewidth=0.4)
         #ax1.invert_yaxis()
-<<<<<<< HEAD
-=======
         ax1.legend()
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
         plt.title(self.name, fontsize=22,)
         plt.tight_layout()
         return f
@@ -194,16 +200,6 @@ class Wells(object):
         - self.Tmax_3l
         - self.slop_3l
         """
-<<<<<<< HEAD
-        # directory to save results
-        self.path_temp_est = '.'+os.sep+'temp_prof'+os.sep+'wells'+os.sep+self.name
-        if self.path_temp_est: 
-            pass
-        else:
-            os.mkdir(self.path_temp_est)
-        ## number of samples 
-        Ns = 300
-=======
         if os.path.isdir( '.'+os.sep+'temp_prof_samples'):
             pass
         else:
@@ -223,25 +219,12 @@ class Wells(object):
 
         ## number of samples 
         Ns = 30
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
         ## figure of Test samples
         # f,(ax1,ax2,ax3) = plt.subplots(1,3)
         # f.set_size_inches(12,4)
         # f.suptitle(self.name, fontsize=12, y=.995)
         # f.tight_layout()
         ## text file of Test samples 
-<<<<<<< HEAD
-        #t = open(self.path_temp_est+os.sep+"temp_est_samples.dat", "w")
-        ## create sample of z1 (boundary 1) and z2 (boundary 2) for well position
-        ## z1 and z2 are thicknesses of layer one ans two
-        s_z1 = np.random.normal(self.z1_pars[0], self.z1_pars[1], Ns) # 
-        s_z2 = np.random.normal(self.z2_pars[0], self.z2_pars[1], Ns) # 
-        for z1,z2 in zip(s_z1,s_z2):
-            # for each sample: 
-            # define spatial boundary conditions for heat equation: [z1_min, z2_min, z3_min]
-            Zmin = [self.elev, self.elev - z1 , self.elev - (z1+z2)]
-            Zmax = [Zmin[1] , Zmin[2], self.red_depth[-1]]
-=======
         t = open(self.path_temp_est+os.sep+'temp_est_samples.txt', 'w')
         b = open(self.path_temp_est+os.sep+'betas.txt', 'w')
         s = open(self.path_temp_est+os.sep+'slopes.txt', 'w')
@@ -261,16 +244,10 @@ class Wells(object):
             # define spatial boundary conditions for heat equation: [z1_min, z2_min, z3_min]
             Zmin = [self.elev, self.elev - z1 , self.elev - (z1+z2)]
             Zmax = [Zmin[1] , Zmin[2], self.red_depth_rs[-1]]
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
             # Calculate beta and estimated temp profile
 
             #### This function needs to operate with a resample temp. profile version:
             #   - Next step: cubic interpolation of temp. profiles. 
-<<<<<<< HEAD
-            Test, beta, Tmin, Tmax, slopes = T_beta_est(self.temp_prof_true, self.depth_dev, Zmin, Zmax) # 
-            print(beta)
-            asdf
-=======
             Test, beta, Tmin, Tmax, slopes = T_beta_est(self.temp_prof_rs, self.red_depth_rs, Zmin, Zmax) # 
 
             for item in Test:
@@ -285,7 +262,6 @@ class Wells(object):
         t.close()
         b.close()
         s.close()
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
             # add output parameters to a text file
              
 
@@ -336,10 +312,9 @@ def read_well_temperature(file):
             if well_aux2 in line:
                 line2 = line.split("\t")
                 if not line2[2]: 
-                    line2[2] = float('NaN') # define empty value as NaN 
+                    line2[2] = line2[1]#float('NaN') # define empty value as NaN 
                     if well_aux2 not in dir_no_depth_red: # save in directory name of the well
                         dir_no_depth_red.append(well_aux2)
-                
                 depth_aux.append(float(line2[1]))
                 depth_red_aux.append(float(line2[2]))
                 temp_aux.append(float(line2[3]))
@@ -347,13 +322,72 @@ def read_well_temperature(file):
         wl_prof_depth.append(depth_aux)
         wl_prof_depth_red.append(depth_red_aux)
         wl_prof_temp.append(temp_aux)
-        
+            
         temp_aux = []       # clear variable 
         depth_aux = []      # clear variable 
         depth_red_aux = []  # clear variable 
         infile2.close()
 
     return wells_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red
+
+def read_well_temperature_date(file): # function to read xlsx file from contact energy
+    infile = open(file, 'r')
+    next(infile) # jump first line
+    wells_name = []
+    # wells catalog names
+    for line in infile:
+        name = line.split()[0]
+        if name not in wells_name:
+        	wells_name.append(name)
+    infile.close()
+
+    # wells temp profiles 
+    temp_aux = []
+    depth_aux = []
+    depth_red_aux = []
+    date_aux = []
+
+    wl_prof_depth = []
+    wl_prof_depth_red = []
+    wl_prof_temp = []
+    wl_prof_date = []
+
+    dir_no_depth_red = []  # directory of wells that don't have reduce depth
+
+    for well_aux2 in wells_name:
+        infile2 = open(file, 'r')
+        next(infile2) # jump first line
+        for line in infile2:
+            if well_aux2 in line:
+                line2 = line.split("\t")
+                if not line2[2]: 
+                    line2[2] = line2[1]#float('NaN') # define empty value as NaN 
+                    if well_aux2 not in dir_no_depth_red: # save in directory name of the well
+                        dir_no_depth_red.append(well_aux2)
+                depth_aux.append(float(line2[1]))
+                depth_red_aux.append(float(line2[2]))
+                temp_aux.append(float(line2[3]))
+                year = line2[4].split('/')
+                try: 
+                    date_aux.append(year[2])
+                except:
+                    date_aux.append('1996')
+
+        wl_prof_depth.append(depth_aux)
+        wl_prof_depth_red.append(depth_red_aux)
+        wl_prof_temp.append(temp_aux)
+        wl_prof_date.append(date_aux)
+            
+        temp_aux = []       # clear variable 
+        depth_aux = []      # clear variable 
+        depth_red_aux = []  # clear variable 
+        date_aux = []
+
+        infile2.close()
+
+    return wells_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red, wl_prof_date
+
+
 
 def read_well_meb(file):
     infile = open(file, 'r')
@@ -557,21 +591,13 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return array[idx]
 
-<<<<<<< HEAD
-def Texp2(z,Zmax,Zmin,Tmin,Tmax,beta): 
-=======
 def Texp2(z,Zmin,Zmax,Tmin,Tmax,beta): 
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
     """
     Calculate temp. profile based on model 1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965))
 
     Input:
     - z: depths to calculate
-<<<<<<< HEAD
-    - Zmax,Zmin,Tmin,Tmax: boundary conditions
-=======
     - Zmin,Zmax,Tmin,Tmax: boundary conditions
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
     - beta: beta coeficient for the model 
 
     Output:
@@ -615,20 +641,11 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     inds_z = np.where(z == find_nearest(z, Zmin[0]))
     inds_z_l1_top = int(inds_z[0][0])
     Tmin_l1 = Tw[inds_z_l1_top]
-<<<<<<< HEAD
-    
-    inds_z = np.where(z == find_nearest(z, Zmax[0]))
-    inds_z_l1_bot = int(inds_z[0][0])
-    Tmax_l1 = Tw[inds_z_l1_bot]
-    
-    # Tmin y T max for layer 2
-=======
 
     inds_z = np.where(z == find_nearest(z, Zmax[0]))
     inds_z_l1_bot = int(inds_z[0][0])
     Tmax_l1 = Tw[inds_z_l1_bot]
     # Tmin y Tmax for layer 2
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
     inds_z = np.where(z == find_nearest(z, Zmin[1]))
     inds_z_l2_top = int(inds_z[0][0])
     Tmin_l2 = Tw[inds_z_l2_top]
@@ -650,35 +667,6 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     Tmax = [Tmax_l1, Tmax_l2, Tmax_l3]
 
     # Fit Twell with Texp
-<<<<<<< HEAD
-    beta_range = np.arange(-30.0, 30.0, 0.5)
-    beta_def = -2.5
-    #print(beta_range)
-    
-    ### Layer 1
-    # Calculate beta that best fot the true temp profile 
-    popt, pcov = curve_fit(Texp2, z[inds_z_l1_bot:inds_z_l1_top+1], Tw[inds_z_l1_bot:inds_z_l1_top+1], p0=[Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_def], bounds=([Zmax[0]-1.,Zmin[0]-1.,Tmin[0]-1,Tmax[0]-1., beta_range[0]], [Zmax[0]+1.,Zmin[0]+1.,Tmin[0]+1.,Tmax[0]+1,beta_range[-1]]))
-    
-    beta_opt_l1 = popt[-1]
-    Test_l1 = Texp2(z[inds_z_l1_bot:inds_z_l1_top+1],Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta_opt_l1)
-
-    ### Layer 2
-    # Calculate beta that best fot the true temp profile 
-    popt, pcov = curve_fit(Texp2, z[inds_z_l2_bot:inds_z_l2_top+1], Tw[inds_z_l2_bot:inds_z_l2_top+1], p0=[Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta_def], bounds=([Zmax[1]-1.,Zmin[1]-1.,Tmin[1]-1,Tmax[1]-1., beta_range[0]], [Zmax[1]+1.,Zmin[1]+1.,Tmin[1]+1.,Tmax[1]+1,beta_range[-1]]))
-    
-    beta_opt_l2 = popt[-1]
-    Test_l2 = Texp2(z[inds_z_l2_bot:inds_z_l2_top+1],Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta_opt_l2)
-
-    # layer 3
-    # Calculate beta that best fot the true temp profile 
-    popt, pcov = curve_fit(Texp2, z[inds_z_l3_bot:inds_z_l3_top+1], Tw[inds_z_l3_bot:inds_z_l3_top+1], p0=[Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta_def], bounds=([Zmax[2]-1.,Zmin[2]-1.,Tmin[2]-1,Tmax[2]-1., beta_range[0]], [Zmax[2]+1.,Zmin[2]+1.,Tmin[2]+1.,Tmax[2]+1,beta_range[-1]]))
-    
-    beta_opt_l3 = popt[-1]
-    Test_l3 = Texp2(z[inds_z_l3_bot:inds_z_l3_top+1],Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta_opt_l3)
-    
-    # concatenate the estimated curves
-    Test = np.concatenate((Test_l3[:,], Test_l2[1:], Test_l1[1:]),axis=0) 
-=======
     beta_range = np.arange(-10.0, 10.0, 0.5)
     beta_def = -0.5
 
@@ -737,7 +725,6 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     Test = np.concatenate((list(reversed(Test_l1)), list(reversed(Test_l2)),list(reversed(Test_l3))),axis=0)
 
     #Test = np.concatenate((Test_l3[:,], Test_l2[1:], Test_l1[1:]),axis=0) 
->>>>>>> d1190f3eeab49cbcc870c95ff960a9af9d28cd3f
     beta = [beta_opt_l1, beta_opt_l2, beta_opt_l3]
     slopes = [(Tmax_l1-Tmin_l1)/(Zmax[0]-Zmin[0]),(Tmax_l2-Tmin_l2)/(Zmax[1]-Zmin[1]),(Tmax_l3-Tmin_l3)/(Zmax[2]-Zmin[2])]		
     
