@@ -40,22 +40,23 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = True
-	prof_WRKNW6 = False
+	full_dataset = False
+	prof_WRKNW6 = True
 	prof_NEMT2 = False
 
 	## Folder to be used (1 edi, sample of edis, full array)
 	set_up = True
-	mcmc_meb_inv = True
-	prior_MT_meb_read = False
+	mcmc_meb_inv = False
+	prior_MT_meb_read = True
 	mcmc_MT_inv = False
 	prof_2D_MT = False
 	wells_temp_fit = False
+	sta_temp_est = True 
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -66,7 +67,8 @@ if __name__ == "__main__":
 			path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
 			####### Temperature in wells data
 			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
-			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt" 
+			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt"
+			path_wells_temp_date = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp_date.txt" 
 			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
 			####### MeB data in wells 
 			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
@@ -174,6 +176,11 @@ if __name__ == "__main__":
 					if wl == 'WK005':
 						wdata = [1,2]
 						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i not in wdata] 
+					if wl == 'TH12':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x is not '2016']
+					if wl == 'WK219':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i != 5]
+
 					wl_obj.depth = [wl_prof_depth[count2][i] for i in idx_year]
 					wl_obj.red_depth = [wl_prof_depth_red[count2][i] for i in idx_year]
 					wl_obj.temp_prof_true = [wl_prof_temp[count2][i] for i in idx_year]
@@ -385,15 +392,29 @@ if __name__ == "__main__":
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
+		print('(5) Calculating beta in wells and fitting temperature profile')
 		## Calculate 3-layer model in wells. Fit temperature profiles and calculate beta for each layer. 
 		# Calculate normal dist. pars. [mean, std] for layer boundaries (z1 znd z2) in well position. 
 		# Function assign results as attributes for wells in wells_objects (list of objects).
+		## Note: to run this section prior_MT_meb_read == True
 		calc_layer_mod_quadrant(station_objects, wells_objects)
-		# loop over wells to fit temp. profiles ad calc. betas
+		## loop over wells to fit temp. profiles ad calc. betas
+		## file to save temp prof samples for every well 
+		pp = PdfPages('Test_samples.pdf') # pdf to plot the meb profiles
 		for wl in wells_objects:
+			print('Well: {}'.format(wl.name))
 			# calculate Test and beta values 
-			wl.temp_prof_est() # method of well object
+			f = wl.temp_prof_est(plot_samples = True, ret_fig = True) # method of well object
+			pp.savefig(f)
 			#Test, beta, Tmin, Tmax, slopes = T_beta_est(well_obj.temp_profile[1], well_obj.temp_profile[0], Zmin, Zmax) # 
+		pp.close()
+		shutil.move('Test_samples.pdf','.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+'Test_samples.pdf')
+
+	# (6) 
+	if sta_temp_est: 
+		print('(6) Estimate Temerature profile in MT stations')
+		for wl in wells_objects:
+			wl.read_temp_prof_est_wells()
 
 
 
