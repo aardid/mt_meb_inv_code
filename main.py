@@ -10,6 +10,12 @@
 .. conventions:: 
 	:order in impedanze matrix [xx,xy,yx,yy]
 	: number of layer 3 (2 layers + half-space)
+	: z1 and z2 in MT object refer to thickness of two first layers
+    : z1 and z2 in results of MeB mcmc inversion refer to depth of the top and bottom boundaries of CC (second layer)
+    : cc clay cap
+    : distances in meters
+    : MeB methylene blue
+    : temperature in celcius
 """
 # ==============================================================================
 #  Imports
@@ -320,7 +326,6 @@ if __name__ == "__main__":
 	# (1.1) Correlation temperature in z1 and z2 positions calc from meb inversion 
 	#  
 
-
 	# (2) Construct priors for MT stations
 	if prior_MT_meb_read:
 		# attribute in meb wells for path to mcmc results 
@@ -399,7 +404,7 @@ if __name__ == "__main__":
 		## Note: to run this section prior_MT_meb_read == True
 		calc_layer_mod_quadrant(station_objects, wells_objects)
 		## loop over wells to fit temp. profiles ad calc. betas
-		## file to save temp prof samples for every well 
+		## file to save plots of temp prof samples for every well 
 		pp = PdfPages('Test_samples.pdf') # pdf to plot the meb profiles
 		for wl in wells_objects:
 			print('Well: {}'.format(wl.name))
@@ -410,11 +415,24 @@ if __name__ == "__main__":
 		pp.close()
 		shutil.move('Test_samples.pdf','.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+'Test_samples.pdf')
 
-	# (6) 
+	# (6) Estimated temperature profile in station positions
 	if sta_temp_est: 
 		print('(6) Estimate Temerature profile in MT stations')
 		for wl in wells_objects:
-			wl.read_temp_prof_est_wells()
+			# read samples of betas and others from wells. Load attributes 
+			wl.read_temp_prof_est_wells(beta_hist_corr = False)
+		# Calculate betas and other in MT station positions 
+		calc_beta_sta_quadrant(station_objects, wells_objects)
+		## Construct temperature profiles in MT stations
+		## file to save plots of temp prof samples for every well 
+		pp = PdfPages('Test_samples.pdf') # pdf to plot the meb profiles
+		for sta_obj in station_objects:
+			print(sta_obj.name[:-4])
+			# read samples of betas and others from wells. Load attributes 
+			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True)
+			pp.savefig(f)
+		pp.close()
+		shutil.move('Test_samples.pdf','.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+'Test_samples.pdf')
 
 
 

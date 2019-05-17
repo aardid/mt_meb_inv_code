@@ -27,6 +27,7 @@ from scipy.interpolate import interp1d
 from scipy import arange, array, exp
 from scipy.linalg import solve
 from numpy import linalg as LA
+from Maping_functions import*
 
 # ==============================================================================
 # MT stations class
@@ -105,8 +106,14 @@ class Station(object):
                             * See z1_pars vector description 
 
 	temp_prof				temperaure profile
-	betas				    beta value for each layer
-	slopes				    slopes values for each layer
+
+    betas_3l                beta normal distribution values for 3 layer model  
+                            [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
+    Tmin_3l                 Bottom temperature normal distribution values for 3 layer model 
+                            [[mean_Tmin1, std_Tmin1],[mean_Tmin2, std_Tmin2],[mean_Tmin3, std_Tmin3]]
+    Tmax_3l                 Top temperature normal distribution values for 3 layer model 
+                            [[mean_Tmax1, std_Tmax1],[mean_Tmax2, std_Tmax2],[mean_Tmax3, std_Tmax3]]
+
     =====================   =====================================================
     Methods                 Description
     =====================   =====================================================
@@ -162,8 +169,10 @@ class Station(object):
         self.r3_pars = None
 		# Temperature estimates
         self.temp_prof = None		# temperaure profile
-        self.betas = None			# beta value for each layer
         self.slopes = None			# slopes values for each layer
+        self.betas_3l = None        # beta normal distribution values for 3 layer model
+        self.Tmin_3l = None         # bottom temperature normal distribution values for 3 layer model 
+        self.Tmax_3l = None         # top temperature normal distribution values for 3 layer model 
         # MeB prior
         self.prior_meb_wl_names = None  # name of wells to be consired in MeB prior ()
         self.prior_meb = None           # distance to each wells to be consired in MeB prior
@@ -240,6 +249,131 @@ class Station(object):
             #ssq_Z[i] = csqrt(a)
             ssq_Z[i] = np.sqrt(a)
         return ssq_Z
+
+    def temp_prof_est(self, plot_samples = None, ret_fig = None):
+        """
+        Estimate temperature profile in station position, based on 
+        1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965).
+        Boundary conditions (betas, Tmins and Tmaxs) are calculated in calc_beta_sta_quadrant(). 
+        Zmins and Zmaxs are extracted from layer model in station. 
+        
+        Attributes generated:
+        """
+
+        if os.path.isdir('.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'):
+            pass
+        else:
+            os.mkdir('.'+os.sep+'temp_prof_samples'+os.sep+'MTstation')
+
+        # directory to save results
+        if os.path.isdir( '.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+self.name[:-4]):
+            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+self.name[:-4]
+        else:
+            os.mkdir('.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+self.name[:-4])
+            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+self.name[:-4]
+	
+        # path for folder of the station 
+        path = self.path_temp_est
+        ## number of samples 
+        Ns = 500
+        # extract mcmc inv results from file (z1 and z2 dist.) 
+        mcmc_inv_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+self.name[:-4]+os.sep+"est_par.dat")
+        # values for mean a std for normal distribution representing the prior
+        z1_mean, z1_std = mcmc_inv_results[0,1:3] # mean [1] z1 #  std [1] z1 # median [3] z1 
+        z2_mean, z2_std = mcmc_inv_results[1,1:3] # mean [1] z2 #  std [1] z2 # median [3] z2 
+        
+        # maximum depth for profile -> thicknesses of two first layers plus 500 meters (arbitrary) 
+        max_depth = abs(z1_mean + z2_mean + 300.) # need to be checked
+        zj = np.linspace(0.,max_depth,1000) # depth profile sample
+
+        ## text file of Test samples 
+        t = open(path+os.sep+'temp_est_samples.txt', 'w')
+        if plot_samples:
+            f,(ax1) = plt.subplots(1,1)
+            f.set_size_inches(6,8)
+            ax1.set_xscale("linear")
+            ax1.set_yscale("linear")    
+            ax1.set_xlabel('Temperature [deg C]', fontsize=14)
+            ax1.set_ylabel('Depth [m]', fontsize=14)
+            ax1.grid(True, which='both', linewidth=0.4)
+            ax1.invert_yaxis()
+            plt.title(self.name[:-4], fontsize=18,)
+
+        z1_z1_not_valid = True
+        for i in range(Ns): 
+            if True: # sample boundary conditions and betas
+                ## Spatial boundary conditions (z0,z1,z2,z3)
+                # z0 (surface) and z3 (bottom of third layer)
+                z0, z3 = zj[0], zj[-1]
+                # samples of z1 and z2 (top and bottom boundary of CC)
+                z1 = np.abs(np.random.normal(z1_mean, z1_std, 1))+1. # 
+                z2 = np.abs(np.random.normal(z2_mean, z2_std, 1))+1. # 
+                while z1_z1_not_valid:
+                    # condition for samples: sum of z1 (thick1) and z2(thick2) can't be larger than max depth of resample prof. 
+                    if z1 + z2 < max_depth:
+                        z1_z1_not_valid = False
+                    else: 
+                        z1 = np.abs(np.random.normal(z1_mean, z1_std, 1))+1.  
+                        z2 = np.abs(np.random.normal(z2_mean, z2_std, 1))+1.
+                z1_z1_not_valid = True 
+                # 
+                z1 = z1[0]
+                z2 = z1 + z2[0]
+                ## Temperature boundary conditions (T0,T1,T2,T3)
+                T0_mean, T0_std = self.Tmin_3l[0]
+                T1_mean, T1_std = self.Tmin_3l[1]
+                T2_mean, T2_std = self.Tmin_3l[2]
+                T3_mean, T3_std = self.Tmax_3l[2]
+                # sample values
+                T0 = np.abs(np.random.normal(T0_mean, T0_std + .1, 1)) # 
+                T1 = np.abs(np.random.normal(T1_mean, T1_std, 1)) # 
+                T2 = np.abs(np.random.normal(T2_mean, T2_std, 1)) # 
+                T3 = np.abs(np.random.normal(T3_mean, T3_std, 1)) # 
+
+                ## Beta for each layer 
+                b1_mean, b1_std = self.betas_3l[0]
+                b2_mean, b2_std = self.betas_3l[1]
+                b3_mean, b3_std = self.betas_3l[2]
+                # sample values
+                b1 = np.abs(np.random.normal(b1_mean, b1_std, 1)) # 
+                b2 = np.abs(np.random.normal(b2_mean, b2_std, 1)) # 
+                b3 = np.abs(np.random.normal(b3_mean, b3_std, 1)) # 
+            ## construct profile
+            # layer 1
+            val, idx1 = find_nearest(zj, z1)
+            z_vec1 = zj[0:idx1+1]
+            Test_l1 = Texp2(z_vec1,z0,z1,T0,T1,b1)
+            # layer 2
+            val, idx2 = find_nearest(zj, z2)
+            z_vec2 = zj[idx1+1:idx2+1]
+            Test_l2 = Texp2(z_vec2,z1,z2,T1,T2,b2)
+            # layer 3
+            z_vec3 = zj[idx2+1:len(zj)]
+            Test_l3 = Texp2(z_vec3,z2,z3,T2,T3,b3)
+
+            # concatenate the estimated curves
+            Test = np.concatenate((Test_l1, Test_l2,Test_l3), axis=0)
+            for item in Test:
+                t.write('{}\t'.format(item))
+           
+            if plot_samples: # plot sample temperature profile
+                ax1.plot(Test[:len(zj)] ,zj,'r-', linewidth =.5,  alpha=0.1)
+                # if len(Test) == len(zj):
+                #     ax1.plot(Test ,zj,'r-', linewidth =.5,alpha=0.1)
+                # else:
+                #     pass
+
+        if plot_samples:
+            ax1.plot(Test[:len(zj)] ,zj,'r-', linewidth =.5, alpha=0.1 ,label = 'sample')
+            ax1.legend()
+            plt.tight_layout()
+            f.savefig("Test_samples.png", bbox_inches='tight')
+            shutil.move('Test_samples.png',path+os.sep+'Test_samples.png')
+            if ret_fig:
+                return f
+            else: 
+                plt.close("all")
+        t.close()
 
 # ==============================================================================
 # Read EDI
@@ -1165,30 +1299,211 @@ def Z_plot_appres_phase_indvec_ellip(Z, T):  #Z_full_response(Z, T):
     #plt.show()
     return f
 	
-
 # ==============================================================================
-# Coordinates
+#  Functions
 # ==============================================================================
-def coord_dms2dec(H):
-    lat = H[2]
-    lon = H[3]
-    
-    lat = H[2]
-    pos1 = lat.find(':')
-    lat_degree = float(lat[:pos1])
-    posaux = lat[pos1+1:].find(':')
-    pos2 = pos1 + 1 + posaux 
-    lat_minute = float(lat[pos1+1:pos2])
-    lat_second = float(lat[pos2+1:])
-    
-    pos1 = lon.find(':')
-    lon_degree = float(lon[:pos1])
-    posaux = lon[pos1+1:].find(':')
-    pos2 = pos1 + 1 + posaux 
-    lon_minute = float(lon[pos1+1:pos2])
-    lon_second = float(lon[pos2+1:])
-    
-    lat_dec = -1*round((abs(lat_degree) + ((lat_minute * 60.0) + lat_second) / 3600.0) * 1000000.0) / 1000000.0
-    lon_dec = round((abs(lon_degree) + ((lon_minute * 60.0) + lon_second) / 3600.0) * 1000000.0) / 1000000.0
 
-    return lat_dec, lon_dec
+def calc_beta_sta_quadrant(station_objects, wells_objects): 
+    """
+    Function that calculates betas, Tmins and Tmaxs in MT station positions based those values in
+    nearest wells. First, for each quadrant around the station, the nearest wells are found. 
+    Second, using the beta estimatimation results, the parameters are calculated as a weigthed 
+    average of those in the nearest wells. Third, the results are assigned as attributes to the MT objects. 
+    
+    Attributes generated:
+    sta_obj.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
+    sta_obj.Tmin_3l = [[mean_Tmin1, std_Tmin1],[mean_Tmin2, std_Tmin2],[mean_Tmin3, std_Tmin3]]
+    sta_obj.Tmax_3l = [[mean_Tmax1, std_Tmax1],[mean_Tmax2, std_Tmax2],[mean_Tmax3, std_Tmax3]]
+
+    Note:
+    wl.read_temp_prof_est_wells() needs to be run first for every well to load wl attributes of betas and others. 
+    .. conventions::
+	: z1 and z2 in MT object refer to thickness of two first layers
+    : distances in meters
+    : temperature in celcius
+    """
+    for sta_obj in station_objects:
+        dist_pre_q1 = []
+        dist_pre_q2 = []
+        dist_pre_q3 = []
+        dist_pre_q4 = []
+        #
+        name_aux_q1 = [] 
+        name_aux_q2 = []
+        name_aux_q3 = []
+        name_aux_q4 = []
+        wl_q1 = []
+        wl_q2 = []
+        wl_q3 = []
+        wl_q4 = []
+
+        for wl in wells_objects:
+            # search for nearest well to MT station in quadrant 1 (Q1)
+            if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+                # distance between station and well
+                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                if not dist_pre_q1:
+                    dist_pre_q1 = dist
+                # check if distance is longer than the previous wel 
+                if dist <= dist_pre_q1: 
+                    name_aux_q1 = wl.name
+                    wl_q1 = wl
+                    dist_pre_q1 = dist
+            # search for nearest well to MT station in quadrant 2 (Q2)
+            if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+                # distance between station and well
+                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                if not dist_pre_q2:
+                    dist_pre_q2 = dist
+                # check if distance is longer than the previous wel 
+                if dist <= dist_pre_q2: 
+                    name_aux_q2 = wl.name
+                    wl_q2 = wl
+                    dist_pre_q2 = dist
+            # search for nearest well to MT station in quadrant 3 (Q3)
+            if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+                # distance between station and well
+                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                if not dist_pre_q3:
+                    dist_pre_q3 = dist
+                # check if distance is longer than the previous wel 
+                if dist <= dist_pre_q3: 
+                    name_aux_q3 = wl.name
+                    wl_q3 = wl
+                    dist_pre_q3 = dist
+            # search for nearest well to MT station in quadrant 4 (Q4)
+            if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+                # distance between station and well
+                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                if not dist_pre_q4:
+                    dist_pre_q4 = dist
+                # check if distance is longer than the previous wel 
+                if dist <= dist_pre_q4: 
+                    name_aux_q4 = wl.name
+                    wl_q4 = wl
+                    dist_pre_q4 = dist
+
+        # save names of nearest wells to be used for prior
+        sta_obj.beta_wl_names = [name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+        sta_obj.beta_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
+        near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
+        near_wls = list(filter(None, near_wls))
+        dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
+        dist_wels = list(filter(None, dist_wels))
+        sta_obj.beta_wl_dist = dist_wels
+
+        #### betas
+        # betas consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+        b1_mean = np.zeros(len(near_wls))
+        b1_std = np.zeros(len(near_wls))
+        b2_mean = np.zeros(len(near_wls))
+        b2_std = np.zeros(len(near_wls))
+        b3_mean = np.zeros(len(near_wls))
+        b3_std = np.zeros(len(near_wls))
+        count = 0
+        # extract meb mcmc results from nearest wells 
+        for wl in near_wls:
+            # extract beta values from wl
+            #wl.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
+            b1_mean[count], b1_std[count] = wl.betas_3l[0]
+            b2_mean[count], b2_std[count] = wl.betas_3l[1]
+            b3_mean[count], b3_std[count] = wl.betas_3l[2]
+            count+=1
+        # calculete betas normal dist. for MT stations
+        b1_mean = np.dot(b1_mean,dist_wels)/np.sum(dist_wels)
+        b1_std = np.dot(b1_std,dist_wels)/np.sum(dist_wels)
+        b2_mean = np.dot(b2_mean,dist_wels)/np.sum(dist_wels)
+        b2_std = np.dot(b2_std,dist_wels)/np.sum(dist_wels)
+        b3_mean = np.dot(b3_mean,dist_wels)/np.sum(dist_wels)
+        b3_std = np.dot(b3_std,dist_wels)/np.sum(dist_wels)
+
+        # assign result to attribute
+        sta_obj.betas_3l = [[b1_mean, b1_std],[b2_mean, b2_std],[b3_mean, b3_std]]
+
+        #### Tmin
+        # consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+        t1_mean = np.zeros(len(near_wls))
+        t1_std = np.zeros(len(near_wls))
+        t2_mean = np.zeros(len(near_wls))
+        t2_std = np.zeros(len(near_wls))
+        t3_mean = np.zeros(len(near_wls))
+        t3_std = np.zeros(len(near_wls))
+        count = 0
+        # extract meb mcmc results from nearest wells 
+        for wl in near_wls:
+            # extract beta values from wl
+            #wl.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
+            t1_mean[count], t1_std[count] = wl.Tmin_3l[0]
+            t2_mean[count], t2_std[count] = wl.Tmin_3l[1]
+            t3_mean[count], t3_std[count] = wl.Tmin_3l[2]
+            count+=1
+        # calculete betas normal dist. for MT stations
+        t1_mean = np.dot(t1_mean,dist_wels)/np.sum(dist_wels)
+        t1_std = np.dot(t1_std,dist_wels)/np.sum(dist_wels)
+        t2_mean = np.dot(t2_mean,dist_wels)/np.sum(dist_wels)
+        t2_std = np.dot(t2_std,dist_wels)/np.sum(dist_wels)
+        t3_mean = np.dot(t3_mean,dist_wels)/np.sum(dist_wels)
+        t3_std = np.dot(t3_std,dist_wels)/np.sum(dist_wels)
+
+        # assign result to attribute
+        sta_obj.Tmin_3l = [[t1_mean, t1_std],[t2_mean, t2_std],[t3_mean, t3_std]]
+
+        #### Tmax
+        t1_mean = np.zeros(len(near_wls))
+        t1_std = np.zeros(len(near_wls))
+        t2_mean = np.zeros(len(near_wls))
+        t2_std = np.zeros(len(near_wls))
+        t3_mean = np.zeros(len(near_wls))
+        t3_std = np.zeros(len(near_wls))
+        count = 0
+        # extract meb mcmc results from nearest wells 
+        for wl in near_wls:
+            # extract beta values from wl
+            #wl.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
+            t1_mean[count], t1_std[count] = wl.Tmax_3l[0]
+            t2_mean[count], t2_std[count] = wl.Tmax_3l[1]
+            # assign std for bottom Temp bound condition as the std of previus boundary (To be checked)
+            t3_mean[count], t3_std[count] = wl.Tmax_3l[2][0], wl.Tmax_3l[1][1]
+            count+=1
+        # calculete betas normal dist. for MT stations
+        t1_mean = np.dot(t1_mean,dist_wels)/np.sum(dist_wels)
+        t1_std = np.dot(t1_std,dist_wels)/np.sum(dist_wels)
+        t2_mean = np.dot(t2_mean,dist_wels)/np.sum(dist_wels)
+        t2_std = np.dot(t2_std,dist_wels)/np.sum(dist_wels)
+        t3_mean = np.dot(t3_mean,dist_wels)/np.sum(dist_wels)
+        t3_std = np.dot(t3_std,dist_wels)/np.sum(dist_wels)
+
+        # assign result to attribute
+        sta_obj.Tmax_3l = [[t1_mean, t1_std],[t2_mean, t2_std],[t3_mean, t3_std]]
+
+def Texp2(z,Zmin,Zmax,Tmin,Tmax,beta): 
+    """
+    Calculate temp. profile based on model 1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965))
+
+    Input:
+    - z: depths to calculate
+    - Zmin,Zmax,Tmin,Tmax: boundary conditions
+    - beta: beta coeficient for the model 
+
+    Output:
+    - Test: estimated temperature profile (array)
+
+    """
+    Test = (Tmax - Tmin)*(np.exp(beta*(z-Zmin)/(Zmax-Zmin))-1)/(np.exp(beta)-1) + Tmin
+    return Test
+
+def find_nearest(array, value):
+    """
+    Find nearest to value in an array
+    
+    Input:
+    - array: numpy array to look in
+    - value: value to search
+    
+    Output:
+    - array[idx]: closest element in array to value
+
+    """
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx], idx

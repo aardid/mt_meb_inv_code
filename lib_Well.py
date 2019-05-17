@@ -17,6 +17,8 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.optimize import curve_fit
 from Maping_functions import*
+from scipy.stats import norm
+import matplotlib.mlab as mlab
 
 # ==============================================================================
 # Wells class
@@ -228,7 +230,7 @@ class Wells(object):
             self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
 
         ## number of samples 
-        Ns = 50
+        Ns = 100
         ## figure of Test samples
         # f,(ax1,ax2,ax3) = plt.subplots(1,3)
         # f.set_size_inches(12,4)
@@ -320,7 +322,7 @@ class Wells(object):
         tmin.close()
         tmax.close()
 
-    def read_temp_prof_est_wells(self, path = None):
+    def read_temp_prof_est_wells(self, path = None, beta_hist_corr = None):
         """
         Read results from temp_prof_est(self) and assign attributes to well object. Results are 
         text files containing samples of beta, Tmin and Tmax, for the three layers in the well. 
@@ -332,22 +334,112 @@ class Wells(object):
         self.Tmin_3l = [[mean_Tmin1, std_Tmin1],[mean_Tmin2, std_Tmin2],[mean_Tmin3, std_Tmin3]]
         self.Tmax_3l = [[mean_Tmax1, std_Tmax1],[mean_Tmax2, std_Tmax2],[mean_Tmax3, std_Tmax3]]
 
+        Files generated:
+        if beta_hist_corr True:
+            betas_hist_corr.png : histograms and correlation between betas. Save in path.
+        
         Note:
         Files are located in 
-            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
+            path -> self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
         """
         # path to files
         if path:  
-            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
-        else: 
             self.path_temp_est = path
+        else: 
+            self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
+            
         # Beta: calc means and stds for parameters
         # Read files for import samples
         b = np.genfromtxt(self.path_temp_est+os.sep+'betas.txt').T
+
         mean_beta1, std_beta1 = np.mean(b[0]), np.std(b[0])
         mean_beta2, std_beta2 = np.mean(b[1]), np.std(b[1])
         mean_beta3, std_beta3 = np.mean(b[2]), np.std(b[2])
         self.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
+        
+        if beta_hist_corr: 
+            f = plt.figure(figsize=(7, 9))
+            gs = gridspec.GridSpec(nrows=3, ncols=2, height_ratios=[1, 1, 1])
+            #plt.title('Histograms betas   -   Coorrelation betas', fontsize=14)
+            ## First column -> ax1, ax2, ax3: histograms for betas 
+            ## beta1
+            b1 = b[0]
+            ax1 = f.add_subplot(gs[0, 0])
+            bins = np.linspace(np.min(b1), np.max(b1), int(np.sqrt(len(b1))))
+            h,e = np.histogram(b1, bins, density = True)
+            m = 0.5*(e[:-1]+e[1:])
+            ax1.bar(e[:-1], h, e[1]-e[0])
+            ax1.set_xlabel('beta 1', fontsize=10)
+            ax1.set_ylabel('freq.', fontsize=10)
+            ax1.grid(True, which='both', linewidth=0.1)
+            # plot normal fit 
+            (mu, sigma) = norm.fit(b1)
+            y = mlab.normpdf(bins, mu, sigma)
+            ax1.plot(bins, y, 'r--', linewidth=2)
+
+            ## beta2
+            b1 = b[1]
+            ax2 = f.add_subplot(gs[1, 0])
+            bins = np.linspace(np.min(b1), np.max(b1), int(np.sqrt(len(b1))))
+            h,e = np.histogram(b1, bins, density = True)
+            m = 0.5*(e[:-1]+e[1:])
+            ax2.bar(e[:-1], h, e[1]-e[0])
+            ax2.set_xlabel('beta 2', fontsize=10)
+            ax2.set_ylabel('freq.', fontsize=10)
+            ax2.grid(True, which='both', linewidth=0.1)
+            # plot normal fit 
+            (mu, sigma) = norm.fit(b1)
+            y = mlab.normpdf(bins, mu, sigma)
+            ax2.plot(bins, y, 'r--', linewidth=2)
+
+            ## beta3
+            b1 = b[2]
+            ax3 = f.add_subplot(gs[2, 0])
+            bins = np.linspace(np.min(b1), np.max(b1), int(np.sqrt(len(b1))))
+            h,e = np.histogram(b1, bins, density = True)
+            m = 0.5*(e[:-1]+e[1:])
+            ax3.bar(e[:-1], h, e[1]-e[0])
+            ax3.set_xlabel('beta 3', fontsize=10)
+            ax3.set_ylabel('freq.', fontsize=10)
+            ax3.grid(True, which='both', linewidth=0.1)
+            # plot normal fit 
+            (mu, sigma) = norm.fit(b1)
+            y = mlab.normpdf(bins, mu, sigma)
+            ax3.plot(bins, y, 'r--', linewidth=2)
+
+            ## Second column -> ax3, ax4, ax5: correlation between betas 
+            
+            ## Coor. between beta1 and beta2
+            ax = f.add_subplot(gs[0, 1])
+            ax.plot(b[0], b[1],'*')
+            ax.set_xlabel('beta 1', fontsize=10)
+            ax.set_ylabel('beta 2', fontsize=10)
+            ax.set_xlim([min(b[0])-2,max(b[0])+2])
+            ax.set_ylim([min(b[1])-2,max(b[1])+2])
+            ax.grid(True, which='both', linewidth=0.1)
+
+            ## Coor. between beta1 and beta3
+            ax = f.add_subplot(gs[1, 1])
+            ax.plot(b[0], b[2],'*')
+            ax.set_xlabel('beta 1', fontsize=10)
+            ax.set_ylabel('beta 3', fontsize=10)
+            ax.set_xlim([min(b[0])-2,max(b[0])+2])
+            ax.set_ylim([min(b[2])-2,max(b[2])+2])
+            ax.grid(True, which='both', linewidth=0.1)
+
+            ## Coor. between beta2 and beta3
+            ax = f.add_subplot(gs[2, 1])
+            ax.plot(b[1], b[2],'*')
+            ax.set_xlabel('beta 2', fontsize=10)
+            ax.set_ylabel('beta 3', fontsize=10)
+            ax.set_xlim([min(b[1])-2,max(b[1])+2])
+            ax.set_ylim([min(b[2])-2,max(b[2])+2])
+            ax.grid(True, which='both', linewidth=0.1)
+
+            f.tight_layout()
+            # save figure 
+            plt.savefig(self.path_temp_est+os.sep+'betas_hist_corr.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
         # Tmin: calc means and stds for parameters
         # Read files for import samples
@@ -488,8 +580,6 @@ def read_well_temperature_date(file): # function to read xlsx file from contact 
 
     return wells_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red, wl_prof_date
 
-
-
 def read_well_meb(file):
     infile = open(file, 'r')
     next(infile) # jump first line
@@ -548,7 +638,6 @@ def plot_Temp_profile(name, depth_aux, temp_aux):
     
     
     return f
-
 
 # ==============================================================================
 # Functions 
@@ -768,7 +857,7 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     Tmax = [Tmax_l1, Tmax_l2, Tmax_l3]
 
     # Fit Twell with Texp
-    beta_range = np.arange(-10.0, 10.0, 0.5)
+    beta_range = np.arange(-30.0, 30.0, 0.5)
     beta_def = -0.5
 
     ########## Layer 1 ##############

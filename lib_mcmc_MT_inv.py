@@ -561,9 +561,13 @@ class mcmc_inv(object):
     # Functions               
     # =====================
 
+# ==============================================================================
+#  Functions
+# ==============================================================================
+
 def calc_prior_meb_quadrant(station_objects, wells_objects): 
     """
-    Function that calculate MeB prior for each MT station based on MeB mcmc results. 
+    Function that calculate MeB prior for each MT station based on MeB mcmc results on wells. 
     First, for each quadrant around the station, the nearest well with MeB data is found. 
     Second, using the MeB mcmcm results, the prior is calculated as a weigthed average of the nearest wells. 
     Third, the results are assigned as attributes to the MT objects. 
