@@ -430,9 +430,16 @@ if __name__ == "__main__":
 			print(sta_obj.name[:-4])
 			# read samples of betas and others from wells. Load attributes 
 			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True)
+			sta_obj.uncert_isotherms_percentils(isotherms = [120,150,180,210,240], percentiels = np.arange(5.,100.,5.))
 			pp.savefig(f)
+			# calc
 		pp.close()
 		shutil.move('Test_samples.pdf','.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+'Test_samples.pdf')
+
+		# plot 2D profile
+		if prof_WRKNW6:
+			plot_2D_uncert_isotherms(station_objects, wells_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', isotherms = [150,210]) 
+			pass
 
 
 

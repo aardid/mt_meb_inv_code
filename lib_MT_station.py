@@ -258,6 +258,7 @@ class Station(object):
         Zmins and Zmaxs are extracted from layer model in station. 
         
         Attributes generated:
+        self.path_temp_est
         """
 
         if os.path.isdir('.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'):
@@ -275,7 +276,7 @@ class Station(object):
         # path for folder of the station 
         path = self.path_temp_est
         ## number of samples 
-        Ns = 500
+        Ns = 10
         # extract mcmc inv results from file (z1 and z2 dist.) 
         mcmc_inv_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+self.name[:-4]+os.sep+"est_par.dat")
         # values for mean a std for normal distribution representing the prior
@@ -288,6 +289,11 @@ class Station(object):
 
         ## text file of Test samples 
         t = open(path+os.sep+'temp_est_samples.txt', 'w')
+        t.write('# Temperature profile samples: each line is a profile (starting from surface) \n')
+        t.write('# First line correspond to depth values for temp. sample profiles \n')
+        for z in zj:
+            t.write('{}\t'.format(z))
+        t.write('\n')
         if plot_samples:
             f,(ax1) = plt.subplots(1,1)
             f.set_size_inches(6,8)
@@ -296,8 +302,10 @@ class Station(object):
             ax1.set_xlabel('Temperature [deg C]', fontsize=14)
             ax1.set_ylabel('Depth [m]', fontsize=14)
             ax1.grid(True, which='both', linewidth=0.4)
+            ax1.set_xlim([0.,300.])
             ax1.invert_yaxis()
             plt.title(self.name[:-4], fontsize=18,)
+             
 
         z1_z1_not_valid = True
         for i in range(Ns): 
@@ -355,6 +363,7 @@ class Station(object):
             Test = np.concatenate((Test_l1, Test_l2,Test_l3), axis=0)
             for item in Test:
                 t.write('{}\t'.format(item))
+            t.write('\n')
            
             if plot_samples: # plot sample temperature profile
                 ax1.plot(Test[:len(zj)] ,zj,'r-', linewidth =.5,  alpha=0.1)
@@ -374,6 +383,68 @@ class Station(object):
             else: 
                 plt.close("all")
         t.close()
+
+    def uncert_isotherms_percentils(self, isotherms = None, percentiels = None):
+        """
+        Calculate isotherm percetils (depths) from temperature profile samples of the station
+        (assinged in temp_prof_est(self)). Save them in text file.
+
+        Inputs
+        -----------------
+        isotherms: array of isotherms to calculate the depth percentils 
+            isotherms = [120,150]
+        percentiels: array of wanted percentiels
+            percentiels = np.arange(5.,100.,45)
+
+        File to be create
+        -----------------
+        'isotherms_percectils.txt'
+        location: self.path_temp_est (assinged in temp_prof_est(self)
+        Example of file format: 
+            # Isotherms:	5.0%	50.0%		95.0%	
+            120:	409.8	410.2	410.7
+            150:	509.8	510.3	510.9	
+        """
+        if isotherms is None: 
+            isotherms = [120,150,180,210,240]
+        if percentiels is None: 
+            percentiels = np.arange(5.,100.,5.)
+        #####
+        # path of folder samples  
+        path = self.path_temp_est
+        # create text file to save results 
+        iso_perc = open(path+os.sep+'isotherms_percectils.txt', 'w')
+        iso_perc.write('# Isotherms:\t')
+        for per in percentiels: 
+            iso_perc.write('{}%\t'.format(per))
+        iso_perc.write('\n')
+        # read the samples
+        t_samples = np.genfromtxt(path+os.sep+'temp_est_samples.txt')
+        d_samples = t_samples[0,:] # depths for samples 
+        # loop over the isotherms 
+        for iso in isotherms: # isotherms
+            list_iso_z = []	
+            # loop over samples
+            for l in range(len(t_samples[:,0])-1): # -1 because first line are depths
+                # extract isotherm value, add to list
+                sample = t_samples[l+1,:]
+                val, idx = find_nearest(sample, iso)
+                # z value for idx
+                z_iso = d_samples[idx]
+                # add to list of depths with same isotherm
+                list_iso_z.append(z_iso)
+            list_iso_z = np.asarray(list_iso_z)
+            # calc percentils of list
+            per_iso = [np.percentile(list_iso_z,per) for per in percentiels] 
+            # print in file 
+            iso_perc.write('{}\t'.format(iso))
+            for per in per_iso:
+                iso_perc.write('{:3.1f}\t'.format(per))
+            iso_perc.write('\n')
+        iso_perc.close()   
+
+         
+            
 
 # ==============================================================================
 # Read EDI

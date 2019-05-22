@@ -356,3 +356,68 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
     plt.close(f)
     plt.clf()
+
+def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', width_ref = None, isotherms = None): 
+    """
+    Plot profile on uncertain isotherms.
+    Save figure in temperature folder 'temp_prof_samples'
+
+    Inputs
+    ------
+    sta_objects: list of MT station objects
+    wells_objects: list of well objects
+    file_name: name of file to be saved
+
+    """
+    ###
+    if isotherms is None:
+        isotherms = [150,210]
+    ## sort list by longitud (min to max - East to West)
+    sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    # vectors to be fill and plot 
+    x_axis = np.zeros(len(sta_objects))
+    topo = np.zeros(len(sta_objects))
+
+    # # percetil matrix
+    # s = (len(sta_objects),len(sta_objects[0].z1_pars[3])) # n° of stations x n° of percentils to plot
+    # z1_per = np.zeros(s)
+    # z2_per = np.zeros(s)
+
+    # loop over the stations, to create the lines of percentils 
+    i=0
+    for sta in sta_objects:
+        print(sta.name)
+        # coord of station
+        coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+        coord2 = [sta.lon_dec, sta.lat_dec]
+        ## calculate distances from first station to the others, save in array
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+        ## vectors for plotting 
+        topo[i] = sta.elev
+        # load percentiels
+        sta_perc = np.genfromtxt(sta.path_temp_est+os.sep+'isotherms_percectils.txt')
+        # dictionary of percentils for each isotherm 
+        sta_isoth_perc = dict([(str(int(sta_perc[i,0])), sta_perc[i,1:]) for i in range(len(sta_perc[:,0]))])
+
+        print(sta_isoth_perc['120'])
+        # # list of available isotherms
+        # sta_isotherms = sta_perc[:,0] 
+        # # list of percenils for each isotherm
+        # sta_isotherms_perc = [sta_perc[i,1:] for i in range(len(sta_perc[:,0]))] 
+
+        # for j in range(len(sta.z1_pars[3])): # i station, j percentil
+        #     z1_per[i][j] = topo[i] - sta.z1_pars[3][j]
+        #     z2_per[i][j] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][j])
+        pass
+        i+=1
+
+        # extract percentiels 
+        
+        # fill line (list) of percentil
+        
+        #
+
+    # plot percenils with fill_between   
+
+
+    

@@ -230,7 +230,7 @@ class Wells(object):
             self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
 
         ## number of samples 
-        Ns = 100
+        Ns = 2
         ## figure of Test samples
         # f,(ax1,ax2,ax3) = plt.subplots(1,3)
         # f.set_size_inches(12,4)
@@ -249,12 +249,24 @@ class Wells(object):
         max_depth = abs(min(self.red_depth_rs) - max(self.red_depth_rs))
         s_z1 = np.array([])
         s_z2 = np.array([])
+        # constraint samples by mean diference between z1 and z2
+        z1_z2_mean = np.mean(self.z1_pars[0],self.z2_pars[0])
+        #z2_z2_std = np.mean(self.z2_pars[1],self.z2_pars[1])
+
         for i in range(Ns): 
             z1 = np.abs(np.random.normal(self.z1_pars[0], self.z1_pars[1], 1))+1. # 
             z2 = np.abs(np.random.normal(self.z2_pars[0], self.z2_pars[1], 1))+1. #
+            # sample z1_z2_mean to constraint 
+            #z1_z2_const =  np.abs(np.random.normal(z1_z2_mean, z2_z2_std, 1))
+            z1_z2_const = z1_z2_mean
             while z1_z1_not_valid:
                 # condition for samples: sum of z1 (thick1) and z2(thick2) can't be larger than max depth of resample prof. 
                 if z1 + z2 < max_depth:
+                    z1_z1_not_valid = False
+                else: 
+                    z1 = np.abs(np.random.normal(self.z1_pars[0], self.z1_pars[1], 1))+1. # 
+                    z2 = np.abs(np.random.normal(self.z2_pars[0], self.z2_pars[1], 1))+1.
+                if np.mean(z1, z2) < z1_z2_const: 
                     z1_z1_not_valid = False
                 else: 
                     z1 = np.abs(np.random.normal(self.z1_pars[0], self.z1_pars[1], 1))+1. # 

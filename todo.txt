@@ -31,6 +31,8 @@ MCMC MT library
 	
 	- Add variance in objective function. Variance also need to be rotated. 
 
+	- Study convergence criteria for walkers. 
+
 ------------------------------------------------------------------------
 MT library
 	- Write docstring for methods
