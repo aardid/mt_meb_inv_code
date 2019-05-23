@@ -429,8 +429,10 @@ if __name__ == "__main__":
 		for sta_obj in station_objects:
 			print(sta_obj.name[:-4])
 			# read samples of betas and others from wells. Load attributes 
-			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True)
-			sta_obj.uncert_isotherms_percentils(isotherms = [120,150,180,210,240], percentiels = np.arange(5.,100.,5.))
+			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True, Ns = 200)
+			perc = np.arange(5.,100.,5.) # percentiels to calculate: [5% , 10%, ..., 95%]
+			isoth = [50,100,150,200,250]
+			sta_obj.uncert_isotherms_percentils(isotherms = isoth, percentiels = perc)
 			pp.savefig(f)
 			# calc
 		pp.close()
@@ -438,8 +440,12 @@ if __name__ == "__main__":
 
 		# plot 2D profile
 		if prof_WRKNW6:
-			plot_2D_uncert_isotherms(station_objects, wells_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', isotherms = [150,210]) 
-			pass
+			print('(6.1) Printing uncertain isotherms plot')
+			# note: isotherms = [] are strings coherent with value given in uncert_isotherms_percentils()
+			isoth = ['50','100','150','200','250']
+			plot_2D_uncert_isotherms(station_objects, wells_objects, pref_orient = 'EW', file_name = 'isotherm_uncert',\
+				percentiels = perc, isotherms = isoth) 
+
 
 
 

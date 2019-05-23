@@ -357,7 +357,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     plt.close(f)
     plt.clf()
 
-def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', width_ref = None, isotherms = None): 
+def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', file_name = None, \
+     width_ref = None, isotherms = None, percentiels = None): 
     """
     Plot profile on uncertain isotherms.
     Save figure in temperature folder 'temp_prof_samples'
@@ -368,25 +369,29 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     wells_objects: list of well objects
     file_name: name of file to be saved
 
+    Notes
+    -----
+    figure is save by default in path = '.'+os.sep+'temp_prof_samples'
     """
     ###
+    if file_name is None: 
+        file_name = 'isotherm_uncert'
     if isotherms is None:
-        isotherms = [150,210]
+        isotherms = ['150','210']
+    if percentiels is None:
+        percentiels = np.arange(5.,100.,5.) 
     ## sort list by longitud (min to max - East to West)
     sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
     # vectors to be fill and plot 
     x_axis = np.zeros(len(sta_objects))
     topo = np.zeros(len(sta_objects))
 
-    # # percetil matrix
-    # s = (len(sta_objects),len(sta_objects[0].z1_pars[3])) # n° of stations x n° of percentils to plot
-    # z1_per = np.zeros(s)
-    # z2_per = np.zeros(s)
+    # (List Comprehensions) list of n_isotherms x n_stations x n_percentiels
+    iso_plot_matrix = [[[0. for k in range(len(percentiels))] for j in range(len(sta_objects))] for i in range(len(isotherms))]
 
     # loop over the stations, to create the lines of percentils 
     i=0
     for sta in sta_objects:
-        print(sta.name)
         # coord of station
         coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
         coord2 = [sta.lon_dec, sta.lat_dec]
@@ -396,28 +401,75 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
         topo[i] = sta.elev
         # load percentiels
         sta_perc = np.genfromtxt(sta.path_temp_est+os.sep+'isotherms_percectils.txt')
-        # dictionary of percentils for each isotherm 
+        # dictionary of percentils for each isotherm; key: isotherm, values: z of percentiels 
         sta_isoth_perc = dict([(str(int(sta_perc[i,0])), sta_perc[i,1:]) for i in range(len(sta_perc[:,0]))])
 
-        print(sta_isoth_perc['120'])
-        # # list of available isotherms
-        # sta_isotherms = sta_perc[:,0] 
-        # # list of percenils for each isotherm
-        # sta_isotherms_perc = [sta_perc[i,1:] for i in range(len(sta_perc[:,0]))] 
-
-        # for j in range(len(sta.z1_pars[3])): # i station, j percentil
-        #     z1_per[i][j] = topo[i] - sta.z1_pars[3][j]
-        #     z2_per[i][j] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][j])
-        pass
+        # populate iso_plot_matrix to be plot outside for loop 
+        for j in range(len(isotherms)): 
+            iso_plot_matrix[j][i][:] = sta_isoth_perc[isotherms[j]] 
         i+=1
 
-        # extract percentiels 
-        
-        # fill line (list) of percentil
-        
-        #
+    ## plot envelopes of percentils with fill_between
+    # create figure
+    f = plt.figure(figsize=[9.5,7.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+    # plot meadian and topo
+    ax.plot(x_axis, topo,'g-')
+    # plot station names 
+    i=0
+    for sta in sta_objects:
+            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=8, bbox=dict(facecolor='red', alpha=0.1)) 
+            i+=1
+    # colrs for isotherms
+    if len(isotherms) == 5: 
+        iso_col = ['m','b','g','y','r']
+    if len(isotherms) == 2: 
+        iso_col = ['b','r']
+    if len(isotherms) == 3: 
+        iso_col = ['b','y','r']
+    if len(isotherms) == 4: 
+        iso_col = ['m','b','y','r']
+    ## plot envelopes, per each isotherm 
+    for i in range(len(isotherms)):
+        # plor per envelope
+        n = len(percentiels) # define how many envelopes to construct
+        for j in range(int(n/2)+1):
+            env_up = [] 
+            env_low = []
+            for k in range(len(sta_objects)): 
+                # fill upper ad lower lines for envelopes 
+                # note : Zpercentils are depth from surface 0 elevation -> for plotting, they need to refer to the topo (sta.elev)
+                env_up.append(topo[k] - iso_plot_matrix[i][k][j])
+                env_low.append(topo[k] - iso_plot_matrix[i][k][(n-1)-j])
+                if env_up[-1] == env_low[-1]: 
+                    env_up[-1] = -2000.
+                    env_low[-1] = -2000.
+            # plot envelope (j) for isotherm (i) 
+            if j == (int(n/2)):
+                ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i], label = isotherms[i]+'℃')
+            # elif j == 0:# or j == 1: # do not plot the first envelop for each isothem (5% and 95%) and (10% and 90%)
+            #     pass
+            else:
+                ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i])
 
-    # plot percenils with fill_between   
+    # labels for figure
+    ax.set_ylim([-1.2e3, max(topo)+600.])
+    ax.set_xlim([x_axis[0]-.1, x_axis[-1]+.6])
+    ax.legend(loc=5, prop={'size': 10})	
+    ax.grid(color='c', linestyle='-', linewidth=.1)
+    ax.set_xlabel('y [km]', size = textsize)
+    ax.set_ylabel('depth [m]', size = textsize)
+    ax.set_title('Uncertain isotherms', size = textsize)
+    # save figure
+    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+    shutil.move(file_name+'.png', '.'+os.sep+'temp_prof_samples'+os.sep+file_name+'.png')
+    plt.close(f)
+    plt.clf()
+
+
+
+       
 
 
     

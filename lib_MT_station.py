@@ -250,17 +250,28 @@ class Station(object):
             ssq_Z[i] = np.sqrt(a)
         return ssq_Z
 
-    def temp_prof_est(self, plot_samples = None, ret_fig = None):
+    def temp_prof_est(self, plot_samples = None, ret_fig = None, Ns = None):
         """
         Estimate temperature profile in station position, based on 
         1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965).
         Boundary conditions (betas, Tmins and Tmaxs) are calculated in calc_beta_sta_quadrant(). 
         Zmins and Zmaxs are extracted from layer model in station. 
-        
-        Attributes generated:
-        self.path_temp_est
-        """
 
+        Inputs
+        -----
+        Ns: number of samples to generate
+        plot
+        plot_samples: create a figure of temperature profile samples
+            save in path_temp_est
+        ret_fig : return figure
+        
+        Attributes generated
+        --------------------
+        self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+self.name[:-4]
+        """
+        ## number of samples 
+        if Ns is None:
+            Ns = 100
         if os.path.isdir('.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'):
             pass
         else:
@@ -275,8 +286,6 @@ class Station(object):
 	
         # path for folder of the station 
         path = self.path_temp_est
-        ## number of samples 
-        Ns = 10
         # extract mcmc inv results from file (z1 and z2 dist.) 
         mcmc_inv_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+self.name[:-4]+os.sep+"est_par.dat")
         # values for mean a std for normal distribution representing the prior
