@@ -227,6 +227,11 @@ class Station(object):
 		## phase_deg = [phase_de_xx, phase_de_xy, phase_de_yx, phase_de_yy]
         [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er] = calc_app_res_phase(self.Z)
 
+    def plot_app_res_phase(self): 
+        # plot apparent resistivity and phase (4 components of the tensor)
+        f = plot_Z_appres_phase(self.Z, title = self.name)
+        return f
+
     def calc_max_Z(self): 
         max_Z = np.zeros(self.num_T) 
         for i in range(self.num_T):
@@ -928,35 +933,37 @@ def read_edi(file):
 def rotate_Z(Z, alpha):
 
     #alpha = rot[0]
-    name = Z[0]
-    periods = Z[1]
-    zxxr = Z[2]
-    zxxi = Z[3]
-    zxx = Z[4]
-    zxx_var = Z[5]
-    zxyr = Z[6]
-    zxyi = Z[7]
-    zxy = Z[8]
-    zxy_var = Z[9]
-    zyxr = Z[10]
-    zyxi = Z[11]
-    zyx = Z[12]
-    zyx_var = Z[13]
-    zyyr = Z[14]
-    zyyi = Z[15]
-    zyy = Z[16]
-    zyy_var = Z[17]
+    # name = Z[0]
+    # periods = Z[1]
+    # zxxr = Z[2]
+    # zxxi = Z[3]
+    # zxx = Z[4]
+    # zxx_var = Z[5]
+    # zxyr = Z[6]
+    # zxyi = Z[7]
+    # zxy = Z[8]
+    # zxy_var = Z[9]
+    # zyxr = Z[10]
+    # zyxi = Z[11]
+    # zyx = Z[12]
+    # zyx_var = Z[13]
+    # zyyr = Z[14]
+    # zyyi = Z[15]
+    # zyy = Z[16]
+    # zyy_var = Z[17]
 	
     for i in range(len(Z[1])):
         r_matrix = np.matrix([[np.cos(alpha[i]), np.sin(alpha[i])], [-1*np.sin(alpha[i]), np.cos(alpha[i])]]) 
         Z_teta = np.matrix([[Z[4][i], Z[8][i]], [Z[12][i], Z[16][i]]])
         Z_drot = r_matrix*Z_teta*r_matrix.T
-            
+        
+        # zxx, zxy, zyx, zyy
         Z[4][i] = Z_drot[0,0]
         Z[8][i] = Z_drot[0,1]
         Z[12][i] = Z_drot[1,0]
         Z[16][i] = Z_drot[1,1]
-            
+
+        # zxx real and imag, zxy real and imag, zyx real and imag, zyy real and imag
         Z[2][i] = np.real(Z[4][i])
         Z[3][i] = np.imag(Z[4][i])
         Z[6][i] = np.real(Z[8][i])
@@ -965,6 +972,17 @@ def rotate_Z(Z, alpha):
         Z[11][i] = np.imag(Z[12][i])
         Z[14][i] = np.real(Z[16][i])
         Z[15][i] = np.imag(Z[16][i])
+
+        # variance 
+        # var(Z'ij)=a**2 var(Z11)+ b**2 var(Z12) .+c**2 var(Z21) + d**2 va(Z22)
+        np.matrix([[1., 1.], [1., 1.]])
+        r_elem = r_matrix*np.matrix([[1., 1.], [1., 1.]])*r_matrix.T
+        var = r_elem[0,0]**2 *Z[5][i] + r_elem[0,1]**2 *Z[9][i] + r_elem[1,0]**2 *Z[13][i] + r_elem[1,1]**2 *Z[17][i] 
+        Z[5][i] = var
+        Z[9][i] = var
+        Z[13][i] = var
+        Z[17][i] = var
+
     return [Z]
 
 def calc_app_res_phase(Z): 
@@ -991,28 +1009,28 @@ def calc_app_res_phase(Z):
     phase_de_xx = (360/(2*np.pi)) * phase_ra_xx
     ## std. Error based on Egbert, 98
     app_res_error_xx =  np.sqrt(2.*p*app_res_xx*(zxx_var**2.)/5.)
-    phase_error_xx = (360/(2*np.pi*zxx)) * np.sqrt(zxx_var**2. /2.)
+    phase_error_xx = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
     ## Zxy
     app_res_xy = p/5 * np.square(abs(zxy))
     phase_ra_xy = np.arctan(zxyi/zxyr)      	# radians
     phase_de_xy = (360/(2*np.pi)) * phase_ra_xy # degrees
         ## std. Error based on Egbert, 98
     app_res_error_xy =  np.sqrt(2.*p*app_res_xy*(zxy_var**2.)/5.)
-    phase_error_xy = (360/(2*np.pi*zxy)) * np.sqrt(zxy_var**2. /2.)
+    phase_error_xy = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
     ## Zyx
     app_res_yx = p/5 * np.square(abs(zyx))
     phase_ra_yx = np.arctan(zyxi/zyxr)
     phase_de_yx = (360/(2*np.pi)) * phase_ra_yx
         ## std. Error based on Egbert, 98
     app_res_error_yx =  np.sqrt(2.*p*app_res_yx*(zyx_var**2.)/5.)
-    phase_error_yx = (360/(2*np.pi*zyx)) * np.sqrt(zyx_var**2. /2.)
+    phase_error_yx = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
     ## Zyy
     app_res_yy = p/5 * np.square(abs(zyy))
     phase_ra_yy = np.arctan(zyyi/zyyr)
     phase_de_yy = (360/(2*np.pi)) * phase_ra_yy	
         ## std. Error based on Egbert, 98
     app_res_error_yy =  np.sqrt(2.*p*app_res_yy*(zyy_var**2.)/5.)
-    phase_error_yy = (360/(2*np.pi*zyy)) * np.sqrt(zyy_var**2. /2.)
+    phase_error_yy = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
 
     rho_app = [app_res_xx, app_res_xy, app_res_yx, app_res_yy]
     phase_deg = [phase_de_xx, phase_de_xy, phase_de_yx, phase_de_yy]
@@ -1023,8 +1041,10 @@ def calc_app_res_phase(Z):
 # ==============================================================================
 # Plots
 # ==============================================================================
-def plot_Z_appres_phase(Z):
+def plot_Z_appres_phase(Z, title = None):
     
+    if title is None:
+        title = name[len(name)-10:len(name)-4]
     name = Z[0]
     periods = Z[1]
     zxxr = Z[2]
@@ -1050,32 +1070,29 @@ def plot_Z_appres_phase(Z):
     
     zxx_app_res = periods/5 * np.square(abs(zxx))
     zxx_phase = (360/(2*np.pi)) * np.arctan(zxxi/ zxxr)
-    #zxx_app_res_error =  periods/5 * np.sqrt(zxx_var) #np.sqrt(cte*periods*np.abs(zxx)*zxx_var)
-    #zxx_phase_error = (360/ 2*np.pi) * np.arcsin(np.sqrt(zxx_var)/np.abs(zxx))
-    #zxx_phase_error = np.abs((180/np.pi)*(np.sqrt(zxx_var/2)/np.abs(zxx)))
     ## std. Error based on Egbert, 98
     zxx_app_res_error =  np.sqrt(2.*periods*zxx_app_res*(zxx_var**2.)/5.)
-    zxx_phase_error = (360/(2*np.pi*zxx)) * np.sqrt(zxx_var**2. /2.)
+    zxx_phase_error = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
 
     
     zxy_app_res = periods/5 * np.square(abs(zxy))
     zxy_phase = (360/(2*np.pi)) * np.arctan(zxyi/ zxyr)
     ## std. Error based on Egbert, 98
     zxy_app_res_error =  np.sqrt(2.*periods*zxy_app_res*(zxy_var**2.)/5.)
-    zxy_phase_error = (360/(2*np.pi*zxy)) * np.sqrt(zxy_var**2. /2.)
+    zxy_phase_error = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
 
     
     zyx_app_res = periods/5 * np.square(abs(zyx))
     zyx_phase = (360/(2*np.pi)) * np.arctan(zyxi/ zyxr)
     ## std. Error based on Egbert, 98
     zyx_app_res_error =  np.sqrt(2.*periods*zyx_app_res*(zyx_var**2.)/5.)
-    zyx_phase_error = (360/(2*np.pi*zyx)) * np.sqrt(zyx_var**2. /2.)
+    zyx_phase_error = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
     
     zyy_app_res = periods/5 * np.square(abs(zyy))
     zyy_phase = (360/(2*np.pi)) * np.arctan(zyyi/ zyyr)
     ## std. Error based on Egbert, 98
     zyy_app_res_error =  np.sqrt(2.*periods*zyy_app_res*(zyy_var**2.)/5.)
-    zyy_phase_error = (360/(2*np.pi*zyy)) * np.sqrt(zyy_var**2. /2.)
+    zyy_phase_error = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
   
     #################################################
     # Plot figure with subplots of different sizes
@@ -1084,7 +1101,7 @@ def plot_Z_appres_phase(Z):
     #plt.title(file)
     #f = plt.figure(figsize=(12, 18)) 
     f.set_size_inches(12,18)
-    f.suptitle(name[:len(name)-4], fontsize=22)
+    f.suptitle(title, fontsize=22)
     #gs = gridspec.GridSpec(2, 1, width_ratios=[3, 1]) 
     
     #ax1 = plt.subplot(gs[0])

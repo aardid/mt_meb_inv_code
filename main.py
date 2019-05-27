@@ -46,8 +46,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
@@ -59,10 +59,10 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	prof_2D_MT = False
+	mcmc_MT_inv = True
+	prof_2D_MT = True
 	wells_temp_fit = False
-	sta_temp_est = True 
+	sta_temp_est = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 			####### Temperature in wells data
 			path_wells_loc = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/wells_loc.txt"
 			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt"
-			path_wells_temp_date = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_date_fxTH12-2016rm_fxWK2019-81m-rm.txt"
+			path_wells_temp_date = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_date.txt"
 			####### MeB data in wells 
 			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
 
@@ -103,7 +103,9 @@ if __name__ == "__main__":
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
-			sta2work = ['WT091a','WT102a','WT111a','WT222a']
+			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
+			#sta2work = ['WT091a','WT102a','WT111a','WT222a']
+			#sta2work = ['WT091a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 
@@ -117,10 +119,23 @@ if __name__ == "__main__":
 				sta_obj = Station(file, count, path_files)
 				sta_obj.read_edi_file() 
 				sta_obj.rotate_Z()
-				sta_obj.app_res_phase()
+				sta_obj.app_res_phase() # [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er]
+
 				## Create station objects and fill them
 				station_objects.append(sta_obj)
 				count  += 1
+
+		# plot temp profile for wells
+		# pp = PdfPages('MT_sound_curves.pdf')
+		# for sta_obj in station_objects: 
+		# 	f = sta_obj.plot_app_res_phase()
+		# 	pp.savefig(f)
+		# 	plt.close(f)
+		# pp.close()
+		# if full_dataset:
+		# 	shutil.move('MT_sound_curves.pdf','.'+os.sep+'MT_info'+os.sep+'MT_sound_curves_full.pdf')
+		# if prof_WRKNW6:
+		# 	shutil.move('MT_sound_curves.pdf','.'+os.sep+'MT_info'+os.sep+'MT_sound_curves_prof_WRKNW6.pdf')
 
 		#########################################################################################
 		#########################################################################################
@@ -143,6 +158,7 @@ if __name__ == "__main__":
 			#wl2work = ['TH01']
 		if prof_WRKNW6:
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
+			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 		#########################################################################################
@@ -164,6 +180,7 @@ if __name__ == "__main__":
 				## load data attributes
 				## filter the data to the most recent one (well has overlap data cooresponding to reintepretations)
 				filter_by_date = True
+				filter_by_temp = False
 				if filter_by_date:
 					#year = max(wl_prof_date[count2]) # last year of interpretation 
 					wl_prof_date[count2].sort() # last year of interpretation
@@ -186,10 +203,15 @@ if __name__ == "__main__":
 						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x is not '2016']
 					if wl == 'WK219':
 						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i != 5]
+					# if wl == 'WK684':
+					# 	idx_year = [i for i in idx_year if i != 3]
 
 					wl_obj.depth = [wl_prof_depth[count2][i] for i in idx_year]
 					wl_obj.red_depth = [wl_prof_depth_red[count2][i] for i in idx_year]
 					wl_obj.temp_prof_true = [wl_prof_temp[count2][i] for i in idx_year]
+				
+				elif filter_by_temp:
+					pass
 				else:	
 					wl_obj.depth = wl_prof_depth[count2]	
 					wl_obj.red_depth = wl_prof_depth_red[count2]
@@ -204,16 +226,17 @@ if __name__ == "__main__":
 				wl_obj.red_depth, rep_idx= np.unique(wl_obj.red_depth, return_index = True)
 				temp_aux = [wl_obj.temp_prof_true[i] for i in rep_idx]
 				wl_obj.temp_prof_true = temp_aux 
-				## add a initial point to temp (20°C) profile at 0 depth (elevation of the well)
+				## add a initial point to temp (15°C) profile at 0 depth (elevation of the well)
 				if wl_obj.red_depth[-1] != wl_obj.elev:
 					wl_obj.red_depth = np.append(wl_obj.red_depth, wl_obj.elev)
-					if wl_obj.temp_prof_true[-1] < 20.:
+					if wl_obj.temp_prof_true[-1] < 10.:
 						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, wl_obj.temp_prof_true[-1] - 5.)
 					else:
-						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, 20.0)
+						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, 10.0)
 				## sort depth and temp based on depth (from max to min)
 				wl_obj.red_depth, wl_obj.temp_prof_true = zip(*sorted(zip(wl_obj.red_depth, wl_obj.temp_prof_true), reverse = True))
 				## resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
+				
 				## method of interpolation : Cubic spline interpolation 
 				## inverse order: wl_obj.red_depth start at the higuer value (elev)
 				xi = np.asarray(wl_obj.red_depth)
@@ -224,19 +247,34 @@ if __name__ == "__main__":
 				# add attributes
 				wl_obj.red_depth_rs = xj
 				wl_obj.temp_prof_rs = yj
+				
+				## method of fit: cubic polinomial
+				## inverse order: wl_obj.red_depth start at the higuer value (elev)
+				xi = np.asarray(wl_obj.red_depth)
+				yi = np.asarray(wl_obj.temp_prof_true)
+				N_rs = 500 # number of resample points data
+				xj = np.linspace(xi[0],xi[-1],N_rs)	
+				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
+				# add attributes
+				wl_obj.red_depth_rs = xj
+				wl_obj.temp_prof_rs = yj
+
 				## add well object to directory of well objects
 				wells_objects.append(wl_obj)
 				count  += 1
 			count2 +=1
 
-		## plot temp profile for wells
-		# pp = PdfPages('wells_temp_prof.pdf')
-		# for wl in wells_objects: 
-		# 	f = wl.plot_temp_profile(rs = True, raw = True)
-		# 	pp.savefig(f)
-		# 	plt.close(f)
-		# pp.close()
-		# shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof.pdf')
+		# plot temp profile for wells
+		pp = PdfPages('wells_temp_prof.pdf')
+		for wl in wells_objects: 
+			f = wl.plot_temp_profile(rs = True, raw = True)
+			pp.savefig(f)
+			plt.close(f)
+		pp.close()
+		if full_dataset:
+			shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_full.pdf')
+		if prof_WRKNW6:
+			shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_WRKNW6.pdf')
 
 		# # Search for location of the well and add to attributes
 		# for wl in wells_objects:
@@ -348,13 +386,12 @@ if __name__ == "__main__":
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 
 			## range for the parameters
-			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[1.*1e0,1.*1e3],[1.*1e-3,.5*1e2],[1.*1e1,1.*1e3]]
+			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e2],[.5*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
-
-			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0],prior_input=par_range, \
-				walk_jump = 10000, prior_meb = prior_meb)
+			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
+				walk_jump = 3000, prior_meb = prior_meb)
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))

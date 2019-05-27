@@ -251,24 +251,39 @@ class mcmc_inv(object):
         def prob_likelihood(Z_est, rho_ap_est, phi_est):
 		    # log likelihood for the model, given the data
             v_vec = np.ones(len(self.T_obs))
+            variance = False
             #v_vec[21:] = np.inf 
-            v = 0.15            
             
-            # fitting sounding curves for TE(xy)
+            # TE(xy): fitting sounding curves 
+            v = 0.15
             TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm) /v
+            if variance:
+                TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(1/self.rho_app_obs_er[1])**2) #/v
             #v = self.phase_obs_er[1]**2             
+            v = 100          
             TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
                         -phi_est)/v_vec)**self.norm )/v 
+            if variance:
+                TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
+                        -phi_est)/v_vec)**self.norm / 2*self.phase_obs_er[1]**2) #/v 
             
-            # fitting sounding curves for TM(yx)
+            # TM(yx): fitting sounding curves 
             #v = self.rho_app_obs_er[2]**2
             v = 0.15
             TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm )/v 
+                        -np.log10(rho_ap_est))/v_vec)**self.norm )/v
+            if variance:
+                TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(self.rho_app_obs_er[2])**2) 
             #v = self.phase_obs_er[2]**2
+            v = 100
             TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
                         -phi_est)/v_vec)**self.norm )/v 
+            if variance:
+                TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
+                        -phi_est)/v_vec)**self.norm  / 2*self.phase_obs_er[2]**2)
 
             # fitting maximum value of Z
             max_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
@@ -281,10 +296,6 @@ class mcmc_inv(object):
             # fitting ssq of Z
             ssq_Z = self.inv_dat[6]*-np.sum(((np.log10(obs[:,7]) \
                         -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
-
-            #print(obs[:,7])
-            #print(np.absolute(Z_est)*np.sqrt(2)/2)
-            #print('\n')
 
             return TE_apres + TE_phase +  TM_apres + TM_phase + max_Z + ssq_Z + det_Z 
         
@@ -462,7 +473,9 @@ class mcmc_inv(object):
             ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0, label = 'sample')
             #plot observed
             ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TE (xy)')
+            ax.errorbar(self.T_obs,self.rho_app_obs[1],self.rho_app_obs_er[1], fmt='r*')
             ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TM (yx)')
+            ax.errorbar(self.T_obs,self.rho_app_obs[2],self.rho_app_obs_er[2], fmt='g*')
             ax.legend(loc='lower right', shadow=False, fontsize='small')
             ### ax: phase
             ax1.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
@@ -480,7 +493,9 @@ class mcmc_inv(object):
             ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0, label = 'sample')
             #plot observed
             ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TE (xy)')
+            ax1.errorbar(self.T_obs,self.phase_obs[1],self.phase_obs_er[1], fmt='r*')
             ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TM (yx)')
+            ax1.errorbar(self.T_obs,self.phase_obs[2],self.phase_obs_er[2], fmt='g*')
             ax1.legend(loc='lower right', shadow=False, fontsize='small')
             ax1.set_xscale('log')
             ### layout figure
