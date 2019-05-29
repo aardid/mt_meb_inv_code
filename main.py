@@ -46,21 +46,21 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = False
-	prof_WRKNW6 = True
+	full_dataset = True
+	prof_WRKNW6 = False
 	prof_NEMT2 = False
 
-	## Folder to be used (1 edi, sample of edis, full array)
+	## Sections of the code tu run
 	set_up = True
-	mcmc_meb_inv = False
+	mcmc_meb_inv = True
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
+	mcmc_MT_inv = False
+	prof_2D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
 
@@ -264,17 +264,17 @@ if __name__ == "__main__":
 				count  += 1
 			count2 +=1
 
-		# plot temp profile for wells
-		pp = PdfPages('wells_temp_prof.pdf')
-		for wl in wells_objects: 
-			f = wl.plot_temp_profile(rs = True, raw = True)
-			pp.savefig(f)
-			plt.close(f)
-		pp.close()
-		if full_dataset:
-			shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_full.pdf')
-		if prof_WRKNW6:
-			shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_WRKNW6.pdf')
+		# # plot temp profile for wells
+		# pp = PdfPages('wells_temp_prof.pdf')
+		# for wl in wells_objects: 
+		# 	f = wl.plot_temp_profile(rs = True, raw = True)
+		# 	pp.savefig(f)
+		# 	plt.close(f)
+		# pp.close()
+		# if full_dataset:
+		# 	shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_full.pdf')
+		# if prof_WRKNW6:
+		# 	shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_WRKNW6.pdf')
 
 		# # Search for location of the well and add to attributes
 		# for wl in wells_objects:
@@ -347,7 +347,7 @@ if __name__ == "__main__":
 		with open('corr_z1_z1_temp_glob.txt', 'w') as f:
 			for f1, f2 in zip(temp_full_list_z1, temp_full_list_z2):
 				print(f1, f2, file=f)	
-		shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_z1_z1_temp_glob.txt')
+		shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'corr_z1_z1_temp_glob.txt')
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
@@ -357,12 +357,25 @@ if __name__ == "__main__":
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
 		# print histogram of temperatures of z1 and z2 for the whole net
 		#g = plot_fit_temp_full(temp_full_list_z1,temp_full_list_z2) 
-		g = hist_z1_z1_temp_full()
-		g.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'01_temp_z1_z2_full_net.png')   # save the figure to file
-		plt.close(g)    # close the figure
+		#g = hist_z1_z2_temp_full()
+		#g.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'01_temp_z1_z2_full_net.png')   # save the figure to file
+		#plt.close(g)    # close the figure
 	
-	# (1.1) Correlation temperature in z1 and z2 positions calc from meb inversion 
-	#  
+	# (1.1) Correlation temperature in z1 and z2 positions calc from meb inversion and temperature
+	if True: 
+		# open quality ref file (corr_z1_z1_temp_glob.txt)
+		z1_vec, temp_z1_vec, z2_vec, temp_z2_vec = np.genfromtxt(\
+			'.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'corr_z1_z1_temp_glob.txt').T
+		# loop over wells
+		for wl in wells_objects:
+			if wl.meb: 
+				# open corr_z1_z2_temp.txt
+				path = '.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'corr_z1_z2_temp.txt'
+				z1_vec, temp_z1_vec, z2_vec, temp_z2_vec = np.genfromtxt(path).T
+
+
+
+
 
 	# (2) Construct priors for MT stations
 	if prior_MT_meb_read:

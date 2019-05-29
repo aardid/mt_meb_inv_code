@@ -516,9 +516,10 @@ class mcmc_meb(object):
             plt.savefig(self.path_results+os.sep+'fit_temp_hist.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             # save lists: ls_T_z1, ls_T_z1
-            with open(self.path_results+os.sep+'corr_z1_z1_temp.txt', 'w') as g:
-                for f1, f2 in zip(ls_T_z1, ls_T_z2):
-                    print(f1, f2, file=g)	
+            with open(self.path_results+os.sep+'corr_z1_z2_temp.txt', 'w') as g:
+                print('#  z1  temp_z1  z2  temp_z2 ', file=g)
+                for z1_sam, t1, z2_sam, t2 in zip(z1,ls_T_z1,z2,ls_T_z2):
+                    print(z1_sam, t1, z2_sam, t2, file=g)	
     
         #####################################################################3        
         if exp_fig == None:
@@ -526,7 +527,6 @@ class mcmc_meb(object):
             plt.clf()
         if exp_fig:  # True: return figure
            return f
-
 
     def model_pars_est(self, path = None, plot_dist = False, plot_hist = True):
 
@@ -659,9 +659,9 @@ class mcmc_meb(object):
 # Functions
 ################################################################################################
 
-def hist_z1_z1_temp_full(): 
+def hist_z1_z2_temp_full(): 
 
-    ls_T_z1_full, ls_T_z2_full = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_z1_z1_temp_glob.txt').T
+    ls_T_z1_full, ls_T_z2_full = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'corr_z1_z1_temp_glob.txt').T
     ls_T_z1_full = ls_T_z1_full[np.logical_not(np.isnan(ls_T_z1_full))]
     ls_T_z2_full = ls_T_z2_full[np.logical_not(np.isnan(ls_T_z2_full))]
     # create a figure  of temp of z1 and z2 for the full net
