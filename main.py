@@ -51,16 +51,17 @@ if __name__ == "__main__":
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = False
 	prof_WRKNW6 = False
+	prof_WRKNW5 = True
 	prof_NEMT2 = False
 
 	## Sections of the code tu run
 	set_up = True
-	mcmc_meb_inv = True
+	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	prof_2D_MT = False
+	mcmc_MT_inv = True
+	prof_2D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
 
@@ -106,6 +107,8 @@ if __name__ == "__main__":
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
 			#sta2work = ['WT091a','WT102a','WT111a','WT222a']
 			#sta2work = ['WT091a']
+		if prof_WRKNW5:
+			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 
@@ -159,6 +162,8 @@ if __name__ == "__main__":
 		if prof_WRKNW6:
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
+		if prof_WRKNW5:
+			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK404','WK401'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 		#########################################################################################
@@ -360,21 +365,6 @@ if __name__ == "__main__":
 		#g = hist_z1_z2_temp_full()
 		#g.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'01_temp_z1_z2_full_net.png')   # save the figure to file
 		#plt.close(g)    # close the figure
-	
-	# (1.1) Correlation temperature in z1 and z2 positions calc from meb inversion and temperature
-	if True: 
-		# open quality ref file (corr_z1_z1_temp_glob.txt)
-		z1_vec, temp_z1_vec, z2_vec, temp_z2_vec = np.genfromtxt(\
-			'.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'corr_z1_z1_temp_glob.txt').T
-		# loop over wells
-		for wl in wells_objects:
-			if wl.meb: 
-				# open corr_z1_z2_temp.txt
-				path = '.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'corr_z1_z2_temp.txt'
-				z1_vec, temp_z1_vec, z2_vec, temp_z2_vec = np.genfromtxt(path).T
-
-
-
 
 
 	# (2) Construct priors for MT stations
@@ -399,7 +389,7 @@ if __name__ == "__main__":
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 
 			## range for the parameters
-			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e2],[.5*1e1,1.*1e3]]
+			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,0,1,0,0,0,0]

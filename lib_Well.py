@@ -230,7 +230,7 @@ class Wells(object):
             self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
 
         ## number of samples 
-        Ns = 2
+        Ns = 20
         ## figure of Test samples
         # f,(ax1,ax2,ax3) = plt.subplots(1,3)
         # f.set_size_inches(12,4)
@@ -250,7 +250,7 @@ class Wells(object):
         s_z1 = np.array([])
         s_z2 = np.array([])
         # constraint samples by mean diference between z1 and z2
-        z1_z2_mean = np.mean(self.z1_pars[0],self.z2_pars[0])
+        z1_z2_mean = np.mean([self.z1_pars[0],self.z2_pars[0]])
         #z2_z2_std = np.mean(self.z2_pars[1],self.z2_pars[1])
 
         for i in range(Ns): 
@@ -266,7 +266,7 @@ class Wells(object):
                 else: 
                     z1 = np.abs(np.random.normal(self.z1_pars[0], self.z1_pars[1], 1))+1. # 
                     z2 = np.abs(np.random.normal(self.z2_pars[0], self.z2_pars[1], 1))+1.
-                if np.mean(z1, z2) < z1_z2_const: 
+                if np.mean([z1, z2]) < z1_z2_const: 
                     z1_z1_not_valid = False
                 else: 
                     z1 = np.abs(np.random.normal(self.z1_pars[0], self.z1_pars[1], 1))+1. # 
@@ -919,9 +919,14 @@ def T_beta_est(Tw, z, Zmin, Zmax):
         count+=1
     # Calculate beta that best fot the true temp profile 
     pars = [zv[0],zv[-1],Tv[0],Tv[-1],beta_def]
-    popt, pcov = curve_fit(Texp2, zv, Tv, p0= pars, bounds=([zv[0]-1.,zv[-1]-1.,Tv[0]-1,Tv[-1]-1., beta_range[0]], [zv[0]+1.,zv[-1]+1.,Tv[0]+1.,Tv[-1]+1,beta_range[-1]]))
+    if zv[0] == zv[-1]:
+        zv[-1] = zv[-1]+10.
+    popt, pcov = curve_fit(Texp2, zv, Tv, p0= pars,\
+        bounds=([zv[0]-1.,zv[-1]-1.,Tv[0]-1,Tv[-1]-1., beta_range[0]], \
+                [zv[0]+1.,zv[-1]+1.,Tv[0]+1.,Tv[-1]+1,beta_range[-1]]))
     beta_opt_l3 = popt[-1]
     Test_l3 = Texp2(zv,zv[0],zv[-1],Tv[0],Tv[-1],beta_opt_l3)
+
 
     # concatenate the estimated curves
     Test = np.concatenate((list(reversed(Test_l1)), list(reversed(Test_l2)),list(reversed(Test_l3))),axis=0)

@@ -321,9 +321,12 @@ class mcmc_inv(object):
                         dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
                         weight = np.exp(-dist)
                         # prior over z1 (thickness layer 1)
-                        prob += weight**20 *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm /self.prior_meb_pars[0][1]**2 
+                        prob += weight**2. *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm \
+                            /self.prior_meb_pars[0][1]**2 
                         # prior over z2 (thickness layer 2)
-                        prob += weight**20 *-((self.prior_meb_pars[0][0] - self.prior_meb_pars[1][0]) - pars[1])**self.norm /self.prior_meb_pars[1][1]**2
+                        #prob += weight**0. *-((self.prior_meb_pars[1][0] - self.prior_meb_pars[0][0]) - pars[1])**self.norm \
+                        prob += weight**2. *-((self.prior_meb_pars[1][0]) - pars[1])**self.norm \
+                            /self.prior_meb_pars[1][1]**2
 
             else: # without priors
                 # estimate parameters
@@ -422,7 +425,7 @@ class mcmc_inv(object):
         params = chain[:,2:-1]
 
 		# define parameter sets for forward runs
-        Nruns = 300
+        Nruns = 500
         pars = []
         pars_order = []
         # generate Nruns random integers in parameter set range (as a way of sampling this dist)

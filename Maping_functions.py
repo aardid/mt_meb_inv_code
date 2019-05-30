@@ -16,6 +16,7 @@ from math import sin, cos, sqrt, atan2, radians
 import glob
 import os
 import shutil
+from lib_sample_data import*
 textsize = 15.
 
 # ==============================================================================
@@ -358,7 +359,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     plt.clf()
 
 def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', file_name = None, \
-     width_ref = None, isotherms = None, percentiels = None): 
+     width_ref = None, isotherms = None, percentiels = None, sc_intp = False): 
     """
     Plot profile on uncertain isotherms.
     Save figure in temperature folder 'temp_prof_samples'
@@ -445,16 +446,30 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
                     env_up[-1] = -2000.
                     env_low[-1] = -2000.
             # plot envelope (j) for isotherm (i) 
-            if j == (int(n/2)):
-                ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i], label = isotherms[i]+'℃')
-            # elif j == 0:# or j == 1: # do not plot the first envelop for each isothem (5% and 95%) and (10% and 90%)
-            #     pass
+            if sc_intp: 
+                pass
+                xi = np.asarray(x_axis)
+                yi_up = np.asarray(env_up)
+                yi_low = np.asarray(env_low)
+                N_rs = 50 # number of resample points data
+                xj = np.linspace(xi[0],xi[-1],N_rs)	
+                yj_up = cubic_spline_interpolation(xi,yi_up,xj)
+                yj_low = cubic_spline_interpolation(xi,yi_low,xj)
+                if j == (int(n/2)):
+                    ax.fill_between(xj, yj_up, yj_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i], label = isotherms[i]+'℃')
+                else:
+                    ax.fill_between(xj, yj_up, yj_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i])
             else:
-                ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i])
+                if j == (int(n/2)):
+                    ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i], label = isotherms[i]+'℃')
+                # elif j == 0:# or j == 1: # do not plot the first envelop for each isothem (5% and 95%) and (10% and 90%)
+                #     pass
+                else:
+                    ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i])
 
     # labels for figure
     ax.set_ylim([-1.2e3, max(topo)+600.])
-    ax.set_xlim([x_axis[0]-.1, x_axis[-1]+.6])
+    ax.set_xlim([x_axis[0]-.1, x_axis[-1]+2.0])
     ax.legend(loc=5, prop={'size': 10})	
     ax.grid(color='c', linestyle='-', linewidth=.1)
     ax.set_xlabel('y [km]', size = textsize)
@@ -466,6 +481,9 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     shutil.move(file_name+'.png', '.'+os.sep+'temp_prof_samples'+os.sep+file_name+'.png')
     plt.close(f)
     plt.clf()
+
+
+
 
 
 

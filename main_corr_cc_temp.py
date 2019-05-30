@@ -49,16 +49,19 @@ if __name__ == "__main__":
     WK_Tmihi = False
     WK_NE_in = False
     WK_NE_out = False
-    WK_S = True
+    WK_S = False
     WK_NW_in = False
     WK_NW_out = False
+    TH_in = False
+    TH_out = False
+    TH = True
 
     ## run with quality filter per well
-    q_filt = False
+    q_filt = True
 
     ## name output png file
     #name_file = 'gen_corr_cc_temp.png'
-    name_file = 'WK_S_corr_cc_temp.png'
+    name_file = 'TH_corr_cc_temp_q.png'
 
     ## Sections of the code tu run
     set_up = True
@@ -117,6 +120,12 @@ if __name__ == "__main__":
             wl2work = ['WK270','WK267A','WK243','WK261','WK262','WK260','WK263']
         if WK_NW_out :
             wl2work = ['WK685','WK686','WK684','WK681','WK682','WK683']
+        if TH_in :
+            wl2work = ['TH19','TH13']
+        if TH_out :
+            wl2work = ['TH18','TH12']
+        if TH :
+            wl2work = ['TH18','TH12','TH19','TH13']
 
         #########################################################################################
         # ## Loop over the wells to create objects and assing data attributes 
