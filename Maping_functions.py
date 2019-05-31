@@ -241,27 +241,27 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         ## plot 5% and 95% percetils as dotted lines 
         if width_ref == '90%': 
             # top boundary
-            ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5)
-            ax.text(x_axis[0],z1_per[0,0]+10,'5%',size = 8., color = 'r')
-            ax.plot(x_axis, z1_per[:,-1],'r--',linewidth=.5)
-            ax.text(x_axis[0],z1_per[0,-1]+10,'95%',size = 8.,color = 'r')
+            ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5, alpha=.5)
+            ax.text(x_axis[0]-.4,z1_per[0,0]+25,'5%',size = 8., color = 'r')
+            ax.plot(x_axis, z1_per[:,-1],'r--',linewidth=.5, alpha=.5)
+            ax.text(x_axis[0]-.4,z1_per[0,-1]-25,'95%',size = 8.,color = 'r')
             # bottom boundary
-            ax.plot(x_axis, z2_per[:,0],'b--',linewidth=.5)
-            ax.text(x_axis[-1],z2_per[-1,0],'5%',size = 8., color = 'b')
-            ax.plot(x_axis, z2_per[:,-1],'b--',linewidth=.5)
-            ax.text(x_axis[-1],z2_per[-1,-1],'95%',size = 8.,color = 'b')
+            ax.plot(x_axis, z2_per[:,0],'b--',linewidth=.5, alpha=.5)
+            ax.text(x_axis[-1]+.1,z2_per[-1,0]+0,'5%',size = 8., color = 'b')
+            ax.plot(x_axis, z2_per[:,-1],'b--',linewidth=.5, alpha=.5)
+            ax.text(x_axis[-1]+.1,z2_per[-1,-1]-50,'95%',size = 8.,color = 'b')
 
         ## plot 20% and 80% percetils as dotted lines
         if width_ref == '60%': 
             # top boundary
-            ax.plot(x_axis, z1_per[:,3],'r--',linewidth=.5)
-            ax.text(x_axis[0],z1_per[0,3]+10,'20%',size = 8., color = 'r')
-            ax.plot(x_axis, z1_per[:,-4],'r--',linewidth=.5)
-            ax.text(x_axis[0],z1_per[0,-4]+10,'80%',size = 8.,color = 'r')
+            ax.plot(x_axis, z1_per[:,3],'r--',linewidth=.5, alpha=.2)
+            ax.text(x_axis[0]-.8,z1_per[0,3]+25,'20%',size = 8., color = 'r')
+            ax.plot(x_axis, z1_per[:,-4],'r--',linewidth=.5, alpha=.2)
+            ax.text(x_axis[0]-.8,z1_per[0,-4]-25,'80%',size = 8.,color = 'r')
             # bottom boundary
-            ax.plot(x_axis, z2_per[:,3],'b--',linewidth=.5)
+            ax.plot(x_axis, z2_per[:,3],'b--',linewidth=.5, alpha=.2)
             ax.text(x_axis[-1],z2_per[-1,3],'20%',size = 8., color = 'b')
-            ax.plot(x_axis, z2_per[:,-4],'b--',linewidth=.5)
+            ax.plot(x_axis, z2_per[:,-4],'b--',linewidth=.5, alpha=.2)
             ax.text(x_axis[-1],z2_per[-1,-4],'80%',size = 8.,color = 'b')
 
         ## plot 45% and 65% percetils as dotted lines
@@ -322,7 +322,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         i = 0
         for wl in wls_obj: 
             # plot well names 
-            ax.text(x_axis_wl[i], topo_wl[i]-1.1e3, wl.name, rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
+            ax.text(x_axis_wl[i], topo_wl[i]-0.9e3, wl.name, rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
@@ -340,7 +340,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
 
     ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
     if prior_meb:
-        ax.set_ylim([-1.2e3, max(topo)+600.])
+        ax.set_ylim([-1.0e3, max(topo)+600.])
     else:
         ax.set_ylim([-1.0e3, max(topo)+600.])
     ax.set_xlabel('y [km]', size = textsize)
@@ -469,7 +469,7 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
 
     # labels for figure
     ax.set_ylim([-1.2e3, max(topo)+600.])
-    ax.set_xlim([x_axis[0]-.1, x_axis[-1]+2.0])
+    ax.set_xlim([x_axis[0]-1, x_axis[-1]+2.0])
     ax.legend(loc=5, prop={'size': 10})	
     ax.grid(color='c', linestyle='-', linewidth=.1)
     ax.set_xlabel('y [km]', size = textsize)

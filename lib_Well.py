@@ -230,7 +230,7 @@ class Wells(object):
             self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'wells'+os.sep+self.name
 
         ## number of samples 
-        Ns = 20
+        Ns = 30
         ## figure of Test samples
         # f,(ax1,ax2,ax3) = plt.subplots(1,3)
         # f.set_size_inches(12,4)

@@ -52,18 +52,18 @@ if __name__ == "__main__":
 
 	## Set of data to work with 
 	full_dataset = False
-	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW6 = True
+	prof_WRKNW5 = False
 	prof_NEMT2 = False
 
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
-	wells_temp_fit = False
-	sta_temp_est = False
+	mcmc_MT_inv = False
+	prof_2D_MT = False
+	wells_temp_fit = True
+	sta_temp_est = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 				station_objects.append(sta_obj)
 				count  += 1
 
-		# plot temp profile for wells
+		# # plot temp profile for wells
 		# pp = PdfPages('MT_sound_curves.pdf')
 		# for sta_obj in station_objects: 
 		# 	f = sta_obj.plot_app_res_phase()
@@ -139,6 +139,8 @@ if __name__ == "__main__":
 		# 	shutil.move('MT_sound_curves.pdf','.'+os.sep+'MT_info'+os.sep+'MT_sound_curves_full.pdf')
 		# if prof_WRKNW6:
 		# 	shutil.move('MT_sound_curves.pdf','.'+os.sep+'MT_info'+os.sep+'MT_sound_curves_prof_WRKNW6.pdf')
+		# if prof_WRKNW5:
+		# 	shutil.move('MT_sound_curves.pdf','.'+os.sep+'MT_info'+os.sep+'MT_sound_curves_prof_WRKNW5.pdf')
 
 		#########################################################################################
 		#########################################################################################
@@ -280,6 +282,8 @@ if __name__ == "__main__":
 		# 	shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_full.pdf')
 		# if prof_WRKNW6:
 		# 	shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_WRKNW6.pdf')
+		# if prof_WRKNW5:
+		# 	shutil.move('wells_temp_prof.pdf','.'+os.sep+'wells_info'+os.sep+'wells_temp_prof_WRKNW5.pdf')
 
 		# # Search for location of the well and add to attributes
 		# for wl in wells_objects:
@@ -366,7 +370,6 @@ if __name__ == "__main__":
 		#g.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'01_temp_z1_z2_full_net.png')   # save the figure to file
 		#plt.close(g)    # close the figure
 
-
 	# (2) Construct priors for MT stations
 	if prior_MT_meb_read:
 		# attribute in meb wells for path to mcmc results 
@@ -426,13 +429,14 @@ if __name__ == "__main__":
 	
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
+		print('(4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)')
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
-		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name)
+		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '60%', prior_meb = wells_objects)#, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects)#, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+os.sep+file_name+'.png')
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
@@ -479,7 +483,7 @@ if __name__ == "__main__":
 		shutil.move('Test_samples.pdf','.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+'Test_samples.pdf')
 
 		# plot 2D profile
-		if prof_WRKNW6:
+		if prof_WRKNW6 or prof_WRKNW5:
 			print('(6.1) Printing uncertain isotherms plot')
 			# note: isotherms = [] are strings coherent with value given in uncert_isotherms_percentils()
 			isoth = ['50','100','150','200','250']
