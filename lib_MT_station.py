@@ -375,6 +375,12 @@ class Station(object):
 
             # concatenate the estimated curves
             Test = np.concatenate((Test_l1, Test_l2,Test_l3), axis=0)
+
+            # if z1 and z2 are similar:  construct the tempo profile using one layer
+            # with boundary conditions for layer one 
+            if z2_mean < 50.:
+                Test = Texp2(zj,z0,z3,T0,T1,b1)
+
             for item in Test:
                 t.write('{}\t'.format(item))
             t.write('\n')

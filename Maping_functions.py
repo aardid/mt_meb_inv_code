@@ -468,7 +468,7 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
                     ax.fill_between(x_axis, env_up, env_low,  alpha=.05*(j+1), facecolor=iso_col[i], edgecolor=iso_col[i])
 
     # labels for figure
-    ax.set_ylim([-1.2e3, max(topo)+600.])
+    ax.set_ylim([-0.5e3, max(topo)+600.])
     ax.set_xlim([x_axis[0]-1, x_axis[-1]+2.0])
     ax.legend(loc=5, prop={'size': 10})	
     ax.grid(color='c', linestyle='-', linewidth=.1)

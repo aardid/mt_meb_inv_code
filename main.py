@@ -46,14 +46,14 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
 	full_dataset = False
-	prof_WRKNW6 = True
-	prof_WRKNW5 = False
+	prof_WRKNW6 = False
+	prof_WRKNW5 = True
 	prof_NEMT2 = False
 
 	## Sections of the code tu run
