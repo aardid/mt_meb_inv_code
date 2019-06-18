@@ -52,8 +52,8 @@ if __name__ == "__main__":
 
 	## Set of data to work with 
 	full_dataset = False
-	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW6 = True
+	prof_WRKNW5 = False
 	prof_NEMT2 = False
 
 	## Sections of the code tu run
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = False
+	prof_2D_MT = True
 	wells_temp_fit = True
 	sta_temp_est = True
 
@@ -120,15 +120,24 @@ if __name__ == "__main__":
 			if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
 				file = file_aux[pos_ast:] # name on the file
 				sta_obj = Station(file, count, path_files)
+
 				sta_obj.read_edi_file() 
 				sta_obj.rotate_Z()
+				# import PT derotated data 
+				sta_obj.read_PT_Z() 
 				sta_obj.app_res_phase() # [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er]
-
 				## Create station objects and fill them
 				station_objects.append(sta_obj)
 				count  += 1
 
-		# # plot temp profile for wells
+		# save to .txt names of stations and coord. 
+		# f = open("MT_sta_latlon.txt", "w") # text file to save names of meb wells 
+		# f.write('# sta lat lon lat_dec lon_dec\n')
+		# for sta in station_objects: # loop over the meb wells (objects)
+		# 	f.write(sta.name+'\t'+str(sta.lat)+'\t'+str(sta.lon)+'\t'+str(sta.lat_dec)+'\t'+str(sta.lon_dec)+'\n')
+		# f.close()
+
+		# plot sounding curves
 		# pp = PdfPages('MT_sound_curves.pdf')
 		# for sta_obj in station_objects: 
 		# 	f = sta_obj.plot_app_res_phase()

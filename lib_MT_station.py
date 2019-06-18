@@ -210,9 +210,38 @@ class Station(object):
         self.tip_mag = T[-1]
         self.tip_strike = Z_dim[1]
     
+    def read_PT_Z(self):
+		# Read derotated data file of Z 
+        # format: per Z11 Z21 Z12 Z22 err11 err21 err12 err22 
+        path = '/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files'+os.sep+self.name[:-4]+'.Z'
+        Z_dr = np.genfromtxt(path).T
+        self.T = Z_dr[0]
+        # Zxx
+        self.Z_xx[0] = Z_dr[1]
+        self.Z_xx[1] = Z_dr[2]
+        self.Z_xx[2] = [complex(Z_dr[1][i], Z_dr[2][i]) for i in range(len(Z_dr[0]))]
+        self.Z_xx[3] = Z_dr[9]
+        # Zyx
+        self.Z_yx[0] = Z_dr[3]
+        self.Z_yx[1] = Z_dr[4]
+        self.Z_yx[2] = [complex(Z_dr[3][i], Z_dr[4][i]) for i in range(len(Z_dr[0]))]
+        self.Z_yx[3] = Z_dr[10]
+        # Zxy
+        self.Z_xy[0] = Z_dr[5]
+        self.Z_xy[1] = Z_dr[6]
+        self.Z_xy[2] = [complex(Z_dr[5][i], Z_dr[6][i]) for i in range(len(Z_dr[0]))]
+        self.Z_xy[3] = Z_dr[11]
+        # Zxx
+        self.Z_yy[0] = Z_dr[7]
+        self.Z_yy[1] = Z_dr[8]
+        self.Z_yy[2] = [complex(Z_dr[7][i], Z_dr[8][i]) for i in range(len(Z_dr[0]))]
+        self.Z_yy[3] = Z_dr[12]
+
     def rotate_Z(self):
 		## 2. Rotate Z to North (0°)
-        alpha = self.Z_strike # Z_rot[0]  # rotate to cero (north)
+        #alpha = -1* self.Z_strike # Z_rot[0]  # rotate to cero (north)
+        #alpha = 360. - self.Z_strike # Z_rot[0]  # rotate to cero (north)
+        alpha = 0.*self.Z_strike 
         [Z_prime] = rotate_Z(self.Z, alpha)
         Z = Z_prime # for consider rotation 
         self.Z = Z
@@ -462,9 +491,6 @@ class Station(object):
                 iso_perc.write('{:3.1f}\t'.format(per))
             iso_perc.write('\n')
         iso_perc.close()   
-
-         
-            
 
 # ==============================================================================
 # Read EDI
@@ -981,13 +1007,38 @@ def rotate_Z(Z, alpha):
 
         # variance 
         # var(Z'ij)=a**2 var(Z11)+ b**2 var(Z12) .+c**2 var(Z21) + d**2 va(Z22)
-        np.matrix([[1., 1.], [1., 1.]])
-        r_elem = r_matrix*np.matrix([[1., 1.], [1., 1.]])*r_matrix.T
-        var = r_elem[0,0]**2 *Z[5][i] + r_elem[0,1]**2 *Z[9][i] + r_elem[1,0]**2 *Z[13][i] + r_elem[1,1]**2 *Z[17][i] 
-        Z[5][i] = var
-        Z[9][i] = var
-        Z[13][i] = var
-        Z[17][i] = var
+        # np.matrix([[1., 1.], [1., 1.]])
+        # r_elem = r_matrix*np.matrix([[1., 1.], [1., 1.]])*r_matrix.T
+        # #var = r_elem[0,0]**2 *Z[5][i] + r_elem[0,1]**2 *Z[9][i] + r_elem[1,0]**2 *Z[13][i] + r_elem[1,1]**2 *Z[17][i] 
+        # Z[5][i] = var
+        # Z[9][i] = var
+        # Z[13][i] = var
+        # Z[17][i] = var
+
+        # rotate variance 
+        Z[5][i] = \
+            + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[5][i] \
+            + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[9][i] \
+            + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[13][i] \
+            + (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[17][i]
+
+        Z[9][i] = \
+            + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[5][i] \
+            + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[9][i] \
+            - (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[13][i] \
+            + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[17][i]
+
+        Z[13][i] = \
+            - (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[5][i] \
+            - (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[9][i] \
+            + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[13][i] \
+            + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[17][i]
+    
+        Z[17][i] = \
+            - (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[5][i] \
+            - (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[9][i] \
+            + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[13][i] \
+            + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[17][i]
 
     return [Z]
 

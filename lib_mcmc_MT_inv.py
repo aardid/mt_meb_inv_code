@@ -260,7 +260,7 @@ class mcmc_inv(object):
                         -np.log10(rho_ap_est))/v_vec)**self.norm) /v
             if variance:
                 TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(1/self.rho_app_obs_er[1])**2) #/v
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*self.rho_app_obs_er[1]**2) #/v
             #v = self.phase_obs_er[1]**2             
             v = 100          
             TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
@@ -276,7 +276,7 @@ class mcmc_inv(object):
                         -np.log10(rho_ap_est))/v_vec)**self.norm )/v
             if variance:
                 TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(self.rho_app_obs_er[2])**2) 
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*self.rho_app_obs_er[2])**2 
             #v = self.phase_obs_er[2]**2
             v = 100
             TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
