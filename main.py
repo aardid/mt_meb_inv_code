@@ -120,7 +120,6 @@ if __name__ == "__main__":
 			if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
 				file = file_aux[pos_ast:] # name on the file
 				sta_obj = Station(file, count, path_files)
-
 				sta_obj.read_edi_file() 
 				sta_obj.rotate_Z()
 				# import PT derotated data 

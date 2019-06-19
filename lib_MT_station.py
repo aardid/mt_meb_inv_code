@@ -987,7 +987,7 @@ def rotate_Z(Z, alpha):
     for i in range(len(Z[1])):
         r_matrix = np.matrix([[np.cos(alpha[i]), np.sin(alpha[i])], [-1*np.sin(alpha[i]), np.cos(alpha[i])]]) 
         Z_teta = np.matrix([[Z[4][i], Z[8][i]], [Z[12][i], Z[16][i]]])
-        Z_drot = r_matrix*Z_teta*r_matrix.T
+        Z_drot = np.matmult(r_matrix,np.matmult(Z_teta,r_matrix.T))
         
         # zxx, zxy, zyx, zyy
         Z[4][i] = Z_drot[0,0]
@@ -1007,33 +1007,27 @@ def rotate_Z(Z, alpha):
 
         # variance 
         # var(Z'ij)=a**2 var(Z11)+ b**2 var(Z12) .+c**2 var(Z21) + d**2 va(Z22)
-        # np.matrix([[1., 1.], [1., 1.]])
-        # r_elem = r_matrix*np.matrix([[1., 1.], [1., 1.]])*r_matrix.T
-        # #var = r_elem[0,0]**2 *Z[5][i] + r_elem[0,1]**2 *Z[9][i] + r_elem[1,0]**2 *Z[13][i] + r_elem[1,1]**2 *Z[17][i] 
-        # Z[5][i] = var
-        # Z[9][i] = var
-        # Z[13][i] = var
-        # Z[17][i] = var
 
         # rotate variance 
+        # varXX
         Z[5][i] = \
             + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[5][i] \
             + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[9][i] \
             + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[13][i] \
             + (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[17][i]
-
+        # varXY
         Z[9][i] = \
             + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[5][i] \
             + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[9][i] \
             - (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[13][i] \
             + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[17][i]
-
+        # varYX
         Z[13][i] = \
             - (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[5][i] \
             - (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[9][i] \
             + (np.cos(alpha[i])*np.cos(alpha[i]))**2 * Z[13][i] \
             + (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[17][i]
-    
+        # varYY
         Z[17][i] = \
             - (np.sin(alpha[i])*np.sin(alpha[i]))**2 * Z[5][i] \
             - (np.sin(alpha[i])*np.cos(alpha[i]))**2 * Z[9][i] \
