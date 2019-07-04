@@ -250,7 +250,7 @@ class Wells(object):
         s_z1 = np.array([])
         s_z2 = np.array([])
         # constraint samples by mean diference between z1 and z2
-        z1_z2_mean = np.mean([self.z1_pars[0],self.z2_pars[0]])
+        z1_z2_mean = np.mean([self.z1_pars[0], self.z2_pars[0]])
         #z2_z2_std = np.mean(self.z2_pars[1],self.z2_pars[1])
 
         for i in range(Ns): 
@@ -281,6 +281,8 @@ class Wells(object):
             ax1.set_yscale("linear")    
             ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'filt. data') # plot true data
             ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'SC interpolation')
+            ax1.plot([50.,200.], [self.z1_pars[0],self.z1_pars[0]],'y--')
+            ax1.plot([50.,200.], [self.z2_pars[0],self.z2_pars[0]],'r--')
             ax1.set_xlabel('Temperature [deg C]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)
@@ -837,6 +839,7 @@ def T_beta_est(Tw, z, Zmin, Zmax):
 
     Notes:
     """
+
     #z = np.asarray(z)			
     # Search for index of ccboud in depth profile
     # Tmin y T max for layer 1
@@ -871,8 +874,15 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     # Fit Twell with Texp
     beta_range = np.arange(-30.0, 30.0, 0.5)
     beta_def = -0.5
+    # beta range per layer
+    beta_range_l1 = np.arange(0.5, 30.5, 0.5)
+    beta_range_l2 = np.arange(-.5, 1.0, 0.2)
+    beta_range_l3 = np.arange(-30.0, 0., 0.5)
+
 
     ########## Layer 1 ##############
+    beta_range = beta_range_l1
+    beta_def = beta_range_l1[1]
     # flip (reversed) depth and temperature vectors in the layer (to be solved by curvefit)
     zv_aux = z[inds_z_l1_top:inds_z_l1_bot+1]
     Tv_aux = Tw[inds_z_l1_top:inds_z_l1_bot+1]
@@ -890,6 +900,8 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     Test_l1 = Texp2(zv,zv[0],zv[-1],Tv[0],Tv[-1],beta_opt_l1)
 
     ########## Layer 2 ##############
+    beta_range = beta_range_l2
+    beta_def = beta_range_l2[1]
     # flip (reversed) depth and temperature vectors in the layer (to be solved by curvefit)
     zv_aux = z[inds_z_l2_top:inds_z_l2_bot+1]
     Tv_aux = Tw[inds_z_l2_top:inds_z_l2_bot+1]
@@ -907,6 +919,8 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     Test_l2 = Texp2(zv,zv[0],zv[-1],Tv[0],Tv[-1],beta_opt_l2)
 
     ########## Layer 3 ##############
+    beta_range = beta_range_l3
+    beta_def = beta_range_l3[1]
     # flip (reversed) depth and temperature vectors in the layer (to be solved by curvefit)
     zv_aux = z[inds_z_l3_top:inds_z_l3_bot+1]
     Tv_aux = Tw[inds_z_l3_top:inds_z_l3_bot+1]
@@ -933,7 +947,7 @@ def T_beta_est(Tw, z, Zmin, Zmax):
 
     #Test = np.concatenate((Test_l3[:,], Test_l2[1:], Test_l1[1:]),axis=0) 
     beta = [beta_opt_l1, beta_opt_l2, beta_opt_l3]
-    slopes = [(Tmax_l1-Tmin_l1)/(Zmax[0]-Zmin[0]),(Tmax_l2-Tmin_l2)/(Zmax[1]-Zmin[1]),(Tmax_l3-Tmin_l3)/(Zmax[2]-Zmin[2])]		
+    slopes = [(Tmax_l1-Tmin_l1)/(Zmax[0]-Zmin[0]),(Tmax_l2-Tmin_l2)/(Zmax[1]-Zmin[1]),(Tmax_l3-Tmin_l3)/(Zmax[2]-Zmin[2])]	
     
     return Test, beta, Tmin, Tmax, slopes
 

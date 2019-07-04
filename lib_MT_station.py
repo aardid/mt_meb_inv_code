@@ -240,8 +240,8 @@ class Station(object):
     def rotate_Z(self):
 		## 2. Rotate Z to North (0°)
         #alpha = -1* self.Z_strike # Z_rot[0]  # rotate to cero (north)
-        #alpha = 360. - self.Z_strike # Z_rot[0]  # rotate to cero (north)
-        alpha = 0.*self.Z_strike 
+        alpha = 360. - self.Z_strike # Z_rot[0]  # rotate to cero (north)
+        #alpha = 0.*self.Z_strike 
         [Z_prime] = rotate_Z(self.Z, alpha)
         Z = Z_prime # for consider rotation 
         self.Z = Z
@@ -987,7 +987,7 @@ def rotate_Z(Z, alpha):
     for i in range(len(Z[1])):
         r_matrix = np.matrix([[np.cos(alpha[i]), np.sin(alpha[i])], [-1*np.sin(alpha[i]), np.cos(alpha[i])]]) 
         Z_teta = np.matrix([[Z[4][i], Z[8][i]], [Z[12][i], Z[16][i]]])
-        Z_drot = np.matmult(r_matrix,np.matmult(Z_teta,r_matrix.T))
+        Z_drot = np.matmul(r_matrix,np.matmul(Z_teta,r_matrix.T))
         
         # zxx, zxy, zyx, zyy
         Z[4][i] = Z_drot[0,0]

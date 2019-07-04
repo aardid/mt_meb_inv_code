@@ -52,8 +52,8 @@ if __name__ == "__main__":
 
 	## Set of data to work with 
 	full_dataset = False
-	prof_WRKNW6 = True
-	prof_WRKNW5 = False
+	prof_WRKNW6 = False
+	prof_WRKNW5 = True
 	prof_NEMT2 = False
 
 	## Sections of the code tu run
@@ -61,9 +61,9 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = True
+	prof_2D_MT = False
 	wells_temp_fit = True
-	sta_temp_est = True
+	sta_temp_est = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -174,6 +174,7 @@ if __name__ == "__main__":
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
 		if prof_WRKNW5:
 			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK404','WK401'] 
+			#wl2work = ['WK260'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 		#########################################################################################
