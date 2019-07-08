@@ -281,8 +281,8 @@ class Wells(object):
             ax1.set_yscale("linear")    
             ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'filt. data') # plot true data
             ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'SC interpolation')
-            ax1.plot([50.,200.], [self.z1_pars[0],self.z1_pars[0]],'y--')
-            ax1.plot([50.,200.], [self.z2_pars[0],self.z2_pars[0]],'r--')
+            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0], self.elev - self.z1_pars[0]],'y--')
+            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]), self.elev - (self.z1_pars[0] + self.z2_pars[0])],'r--')
             ax1.set_xlabel('Temperature [deg C]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)
@@ -762,7 +762,7 @@ def calc_layer_mod_quadrant(station_objects, wells_objects):
         for sta_obj in near_stas:
             # extract MT mcmc results from file of the station
             mcmc_results = np.genfromtxt('.'+os.sep+str('mcmc_inversions')+os.sep+sta_obj.name[:-4]+os.sep+"est_par.dat")
-            # values for mean a std for normal distribution representing the prior
+            # values for mean a std for normal  distribution representing the prior
             z1_mean[count] = mcmc_results[0,1] # mean [1] z1 # median [3] z1 
             z1_std[count] =  mcmc_results[0,2] # std z1
             z2_mean[count] = mcmc_results[1,1] # mean [1] z2 # median [3] z1
@@ -875,9 +875,9 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     beta_range = np.arange(-30.0, 30.0, 0.5)
     beta_def = -0.5
     # beta range per layer
-    beta_range_l1 = np.arange(0.5, 30.5, 0.5)
+    beta_range_l1 = np.arange(-30.5, -1.0, 0.5)
     beta_range_l2 = np.arange(-.5, 1.0, 0.2)
-    beta_range_l3 = np.arange(-30.0, 0., 0.5)
+    beta_range_l3 = np.arange(1.0, 30., 0.5)
 
 
     ########## Layer 1 ##############

@@ -113,6 +113,8 @@ class Station(object):
                             [[mean_Tmin1, std_Tmin1],[mean_Tmin2, std_Tmin2],[mean_Tmin3, std_Tmin3]]
     Tmax_3l                 Top temperature normal distribution values for 3 layer model 
                             [[mean_Tmax1, std_Tmax1],[mean_Tmax2, std_Tmax2],[mean_Tmax3, std_Tmax3]]
+    max_depth_temp          maximum depth for temp. profile based on weigthed average of nearest wells
+                            Defined in calc_beta_sta_quadrant function 
 
     =====================   =====================================================
     Methods                 Description
@@ -211,9 +213,13 @@ class Station(object):
         self.tip_strike = Z_dim[1]
     
     def read_PT_Z(self):
-		# Read derotated data file of Z 
+        # Read derotated data file of Z 
         # format: per Z11 Z21 Z12 Z22 err11 err21 err12 err22 
-        path = '/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files'+os.sep+self.name[:-4]+'.Z'
+        #if pc == "personalSuse":
+        #    path = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files"+os.sep+self.name[:-4]+".Z"
+        #if pc == "office": 
+        path = "D:\workflow_data\MTdata_PT_unrotated\Z_Files"+os.sep+self.name[:-4]+".Z"
+
         Z_dr = np.genfromtxt(path).T
         self.T = Z_dr[0]
         # Zxx
@@ -302,6 +308,7 @@ class Station(object):
         Attributes generated
         --------------------
         self.path_temp_est = '.'+os.sep+'temp_prof_samples'+os.sep+'MTstation'+os.sep+self.name[:-4]
+
         """
         ## number of samples 
         if Ns is None:
@@ -327,8 +334,10 @@ class Station(object):
         z2_mean, z2_std = mcmc_inv_results[1,1:3] # mean [1] z2 #  std [1] z2 # median [3] z2 
         
         # maximum depth for profile -> thicknesses of two first layers plus 500 meters (arbitrary) 
-        max_depth = abs(z1_mean + z2_mean + 300.) # need to be checked
-        zj = np.linspace(0.,max_depth,1000) # depth profile sample
+        #max_depth = abs(z1_mean + z2_mean + 300.) # need to be checked (too arbitrary)
+        max_depth = abs(self.max_depth_temp)
+
+        zj = np.linspace(0.,max_depth,500) # depth profile sample. Set to the depth of the nearest well 
 
         ## text file of Test samples 
         t = open(path+os.sep+'temp_est_samples.txt', 'w')
@@ -368,8 +377,8 @@ class Station(object):
                         z2 = np.abs(np.random.normal(z2_mean, z2_std, 1))+1.
                 z1_z1_not_valid = True 
                 # 
-                z1 = z1[0]
-                z2 = z1 + z2[0]
+                z1_aux = z1[0]
+                z2_aux = z1_aux + z2[0]
                 ## Temperature boundary conditions (T0,T1,T2,T3)
                 T0_mean, T0_std = self.Tmin_3l[0]
                 T1_mean, T1_std = self.Tmin_3l[1]
@@ -380,32 +389,31 @@ class Station(object):
                 T1 = np.abs(np.random.normal(T1_mean, T1_std, 1)) # 
                 T2 = np.abs(np.random.normal(T2_mean, T2_std, 1)) # 
                 T3 = np.abs(np.random.normal(T3_mean, T3_std, 1)) # 
-
-                ## Beta for each layer 
+                ## Beta for each layer
                 b1_mean, b1_std = self.betas_3l[0]
                 b2_mean, b2_std = self.betas_3l[1]
                 b3_mean, b3_std = self.betas_3l[2]
                 # sample values
-                b1 = np.abs(np.random.normal(b1_mean, b1_std, 1)) # 
-                b2 = np.abs(np.random.normal(b2_mean, b2_std, 1)) # 
-                b3 = np.abs(np.random.normal(b3_mean, b3_std, 1)) # 
+                b1 = -1.*np.random.normal(b1_mean, b1_std, 1) # 
+                b2 = -1.*np.random.normal(b2_mean, b2_std, 1) # 
+                b3 = -1.*np.random.normal(b3_mean, b3_std, 1) # 
             ## construct profile
             # layer 1
-            val, idx1 = find_nearest(zj, z1)
+            val, idx1 = find_nearest(zj, z1_aux)
             z_vec1 = zj[0:idx1+1]
-            Test_l1 = Texp2(z_vec1,z0,z1,T0,T1,b1)
+            Test_l1 = Texp2(z_vec1,z0,z1_aux,T0,T1,b1)
             # layer 2
-            val, idx2 = find_nearest(zj, z2)
+            val, idx2 = find_nearest(zj, z2_aux)
             z_vec2 = zj[idx1+1:idx2+1]
-            Test_l2 = Texp2(z_vec2,z1,z2,T1,T2,b2)
+            Test_l2 = Texp2(z_vec2,z1_aux,z2_aux,T1,T2,b2)
             # layer 3
             z_vec3 = zj[idx2+1:len(zj)]
-            Test_l3 = Texp2(z_vec3,z2,z3,T2,T3,b3)
+            Test_l3 = Texp2(z_vec3,z2_aux,z3,T2,T3,b3)
 
             # concatenate the estimated curves
             Test = np.concatenate((Test_l1, Test_l2,Test_l3), axis=0)
 
-            # if z1 and z2 are similar:  construct the tempo profile using one layer
+            # if z1_aux and z2_aux are similar:  construct the tempo profile using one layer
             # with boundary conditions for layer one 
             if z2_mean < 50.:
                 Test = Texp2(zj,z0,z3,T0,T1,b1)
@@ -1462,6 +1470,7 @@ def calc_beta_sta_quadrant(station_objects, wells_objects):
     sta_obj.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
     sta_obj.Tmin_3l = [[mean_Tmin1, std_Tmin1],[mean_Tmin2, std_Tmin2],[mean_Tmin3, std_Tmin3]]
     sta_obj.Tmax_3l = [[mean_Tmax1, std_Tmax1],[mean_Tmax2, std_Tmax2],[mean_Tmax3, std_Tmax3]]
+    self.max_depth_temp : maximum depth for temp. profile based on weigthed average 
 
     Note:
     wl.read_temp_prof_est_wells() needs to be run first for every well to load wl attributes of betas and others. 
@@ -1540,6 +1549,11 @@ def calc_beta_sta_quadrant(station_objects, wells_objects):
         dist_wels = list(filter(None, dist_wels))
         sta_obj.beta_wl_dist = dist_wels
 
+        # maximum depth for temp. profile based on weigthed average 
+        depth_near_wls = [wl.red_depth[-1] for wl in near_wls]
+        sta_obj.max_depth_temp = np.dot(depth_near_wls,dist_wels)/np.sum(dist_wels)
+
+
         #### betas
         # betas consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
         b1_mean = np.zeros(len(near_wls))
@@ -1549,7 +1563,10 @@ def calc_beta_sta_quadrant(station_objects, wells_objects):
         b3_mean = np.zeros(len(near_wls))
         b3_std = np.zeros(len(near_wls))
         count = 0
-        # extract meb mcmc results from nearest wells 
+        # extract betas from nearest wells 
+        #print(sta_obj.beta_wl_names)
+        #print(sta_obj.beta_wl_dist)
+        
         for wl in near_wls:
             # extract beta values from wl
             #wl.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
@@ -1567,7 +1584,6 @@ def calc_beta_sta_quadrant(station_objects, wells_objects):
 
         # assign result to attribute
         sta_obj.betas_3l = [[b1_mean, b1_std],[b2_mean, b2_std],[b3_mean, b3_std]]
-
         #### Tmin
         # consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
         t1_mean = np.zeros(len(near_wls))
@@ -1604,7 +1620,7 @@ def calc_beta_sta_quadrant(station_objects, wells_objects):
         t3_mean = np.zeros(len(near_wls))
         t3_std = np.zeros(len(near_wls))
         count = 0
-        # extract meb mcmc results from nearest wells 
+        # extract T bound. cond. from nearest wells 
         for wl in near_wls:
             # extract beta values from wl
             #wl.betas_3l = [[mean_beta1, std_beta1],[mean_beta2, std_beta2],[mean_beta3, std_beta3]]
