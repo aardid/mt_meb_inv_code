@@ -67,3 +67,20 @@ def mx_c(x1,y1,x2,y2):
 	# y-intercept
 	c = y1-m*x1
 	return m,c
+
+def find_nearest(array, value):
+    """
+    Find nearest to value in an array
+    
+    Input:
+    - array: numpy array to look in
+    - value: value to search
+    
+    Output:
+    - array[idx]: closest element in array to value
+    - idx: index of array[idx] in array
+
+    """
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx], idx

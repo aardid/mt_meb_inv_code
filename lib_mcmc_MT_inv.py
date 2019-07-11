@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from Maping_functions import *
 import multiprocessing 
+from misc_functios import find_nearest
 import csv
 
 textsize = 15.
@@ -52,6 +53,7 @@ class mcmc_inv(object):
                             f: determinat of Z
                             g: sum of squares elements of Z
     norm                    norm to measure the fit in the inversion    2.
+    range_p                 filter range of periods to invert           [0,inf]
 	time				    time consumed in inversion 
     prior                   consider priors (boolean). For uniform      False
                             priors to set a range on parameters use 
@@ -113,7 +115,7 @@ class mcmc_inv(object):
 
     """
     def __init__(self, sta_obj, name= None, work_dir = None, num_lay = None , norm = None, \
-        prior = None, prior_input = None, prior_meb = None, walk_jump = None, inv_dat = None, ini_mod = None):
+        prior = None, prior_input = None, prior_meb = None, walk_jump = None, inv_dat = None, ini_mod = None, range_p = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -127,6 +129,7 @@ class mcmc_inv(object):
         self.det_Z_obs = sta_obj.det_Z
         self.ssq_Z_obs = sta_obj.ssq_Z
         self.norm = norm
+        self.range_p = range_p
         if work_dir is None: 
             self.work_dir = '.'
         if num_lay is None: 
@@ -253,7 +256,17 @@ class mcmc_inv(object):
             v_vec = np.ones(len(self.T_obs))
             variance = False
             #v_vec[21:] = np.inf 
-            
+            # filter range of periods to work with
+            if self.range_p: 
+                ## range_p = [0.01, 1.0] s
+                ## to do: replace in v_vec with '1' for positions of periods to invert and 'inf' otherwise.  
+                # find values of range_p in vector of periods 
+                short_p, short_p_idx = find_nearest(self.T_obs, self.range_p[0])
+                long_p, long_p_idx = find_nearest(self.T_obs, self.range_p[1])
+                # fill v_vec 
+                v_vec[:short_p_idx] = np.inf
+                v_vec[long_p_idx:] = np.inf
+
             # TE(xy): fitting sounding curves 
             v = 0.15
             TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
