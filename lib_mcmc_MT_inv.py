@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from Maping_functions import *
 import multiprocessing 
+from misc_functios import find_nearest
 import csv
 
 textsize = 15.
@@ -52,6 +53,7 @@ class mcmc_inv(object):
                             f: determinat of Z
                             g: sum of squares elements of Z
     norm                    norm to measure the fit in the inversion    2.
+    range_p                 filter range of periods to invert           [0,inf]
 	time				    time consumed in inversion 
     prior                   consider priors (boolean). For uniform      False
                             priors to set a range on parameters use 
@@ -113,7 +115,7 @@ class mcmc_inv(object):
 
     """
     def __init__(self, sta_obj, name= None, work_dir = None, num_lay = None , norm = None, \
-        prior = None, prior_input = None, prior_meb = None, walk_jump = None, inv_dat = None, ini_mod = None):
+        prior = None, prior_input = None, prior_meb = None, walk_jump = None, inv_dat = None, ini_mod = None, range_p = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -127,6 +129,7 @@ class mcmc_inv(object):
         self.det_Z_obs = sta_obj.det_Z
         self.ssq_Z_obs = sta_obj.ssq_Z
         self.norm = norm
+        self.range_p = range_p
         if work_dir is None: 
             self.work_dir = '.'
         if num_lay is None: 
@@ -253,7 +256,17 @@ class mcmc_inv(object):
             v_vec = np.ones(len(self.T_obs))
             variance = False
             #v_vec[21:] = np.inf 
-            
+            # filter range of periods to work with
+            if self.range_p: 
+                ## range_p = [0.01, 1.0] s
+                ## to do: replace in v_vec with '1' for positions of periods to invert and 'inf' otherwise.  
+                # find values of range_p in vector of periods 
+                short_p, short_p_idx = find_nearest(self.T_obs, self.range_p[0])
+                long_p, long_p_idx = find_nearest(self.T_obs, self.range_p[1])
+                # fill v_vec 
+                v_vec[:short_p_idx] = np.inf
+                v_vec[long_p_idx:] = np.inf
+
             # TE(xy): fitting sounding curves 
             v = 0.15
             TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
@@ -290,8 +303,15 @@ class mcmc_inv(object):
                         -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
 
             # fitting determinant of Z
-            det_Z = self.inv_dat[5]*-np.sum(((np.log10(obs[:,6]) \
+            # divide det() in magnitud and phase 
+
+            det_Z_amp = self.inv_dat[5]*-np.sum(((np.log10(np.absolute(obs[:,6])) \
                         -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+
+            det_Z_pha = self.inv_dat[5]*-np.sum(((np.angle(obs[:,6],deg=True) \
+                        -np.angle(Z_est, deg=True))/v_vec)**self.norm)/v
+
+            det_Z = det_Z_amp
 
             # fitting ssq of Z
             ssq_Z = self.inv_dat[6]*-np.sum(((np.log10(obs[:,7]) \
@@ -413,7 +433,7 @@ class mcmc_inv(object):
         chain = None
         plt.close('all')
 
-    def sample_post(self, plot_fit = True, exp_fig = None): 
+    def sample_post(self, plot_fit = True, exp_fig = None, plot_model = None): 
         if plot_fit is None:
             plot_fit = ['appres', 'phase']
 		######################################################################
@@ -454,7 +474,49 @@ class mcmc_inv(object):
                 pars_order[j,5], pars_order[j,6], pars_order[j,7]))
         f.close()
 
-        
+        if plot_model:
+            def square_fn(pars, x_axis):
+                """
+                Calcule y axis for square function over x_axis
+                with corners given by pars, starting at y_base. 
+
+                pars = [x1,x2,y0,y1,y2] 
+                y_base = 0 (default)
+                """
+                # vector to fill
+                y_axis = np.zeros(len(x_axis))
+                # pars = [x1,x2,y1]
+                # find indexs in x axis
+                idx1 = np.argmin(abs(x_axis-pars[0]))
+                idx2 = np.argmin(abs(x_axis-pars[1]))
+                # fill y axis and return 
+                y_axis[0:idx1] = pars[2]
+                y_axis[idx1:idx2+1] = pars[3]
+                y_axis[idx2+1:] = pars[4]
+                return y_axis
+            # depths to plot
+            z_model = np.arange(0.,1500.,2.)
+            f,(ax) = plt.subplots(1,1)
+            f.set_size_inches(8,4) 
+            f.suptitle(self.name, size = textsize)
+            for par in pars_order:
+                #if all(x > 0. for x in par):
+                sq_prof_est = square_fn([par[2],par[2]+par[3],par[4],par[5],par[6]], x_axis=z_model)
+                ax.semilogy(z_model,sq_prof_est,'b-', lw = 0.5, alpha=0.1, zorder=0)
+            ax.plot(z_model,sq_prof_est,'b-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
+            # labels
+            ax.set_xlim([np.min(z_model), np.max(z_model)])
+            #ax.set_xlim([1E-3,1e3])
+            ax.set_ylim([1E-1,1e4])
+            ax.set_xlabel('depth [s]', size = textsize)
+            ax.set_ylabel('resistivity [Ohm m]', size = textsize)
+            ### layout figure
+            #plt.tight_layout()
+            plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            plt.close(f)
+            plt.clf()
+
         if plot_fit: 
             f,(ax, ax1) = plt.subplots(2,1)
             f.set_size_inches(8,8) 
