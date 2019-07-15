@@ -482,7 +482,7 @@ if __name__ == "__main__":
 		for sta_obj in station_objects:
 			print(sta_obj.name[:-4])
 			# read samples of betas and others from wells. Load attributes 
-			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True, Ns = 200)
+			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True, Ns = 1000)
 			perc = np.arange(5.,100.,5.) # percentiels to calculate: [5% , 10%, ..., 95%]
 			isoth = [50,100,150,200,250]
 			sta_obj.uncert_isotherms_percentils(isotherms = isoth, percentiels = perc)
