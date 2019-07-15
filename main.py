@@ -60,10 +60,10 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
-	wells_temp_fit = False
-	sta_temp_est = False
+	mcmc_MT_inv = False
+	prof_2D_MT = False
+	wells_temp_fit = True
+	sta_temp_est = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
-			#sta2work = ['WT091a','WT102a','WT111a','WT222a']
+			sta2work = ['WT091a','WT102a','WT111a','WT222a']
 			#sta2work = ['WT091a']
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']
@@ -173,7 +173,7 @@ if __name__ == "__main__":
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
 		if prof_WRKNW5:
-			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK404','WK401'] 
+			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK404','WK408','WK401'] 
 			#wl2work = ['WK260'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
@@ -404,9 +404,9 @@ if __name__ == "__main__":
 			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
-  			# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
+  			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 5000, prior_meb = prior_meb, range_p = [0.,5.0])
+				walk_jump = 3000, prior_meb = prior_meb, range_p = [0.,0.4])
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -414,10 +414,10 @@ if __name__ == "__main__":
 			## run inversion 
 			mcmc_sta.inv()
 			## plot results (save in .png)
-			mcmc_sta.plot_results_mcmc()
+			mcmc_sta.plot_results_mcmc(corner_plt = True, walker_plt = True)
 			## sample posterior
 			#mcmc_sta.sample_post()
-			f = mcmc_sta.sample_post(exp_fig = True) # Figure with fit to be add in pdf (whole station)
+			f = mcmc_sta.sample_post(plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
 			pp.savefig(f)
 			plt.close("all")
 			## calculate estimate parameters
@@ -473,7 +473,7 @@ if __name__ == "__main__":
 		print('(6) Estimate Temerature profile in MT stations')
 		for wl in wells_objects:
 			# read samples of betas and others from wells. Load attributes 
-			wl.read_temp_prof_est_wells(beta_hist_corr = False)
+			wl.read_temp_prof_est_wells(beta_hist_corr = True)
 		# Calculate betas and other in MT station positions 
 		calc_beta_sta_quadrant(station_objects, wells_objects)
 		## Construct temperature profiles in MT stations

@@ -336,8 +336,10 @@ class Station(object):
         # maximum depth for profile -> thicknesses of two first layers plus 500 meters (arbitrary) 
         #max_depth = abs(z1_mean + z2_mean + 300.) # need to be checked (too arbitrary)
         max_depth = abs(self.max_depth_temp)
-
-        zj = np.linspace(0.,max_depth,500) # depth profile sample. Set to the depth of the nearest well 
+        # depths vector where temps are going to be estimated
+        # zj = np.linspace(0.,max_depth,20) # depth profile sample. Set to the depth of the nearest well 
+        delta_z = 2. 
+        zj = np.arange(0.,max_depth , delta_z)
 
         ## text file of Test samples 
         t = open(path+os.sep+'temp_est_samples.txt', 'w')
@@ -357,7 +359,16 @@ class Station(object):
             ax1.set_xlim([0.,300.])
             ax1.invert_yaxis()
             plt.title(self.name[:-4], fontsize=18,)
-             
+            # plot resistivity model  
+            self.elev = float(self.elev)
+            # upper bound
+            ax1.plot([-5.,300.], [z1_mean, z1_mean],'y-', alpha = .5)
+            ax1.plot([-5.,300.], [z1_mean + z1_std, z1_mean + z1_std],'y--', alpha = .3)
+            ax1.plot([-5.,300.], [z1_mean - z1_std, z1_mean - z1_std],'y--', alpha = .3)
+            # lower bound
+            ax1.plot([-5.,300.], [z1_mean + z2_mean, z1_mean + z2_mean],'g-', alpha = .5)
+            ax1.plot([-5.,300.], [z1_mean + z2_mean + z2_std, z1_mean + z2_mean + z2_std],'g--', alpha = .3)
+            ax1.plot([-5.,300.], [z1_mean + z2_mean - z2_std, z1_mean + z2_mean - z2_std],'g--', alpha = .3)
 
         z1_z1_not_valid = True
         for i in range(Ns): 

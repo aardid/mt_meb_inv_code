@@ -281,8 +281,16 @@ class Wells(object):
             ax1.set_yscale("linear")    
             ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'filt. data') # plot true data
             ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'SC interpolation')
-            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0], self.elev - self.z1_pars[0]],'y--')
-            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]), self.elev - (self.z1_pars[0] + self.z2_pars[0])],'r--')
+            
+            # upper boundary (z1 distribution)
+            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0], self.elev - self.z1_pars[0]],'y-', alpha=0.5)
+            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0] - self.z1_pars[1], self.elev - self.z1_pars[0] - self.z1_pars[1]],'y--', alpha=0.3)
+            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0] + self.z1_pars[1], self.elev - self.z1_pars[0] + self.z1_pars[1]],'y--', alpha=0.3)
+            # lower boundary (z2 distribution)
+            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]), self.elev - (self.z1_pars[0] + self.z2_pars[0])],'r-', alpha=0.5)
+            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]) - self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) - self.z2_pars[1]],'r--', alpha=0.3)
+            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]) + self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) + self.z2_pars[1]],'r--', alpha=0.3)
+            
             ax1.set_xlabel('Temperature [deg C]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)
@@ -317,8 +325,6 @@ class Wells(object):
             s.write('\n')
             tmin.write('\n')
             tmax.write('\n')
-            if plot_samples:
-                ax1.plot(Test[1:-1] ,self.red_depth_rs,'g-', linewidth = .5,alpha=0.5)
 
         if plot_samples:
             ax1.plot(Test[1:-1],self.red_depth_rs,'g-', alpha=1.0 ,label = 'sample')

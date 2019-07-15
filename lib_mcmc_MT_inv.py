@@ -303,8 +303,15 @@ class mcmc_inv(object):
                         -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
 
             # fitting determinant of Z
-            det_Z = self.inv_dat[5]*-np.sum(((np.log10(obs[:,6]) \
+            # divide det() in magnitud and phase 
+
+            det_Z_amp = self.inv_dat[5]*-np.sum(((np.log10(np.absolute(obs[:,6])) \
                         -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+
+            det_Z_pha = self.inv_dat[5]*-np.sum(((np.angle(obs[:,6],deg=True) \
+                        -np.angle(Z_est, deg=True))/v_vec)**self.norm)/v
+
+            det_Z = det_Z_amp
 
             # fitting ssq of Z
             ssq_Z = self.inv_dat[6]*-np.sum(((np.log10(obs[:,7]) \
@@ -426,7 +433,7 @@ class mcmc_inv(object):
         chain = None
         plt.close('all')
 
-    def sample_post(self, plot_fit = True, exp_fig = None): 
+    def sample_post(self, plot_fit = True, exp_fig = None, plot_model = None): 
         if plot_fit is None:
             plot_fit = ['appres', 'phase']
 		######################################################################
@@ -467,7 +474,49 @@ class mcmc_inv(object):
                 pars_order[j,5], pars_order[j,6], pars_order[j,7]))
         f.close()
 
-        
+        if plot_model:
+            def square_fn(pars, x_axis):
+                """
+                Calcule y axis for square function over x_axis
+                with corners given by pars, starting at y_base. 
+
+                pars = [x1,x2,y0,y1,y2] 
+                y_base = 0 (default)
+                """
+                # vector to fill
+                y_axis = np.zeros(len(x_axis))
+                # pars = [x1,x2,y1]
+                # find indexs in x axis
+                idx1 = np.argmin(abs(x_axis-pars[0]))
+                idx2 = np.argmin(abs(x_axis-pars[1]))
+                # fill y axis and return 
+                y_axis[0:idx1] = pars[2]
+                y_axis[idx1:idx2+1] = pars[3]
+                y_axis[idx2+1:] = pars[4]
+                return y_axis
+            # depths to plot
+            z_model = np.arange(0.,1500.,2.)
+            f,(ax) = plt.subplots(1,1)
+            f.set_size_inches(8,4) 
+            f.suptitle(self.name, size = textsize)
+            for par in pars_order:
+                #if all(x > 0. for x in par):
+                sq_prof_est = square_fn([par[2],par[2]+par[3],par[4],par[5],par[6]], x_axis=z_model)
+                ax.semilogy(z_model,sq_prof_est,'b-', lw = 0.5, alpha=0.1, zorder=0)
+            ax.plot(z_model,sq_prof_est,'b-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
+            # labels
+            ax.set_xlim([np.min(z_model), np.max(z_model)])
+            #ax.set_xlim([1E-3,1e3])
+            ax.set_ylim([1E-1,1e4])
+            ax.set_xlabel('depth [s]', size = textsize)
+            ax.set_ylabel('resistivity [Ohm m]', size = textsize)
+            ### layout figure
+            #plt.tight_layout()
+            plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            plt.close(f)
+            plt.clf()
+
         if plot_fit: 
             f,(ax, ax1) = plt.subplots(2,1)
             f.set_size_inches(8,8) 
