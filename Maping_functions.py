@@ -110,6 +110,7 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
     z2_per5 = np.zeros(len(sta_objects))
     z2_per95 = np.zeros(len(sta_objects))
 
+
     i = 0
     for sta in sta_objects:
         coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
@@ -132,7 +133,7 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
         z2_med[i] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[2])
         z2_per5[i] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][0])
         z2_per95[i] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][-1])
-        i+=1
+
 
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[7.5,5.5])
@@ -197,6 +198,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     s = (len(sta_objects),len(sta_objects[0].z1_pars[3])) # n° of stations x n° of percentils to plot
     z1_per = np.zeros(s)
     z2_per = np.zeros(s)
+    # vector for negligeble stations in plot (based on second layer)
+    stns_negli = np.zeros(len(sta_objects))
 
     i = 0
     for sta in sta_objects:
@@ -212,8 +215,17 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         for j in range(len(sta.z1_pars[3])): # i station, j percentil
             z1_per[i][j] = topo[i] - sta.z1_pars[3][j]
             z2_per[i][j] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][j])
+        # criteria for being negligible
+        if abs(sta.z1_pars[0] - sta.z2_pars[0]) < 20.: 
+            stns_negli[i] = True
+        else:
+            stns_negli[i] = False
         i+=1
+
+    # mask sections were second layer is negligible
     
+
+
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[7.5,5.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])

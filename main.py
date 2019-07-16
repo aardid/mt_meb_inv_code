@@ -46,8 +46,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
@@ -61,9 +61,9 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = False
-	wells_temp_fit = True
-	sta_temp_est = True
+	prof_2D_MT = True
+	wells_temp_fit = False
+	sta_temp_est = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -406,7 +406,7 @@ if __name__ == "__main__":
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 3000, prior_meb = prior_meb, range_p = [0.,0.4])
+				walk_jump = 3000, prior_meb = prior_meb, range_p = [0.,0.2])
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -432,9 +432,9 @@ if __name__ == "__main__":
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
 
 		## create text file for google earth, containing names of MT stations considered 
-		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
-		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
-			+os.sep+'00_stations_4_google_earth.txt')
+		#for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
+		#shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
+		#	+os.sep+'00_stations_4_google_earth.txt')
 	
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:

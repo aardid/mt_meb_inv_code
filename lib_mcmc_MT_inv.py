@@ -511,7 +511,7 @@ class mcmc_inv(object):
             ax.set_xlabel('depth [s]', size = textsize)
             ax.set_ylabel('resistivity [Ohm m]', size = textsize)
             ### layout figure
-            #plt.tight_layout()
+            plt.tight_layout()
             plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             plt.close(f)
@@ -563,6 +563,11 @@ class mcmc_inv(object):
             ax1.errorbar(self.T_obs,self.phase_obs[2],self.phase_obs_er[2], fmt='g*')
             ax1.legend(loc='lower right', shadow=False, fontsize='small')
             ax1.set_xscale('log')
+            # plot reference for periods consider in inversion (range_p)
+            ax.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
+            ax.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
+            ax1.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
+            ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
             ### layout figure
             #plt.tight_layout()
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
