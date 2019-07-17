@@ -70,7 +70,10 @@ if __name__ == "__main__":
         # create modem object 
         modem = modEM(work_dir = path_modem)
         # load impedance (forward from final rho model)
-        #modem.read_input(modem.work_dir+os.sep+'*.dat')
+        fls = glob(modem.work_dir + os.sep+'*.dat')
+        # select newest
+        newest = max(fls, key = lambda x: os.path.getctime(x))
+        modem.read_data(newest, extract_origin = True) # origin: self.x0, y0, z0
         # list of .rho (rho models)
         fls = glob(modem.work_dir + os.sep+'*.rho')
         # select newest
@@ -78,7 +81,6 @@ if __name__ == "__main__":
         modem.read_input(newest)
         #print(modem.dim)
         # plot result
-        print(modem.y)
         modem.plot_rho2D(modem.work_dir+os.sep+'rho_inv.pdf', xlim = [-6., 6.], ylim = [-3.,0], gridlines = False, clim = [1e0,1.e4])
 
 

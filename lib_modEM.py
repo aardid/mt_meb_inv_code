@@ -281,7 +281,7 @@ class modEM(object):
                     keepLooping = False
                     break
             # condition to break from loop
-        
+
         # assemble grid
         self.assemble_grid()
         
@@ -309,6 +309,7 @@ class modEM(object):
                     
         if logR: self.rho = np.exp(self.rho)
         fp.close()
+
     def write_input(self, filename):
         with open(filename, 'w') as fp:
             # write the mesh
@@ -337,7 +338,7 @@ class modEM(object):
                     if cnt == 19: fp.write("\n"); cnt = 0
                 if cnt !=0: fp.write("\n")
             if cnt !=0: fp.write("\n")
-    def read_data(self, filename):
+    def read_data(self, filename, extract_origin = None):
         fp = open(filename,'r')
         
         keepReading = True
@@ -363,6 +364,9 @@ class modEM(object):
             ln = fp.readline().rstrip()[1:] # periods and stations
             nums = ln.split(); nT = int(float(nums[0])); nS = int(float(nums[1]))
             
+            if extract_origin: 
+                return 
+            
             # allocate space
             if cnt == 0:
                 self.xs = np.zeros((1,nS))[0]	# station locations
@@ -372,7 +376,7 @@ class modEM(object):
                 self.f = np.zeros((nT,nS))
             
             dat = np.zeros((nT,nS), dtype = complex)
-                    
+
             for i in range(nS):					
                 for j in range(nT):
                     ln = fp.readline().rstrip()
@@ -403,6 +407,7 @@ class modEM(object):
         om = 2.*np.pi*self.f
         self.TE_Resistivity = np.real(np.conj(self.TE_Impedance)*self.TE_Impedance)/(om*4.*np.pi*1.e-7)
         self.TM_Resistivity = np.real(np.conj(self.TM_Impedance)*self.TM_Impedance)/(om*4.*np.pi*1.e-7)
+    
     def write_data(self, filename):
         with open(filename, 'w') as fp:
             for dtype in ['TE_Impedance','TM_Impedance']:				
@@ -547,7 +552,7 @@ class modEM(object):
         yy,zz = np.meshgrid(self.y,self.z)
         
         rho = self.rho*1.
-        rho = self.rho[:][25][:]
+        rho = self.rho[25][:][:]
 
         if clim is None:
             lmin = np.floor(np.min(np.log10(rho)))

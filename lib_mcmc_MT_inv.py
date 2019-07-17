@@ -169,7 +169,7 @@ class mcmc_inv(object):
             self.walk_jump = walk_jump        
         if ini_mod is None: 
             if self.num_lay == 3:
-                self.ini_mod = [300,200,500,5,200]
+                self.ini_mod = [300,200,500,2.5,200]
             if self.num_lay == 4:
                 self.ini_mod = [200,100,200,150,50,500,1000]    
         self.time = None  
@@ -200,7 +200,7 @@ class mcmc_inv(object):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
 		# set the initial location of the walkers
         pars = self.ini_mod  # initial guess
-        p0 = np.array([pars + 0.5e2*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.array([pars + 0.5e0*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
         p0 = np.abs(p0)
         #p0 = emcee.utils.sample_ball(p0, [20., 20.,], size=nwalkers)
 
