@@ -46,8 +46,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
+	mcmc_MT_inv = False
 	prof_2D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -109,6 +109,7 @@ if __name__ == "__main__":
 			#sta2work = ['WT091a']
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']
+			#sta2work = ['WT223a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 
@@ -406,7 +407,7 @@ if __name__ == "__main__":
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 5000, prior_meb = prior_meb, range_p = [0.,10.])
+				walk_jump = 5000, prior_meb = prior_meb, range_p = [0.,1.])
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -417,7 +418,7 @@ if __name__ == "__main__":
 			mcmc_sta.plot_results_mcmc(corner_plt = True, walker_plt = True)
 			## sample posterior
 			#mcmc_sta.sample_post()
-			f = mcmc_sta.sample_post(plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
+			f = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
 			pp.savefig(f)
 			plt.close("all")
 			## calculate estimate parameters
@@ -439,14 +440,22 @@ if __name__ == "__main__":
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
 		print('(4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)')
+		# quality inversion pars. plot (acceptance ratio and autocorrelation time)
+		autocor_accpfrac = True
 		# load mcmc results and assign to attributes of pars to station attributes 
-		load_sta_est_par(station_objects)
+		load_sta_est_par(station_objects, autocor_accpfrac = autocor_accpfrac)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
 			width_ref = '90%', prior_meb = wells_objects)#, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
+
+		# plot autocorrelation time and acceptance factor 
+		if autocor_accpfrac:
+			file_name = 'autocor_accpfrac'
+			plot_profile_autocor_accpfrac(station_objects, pref_orient = 'EW', file_name = file_name)
+			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 

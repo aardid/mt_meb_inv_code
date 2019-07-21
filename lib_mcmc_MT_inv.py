@@ -74,7 +74,8 @@ class mcmc_inv(object):
                             d: [r2_min, r2_max] range for resistivity 
                                 of layer 2  
                             e: [r3_min, r3_max] range for resistivity 
-                                of layer 3           
+                                of layer 3
+    nwalkers                number of walkers                           40                       
     walk_jump               burn-in jumps for walkers                   4000
     ini_mod                 inicial model                               [200,100,150,50,500]
     z1_pars                 distribution parameters for layer 1 
@@ -99,7 +100,11 @@ class mcmc_inv(object):
     r3_pars                 distribution parameters for layer 3 
                             resistivity (model parameter) calculated 
                             from mcmc chain results: [a,b,c,d]
-                            * See z1_pars vector description 
+                            * See z1_pars vector description
+    autocor_tim             autocorrelation time (steps) in mcmc inv. 
+                            [par1,...,par5]
+    aceprat                 acceptance ratio in mcmc inv.
+                            [par1,...,par5]
     prior_meb               consider MeB priors (boolean), for z1 and       False
                             z2 pars
     prior_meb_wl_names      wells considered for MeB prior            
@@ -184,6 +189,7 @@ class mcmc_inv(object):
     # =====================
     def inv(self):
         nwalkers= 40               # number of walkers
+        self.nwalkers = nwalkers
         # Create chain.dat
         if self.num_lay == 3:
             ndim = 5               # parameter space dimensionality
@@ -211,6 +217,26 @@ class mcmc_inv(object):
         pos,prob,state=sampler.run_mcmc(np.abs(p0),self.walk_jump)
 		# sampler.reset()
 
+        # check the mean acceptance fraction of the ensemble 
+
+        # check integrated autocorrelation tim
+        f = open("autocor_accpfrac.txt", "w")
+        f.write("# acceptance fraction: mean std thick1 thick2 res1 res2 res3 \n# autocorrelation time: mean std thick1 thick2 res1 res2 res3\n")
+        acpfrac = sampler.acceptance_fraction
+        self.aceprat = acpfrac
+        f.write("{:2.2f}\t{:2.2f}\t".format(np.mean(acpfrac),np.std(acpfrac)))
+        for j in range(ndim):
+        	f.write("{:2.2f}\t".format(acpfrac[j]))
+        f.write("\n")
+        autocor = sampler.get_autocorr_time(low=10, high=None, step=1, c=1, fast=False) # tau
+        self.autocor_tim = autocor
+        f.write("{:2.2f}\t{:2.2f}\t".format(np.mean(autocor),np.std(autocor)))
+        for j in range(ndim):
+        	f.write("{:2.2f}\t".format(autocor[j]))
+        f.close()
+        #print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+        #print("Mean autocorrelation time: {0:.3f} steps".format(np.mean(sampler.get_autocorr_time(low=10, high=None, step=1, c=1, fast=False))))
+
         f = open("chain.dat", "w")
         nk,nit,ndim=sampler.chain.shape
         for k in range(nk):
@@ -220,6 +246,7 @@ class mcmc_inv(object):
         			f.write("{:15.7f} ".format(sampler.chain[k,i,j]))
         		f.write("{:15.7f}\n".format(sampler.lnprobability[k,i]))
         f.close()
+        
         # assign results to station object attributes 
         self.time = time.time() - start_time # enlapsed time
         ## move chain.dat to file directory
@@ -234,6 +261,7 @@ class mcmc_inv(object):
             
         self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
+        shutil.move('autocor_accpfrac.txt', self.path_results+os.sep+'autocor_accpfrac.txt')
 
         # # save text file with inversion parameters
         if self.prior:
@@ -433,7 +461,10 @@ class mcmc_inv(object):
         chain = None
         plt.close('all')
 
-    def sample_post(self, plot_fit = True, exp_fig = None, plot_model = None): 
+    def sample_post(self, idt_sam = None, plot_fit = True, exp_fig = None, plot_model = None): 
+        """
+        idt_sam: sample just independet samples by autocorrelation in time criteria 
+        """
         if plot_fit is None:
             plot_fit = ['appres', 'phase']
 		######################################################################
@@ -441,26 +472,62 @@ class mcmc_inv(object):
         np.random.seed(1)
 		# load in the posterior
         chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
-        walk_jump = chain[:,0:2]
-        params = chain[:,2:-1]
+        #walk_jump = chain[:,0:2]
+        
 
 		# define parameter sets for forward runs
         Nruns = 500
         pars = []
         pars_order = []
-        # generate Nruns random integers in parameter set range (as a way of sampling this dist)
         Nsamples = 0
-        
-        while Nsamples != Nruns:
-            id = np.random.randint(0,params.shape[0]-1)
-            # condition for sample: prob dif than -inf and jump after 2/3 of total (~converged ones)
-            if (chain[id,7] != -np.inf and chain[id,1] > int(self.walk_jump*2/3)) : 
-                #par_new = [params[id,0], params[id,1], params[id,2], params[id,3], params[id,4]]
-                pars.append([Nsamples, params[id,0], params[id,1], params[id,2], params[id,3], \
-                    params[id,4]])
-                pars_order.append([chain[id,0], chain[id,1],chain[id,2], chain[id,3],chain[id,4],\
-                    chain[id,5],chain[id,6],chain[id,7]])
-                Nsamples += 1
+        Nsamples_vec = []
+
+        Nsamples_tot = self.nwalkers * self.walk_jump # total number of samples
+        Nburnin = int(self.walk_jump*.3) # Burnin section (% of the walker jumps)
+
+        if idt_sam: 
+            # sample only independet samples (by autocorrelation in time estimation)     
+            # explain: 
+            act_mean = int(np.mean(self.autocor_tim[:-1]))
+            mult_act = [i for i in np.arange(Nburnin,self.walk_jump,act_mean)] # multiples of act (mean)from burnin position 
+            #print(act_mean)
+            #print(mult_act)
+            # loop over the chain an filter only independet samples 
+            row_count = 0
+            for w in range(self.nwalkers):
+                for i in range(self.walk_jump):
+                    if i in mult_act:
+                        pars.append([Nsamples, chain[row_count,2],chain[row_count,3], chain[row_count,4], chain[row_count,5],\
+                            chain[row_count,6]])
+                        pars_order.append([chain[row_count,0], chain[row_count,1],chain[row_count,2], chain[row_count,3],chain[row_count,4],\
+                            chain[row_count,5],chain[row_count,6],chain[row_count,7]])
+                        Nsamples += 1
+                    row_count+= 1
+            #print('Number of independet samples: {:} from {:}'.format(Nsamples, Nsamples_tot))
+            Nsamples_vec.append(Nsamples)
+
+            f = open(self.path_results+os.sep+"samples_info.txt", "w")
+            f.write('# INDEPENDENT SAMPLES INFORMATION\n# Number of independet samples:\n# Total number of samples:\n# Number of walkers \n# Number of walkers jumps\n')
+            f.write('{:}\n'.format(Nsamples))
+            f.write('{:}\n'.format(Nsamples_tot))
+            f.write('{:}\n'.format(self.nwalkers))
+            f.write('{:}\n'.format(self.walk_jump))
+            f.close()
+
+        else: 
+            # generate Nruns random integers in parameter set range (as a way of sampling this dist)
+            # sample considering just burnin
+            while Nsamples != Nruns:
+                params = chain[:,2:-1]
+                id = np.random.randint(0,params.shape[0]-1)
+                # condition for sample: prob dif than -inf and jump after 2/3 of total (~converged ones)
+                if (chain[id,7] != -np.inf and chain[id,1] > int(self.walk_jump*2/3)) : 
+                    #par_new = [params[id,0], params[id,1], params[id,2], params[id,3], params[id,4]]
+                    pars.append([Nsamples, params[id,0], params[id,1], params[id,2], params[id,3], \
+                        params[id,4]])
+                    pars_order.append([chain[id,0], chain[id,1],chain[id,2], chain[id,3],chain[id,4],\
+                        chain[id,5],chain[id,6],chain[id,7]])
+                    Nsamples += 1
 
 		# Write in .dat paramateres sampled in order of fit (best fit a the top)
         pars_order= np.asarray(pars_order)

@@ -104,6 +104,10 @@ class Station(object):
                             resistivity (model parameter) calculated 
                             from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description 
+    af_mcmcinv              acceptance fraction of mcmc inversion 
+                            [mean std thick1 thick2 res1 res2 res3] 
+    act_mcmcinv             autocorrelation time of mcmc inversion 
+                            [mean std thick1 thick2 res1 res2 res3] 
 
 	temp_prof				temperaure profile
 
@@ -216,9 +220,9 @@ class Station(object):
         # Read derotated data file of Z 
         # format: per Z11 Z21 Z12 Z22 err11 err21 err12 err22 
         #if pc == "personalSuse":
-        #path = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files"+os.sep+self.name[:-4]+".Z"
+        path = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files"+os.sep+self.name[:-4]+".Z"
         #if pc == "office": 
-        path = "D:\workflow_data\MTdata_PT_unrotated\Z_Files"+os.sep+self.name[:-4]+".Z"
+        #path = "D:\workflow_data\MTdata_PT_unrotated\Z_Files"+os.sep+self.name[:-4]+".Z"
 
         Z_dr = np.genfromtxt(path).T
         self.T = Z_dr[0]

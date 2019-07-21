@@ -224,8 +224,6 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
 
     # mask sections were second layer is negligible
     
-
-
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[7.5,5.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
@@ -360,6 +358,75 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     ax.set_title('Clay cap boundaries depth  ', size = textsize)
     ax.legend(loc=4, prop={'size': 8})	
     #ax.grid(True)
+    #(color='r', linestyle='-', linewidth=2)
+    ax.grid(color='c', linestyle='-', linewidth=.1)
+    
+    #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
+    #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
+    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+    plt.close(f)
+    plt.clf()
+
+def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = None): 
+    """
+    """
+    ## sta_objects: list of station objects
+    ## sort list by longitud (min to max - East to West)
+    sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    # vectors to be fill and plot 
+    x_axis = np.zeros(len(sta_objects))
+    #topo = np.zeros(len(sta_objects))
+    af_med = np.zeros(len(sta_objects)) # acceptance fraction mean for sta.
+    af_std = np.zeros(len(sta_objects)) # acceptance fraction std. for sta.
+    act_med = np.zeros(len(sta_objects)) # autocorrelation time mean for sta.
+    act_std = np.zeros(len(sta_objects)) # autocorrelation time std. for sta.
+
+    i = 0
+    for sta in sta_objects:
+        # load acceptance fraction and autocorrelation time for station
+        coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+        coord2 = [sta.lon_dec, sta.lat_dec]
+        ## calculate distances from first station to the others, save in array
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+        ## vectors for plotting 
+        #topo[i] = sta.elev
+        af_med[i] = sta.af_mcmcinv[0] 
+        af_std[i] = sta.af_mcmcinv[1] 
+        act_med[i] = sta.act_mcmcinv[0] 
+        act_std[i] = sta.act_mcmcinv[1] 
+        i+=1
+
+    ## plot af and act for profile 
+    f = plt.figure(figsize=[7.5,5.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+    # plot meadian and topo
+    #ax.plot(x_axis, topo,'g-')
+    color = 'tab:red'
+    ax.errorbar(x_axis,af_med, yerr= af_std, fmt='-o', color = color)
+    ax.tick_params(axis='y', labelcolor=color)
+    ax.set_ylim([0.,1.0])
+    ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
+    color = 'tab:blue'
+    ax2.errorbar(x_axis, act_med, yerr= act_std, fmt='-o', color = color)
+    ax2.tick_params(axis='y', labelcolor=color)
+    ax2.set_ylim([0.,1.2e3])
+    ## plot station names and number of independent samples    
+    i = 0
+    for sta in sta_objects:
+        # load samples information 
+        samp_inf = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'samples_info.txt')
+        n_samples = int(samp_inf[0])
+        ax2.text(x_axis[i], 1100., sta.name[:-4]+': '+str(n_samples)+' samples', rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
+        i+=1
+
+    #ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
+    ax.set_xlabel('y [km]', size = textsize)
+    ax.set_ylabel('acceptance ratio', size = textsize)
+    ax2.set_ylabel('autocorrelate time', size = textsize)
+    ax.set_title('Quality parameters of mcmc inversion', size = textsize)
+    #ax.legend(loc=4, prop={'size': 8})	
+    ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
     ax.grid(color='c', linestyle='-', linewidth=.1)
     

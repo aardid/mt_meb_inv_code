@@ -14,7 +14,7 @@ import os
 #  load files
 # ==============================================================================
 
-def load_sta_est_par(station_objects):
+def load_sta_est_par(station_objects, autocor_accpfrac = None):
     # import file output from mcmc of estimated parameters (est_par.dat) for
     # for each station, and assign those values to station object attributes.
     for sta_obj in station_objects: 
@@ -33,6 +33,11 @@ def load_sta_est_par(station_objects):
                             [float(est_par[3][i]) for i in np.arange(idx_first_per,len_line)]]
         sta_obj.r3_pars = [float(est_par[4][0]), float(est_par[4][1]),float(est_par[4][2]),\
                             [float(est_par[4][i]) for i in np.arange(idx_first_per,len_line)]]
+        
+        if autocor_accpfrac: 
+                act_af = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'autocor_accpfrac.txt')
+                sta_obj.af_mcmcinv = act_af[0,:]
+                sta_obj.act_mcmcinv = act_af[1,:]
 
 # ==============================================================================
 # PIECEWISE LINEAR INTERPOLATION
