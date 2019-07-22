@@ -188,7 +188,7 @@ class mcmc_inv(object):
     # Methods               
     # =====================
     def inv(self):
-        nwalkers= 40               # number of walkers
+        nwalkers= 100               # number of walkers
         self.nwalkers = nwalkers
         # Create chain.dat
         if self.num_lay == 3:

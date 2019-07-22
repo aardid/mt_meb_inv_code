@@ -46,8 +46,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
+	mcmc_MT_inv = True
 	prof_2D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 				sta_obj.read_edi_file() 
 				sta_obj.rotate_Z()
 				# import PT derotated data 
-				sta_obj.read_PT_Z() 
+				sta_obj.read_PT_Z(pc = pc) 
 				sta_obj.app_res_phase() # [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er]
 				## Create station objects and fill them
 				station_objects.append(sta_obj)
@@ -402,12 +402,12 @@ if __name__ == "__main__":
 			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 
 			## range for the parameters
-			par_range = [[.5*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
+			par_range = [[.1*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
 			## create object mcmc_inv 
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 5000, prior_meb = prior_meb, range_p = [0.,1.])
+				walk_jump = 5000, prior_meb = prior_meb, range_p = [0.,1.0])
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))

@@ -402,12 +402,12 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     #ax.plot(x_axis, topo,'g-')
-    color = 'tab:red'
+    color = 'r'
     ax.errorbar(x_axis,af_med, yerr= af_std, fmt='-o', color = color)
     ax.tick_params(axis='y', labelcolor=color)
     ax.set_ylim([0.,1.0])
     ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
-    color = 'tab:blue'
+    color = 'b'
     ax2.errorbar(x_axis, act_med, yerr= act_std, fmt='-o', color = color)
     ax2.tick_params(axis='y', labelcolor=color)
     ax2.set_ylim([0.,1.2e3])

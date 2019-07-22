@@ -216,13 +216,13 @@ class Station(object):
         self.tip_mag = T[-1]
         self.tip_strike = Z_dim[1]
     
-    def read_PT_Z(self):
+    def read_PT_Z(self, pc = None):
         # Read derotated data file of Z 
         # format: per Z11 Z21 Z12 Z22 err11 err21 err12 err22 
-        #if pc == "personalSuse":
-        path = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files"+os.sep+self.name[:-4]+".Z"
-        #if pc == "office": 
-        #path = "D:\workflow_data\MTdata_PT_unrotated\Z_Files"+os.sep+self.name[:-4]+".Z"
+        if pc == "personalSuse":
+            path = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/Unrotated_MTdata_PT/Z_Files"+os.sep+self.name[:-4]+".Z"
+        if pc == "office": 
+            path = "D:\workflow_data\MTdata_PT_unrotated\Z_Files"+os.sep+self.name[:-4]+".Z"
 
         Z_dr = np.genfromtxt(path).T
         self.T = Z_dr[0]
