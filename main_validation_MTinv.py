@@ -58,7 +58,8 @@ if __name__ == "__main__":
     ## Sections of the code tu run
     set_up = True
     import_results_modem = True
-    import_results_MTmcmcinv = False
+    import_results_MT_modem = False
+    validation_MTmcmcinv = True 
 
     if set_up: 
         if pc == 'office': 
@@ -66,7 +67,7 @@ if __name__ == "__main__":
             if prof_WRKNW5: 
                 path_modem = 'modEM_inv'
 
-    if import_results_modem: 
+    if import_results_MT_modem: 
         # create modem object 
         modem = modEM(work_dir = path_modem)
         # load impedance (forward from final rho model)
@@ -80,8 +81,12 @@ if __name__ == "__main__":
         newest = max(fls, key = lambda x: os.path.getctime(x))
         modem.read_input(newest)
         #print(modem.dim)
-        # plot result
+        # plot 2D model from results
         modem.plot_rho2D(modem.work_dir+os.sep+'rho_inv.pdf', xlim = [-6., 6.], ylim = [-3.,0], gridlines = False, clim = [1e0,1.e4])
+    
+    if validation_MT_mcmc_inv:
+        # 
+
 
 
         

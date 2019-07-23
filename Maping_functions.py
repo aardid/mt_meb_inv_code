@@ -231,6 +231,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     ax.plot(x_axis, topo,'g-')
     ax.plot(x_axis, z2_med,'b.-', label='bottom')
     ax.plot(x_axis, z1_med,'r.-', label='top')
+    # plot orange section between means of z1 and z2 (indicating clay cap)
+    ax.fill_between(x_axis, z2_med, z1_med,  alpha=.3, facecolor='orange', edgecolor='orange', label='clay')
     # plot percentils
     n_env = 9 # len(sta.z1_pars[3])/2 +1
     #for i in range(len(sta_objects)):
@@ -251,14 +253,14 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         ## plot 5% and 95% percetils as dotted lines 
         if width_ref == '90%': 
             # top boundary
-            ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5, alpha=.5)
+            #ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5, alpha=.5)
             ax.text(x_axis[0]-.4,z1_per[0,0]+25,'5%',size = 8., color = 'r')
-            ax.plot(x_axis, z1_per[:,-1],'r--',linewidth=.5, alpha=.5)
+            #ax.plot(x_axis, z1_per[:,-1],'r--',linewidth=.5, alpha=.5)
             ax.text(x_axis[0]-.4,z1_per[0,-1]-25,'95%',size = 8.,color = 'r')
             # bottom boundary
-            ax.plot(x_axis, z2_per[:,0],'b--',linewidth=.5, alpha=.5)
+            #ax.plot(x_axis, z2_per[:,0],'b--',linewidth=.5, alpha=.5)
             ax.text(x_axis[-1]+.1,z2_per[-1,0]+0,'5%',size = 8., color = 'b')
-            ax.plot(x_axis, z2_per[:,-1],'b--',linewidth=.5, alpha=.5)
+            #ax.plot(x_axis, z2_per[:,-1],'b--',linewidth=.5, alpha=.5)
             ax.text(x_axis[-1]+.1,z2_per[-1,-1]-50,'95%',size = 8.,color = 'b')
 
         ## plot 20% and 80% percetils as dotted lines
@@ -356,7 +358,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('depth [m]', size = textsize)
     ax.set_title('Clay cap boundaries depth  ', size = textsize)
-    ax.legend(loc=4, prop={'size': 8})	
+    ax.legend(loc=3, prop={'size': 8})	
     #ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
     ax.grid(color='c', linestyle='-', linewidth=.1)

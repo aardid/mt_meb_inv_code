@@ -373,7 +373,7 @@ class mcmc_inv(object):
                             /self.prior_meb_pars[0][1]**2 
                         # prior over z2 (thickness layer 2)
                         #prob += weight**0. *-((self.prior_meb_pars[1][0] - self.prior_meb_pars[0][0]) - pars[1])**self.norm \
-                        prob += weight**2. *-((self.prior_meb_pars[1][0]) - pars[1])**self.norm \
+                        prob += weight**1. *-((self.prior_meb_pars[1][0]) - pars[1])**self.norm \
                             /self.prior_meb_pars[1][1]**2
 
             else: # without priors
@@ -483,7 +483,7 @@ class mcmc_inv(object):
         Nsamples_vec = []
 
         Nsamples_tot = self.nwalkers * self.walk_jump # total number of samples
-        Nburnin = int(self.walk_jump*.3) # Burnin section (% of the walker jumps)
+        Nburnin = int(self.walk_jump*.5) # Burnin section (% of the walker jumps)
 
         if idt_sam: 
             # sample only independet samples (by autocorrelation in time estimation)     
