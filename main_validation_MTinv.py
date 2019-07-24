@@ -45,8 +45,8 @@ textsize = 15.
 
 if __name__ == "__main__":
     ## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-    pc = 'office'
-    #pc = 'personalSuse'
+    #pc = 'office'
+    pc = 'personalSuse'
     #pc = 'personalWin'
 
     ## Set of data to work with 
@@ -58,11 +58,15 @@ if __name__ == "__main__":
     ## Sections of the code tu run
     set_up = True
     import_results_modem = True
-    import_results_MT_modem = False
-    validation_MTmcmcinv = True 
+    import_results_MT_modem = True
+    validation_MT_mcmc_inv = True 
 
     if set_up: 
         if pc == 'office': 
+        #### ModEM results path
+            if prof_WRKNW5: 
+                path_modem = 'modEM_inv'
+        if pc == 'personalSuse': 
         #### ModEM results path
             if prof_WRKNW5: 
                 path_modem = 'modEM_inv'
@@ -85,13 +89,9 @@ if __name__ == "__main__":
         modem.plot_rho2D(modem.work_dir+os.sep+'rho_inv.pdf', xlim = [-6., 6.], ylim = [-3.,0], gridlines = False, clim = [1e0,1.e4])
     
     if validation_MT_mcmc_inv:
-        # 
-
-
-
-        
-
-
-
-
-
+        # (1) Extract res. profile in MT station positions from modem results (3D model)
+        sta_coord = np.genfromtxt('MT_sta_latlon.txt')
+        stas = sta_coord[:,0]
+        lat = sta_coord[:,3] 
+        lon = sta_coord[:,4] 
+        modem.extract_1D_prof(lat[0], lon[0])

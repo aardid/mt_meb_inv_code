@@ -29,6 +29,7 @@ import cmath
 import corner, emcee
 import time
 from matplotlib import gridspec
+from scipy.interpolate import griddata
 #from SimPEG import Utils, Solver, Mesh, DataMisfit, Regularization, Optimization, InvProblem, Directives, Inversion
 J = cmath.sqrt(-1)
 
@@ -177,19 +178,24 @@ class modEM(object):
         for dtype in ['TE_Impedance', 'TM_Impedance']:
             self.__setattr__(dtype, dat)
     def assemble_grid(self):
-        self.xe = np.array(self.x)
-        self.ye = np.array(self.y)
-        self.ze = np.array(self.z)
-        
+        # list to array
+        self.xe = np.array(self.x) # list to array
+        self.ye = np.array(self.y) # list to array
+        self.ze = np.array(self.z) # list to array
+
+        # change from cell size to postition onn grid
         # horizontal coords
         y = 1.*self.ye
         self.ye = np.zeros((1,len(y)+1))[0]
         self.ye[0] = 0
+        # center at the left of the section 
         self.ye[1:] = np.cumsum(y)
         self.y = 0.5*(self.ye[1:]+self.ye[:-1])
         ymin = 0.5*(np.min(self.y)+np.max(self.y))
+        # center at the middle at the section  
         self.y -= ymin
         self.ye -= ymin
+        
         if self.dim == 2:
             # vertical coords
             z = 1.*self.ze
@@ -213,6 +219,8 @@ class modEM(object):
             self.ze[0] = 0
             self.ze[1:] = -np.cumsum(z)
             self.z = 0.5*(self.ze[1:]+self.ze[:-1])
+            ## from here vector self.x,yz contains positions in the grid 
+            ## center at the middle (ex. self.x = [-3,-1,1,3])
     def read_input(self, filename):
         self.x = []
         self.y = []
@@ -284,6 +292,8 @@ class modEM(object):
 
         # assemble grid
         self.assemble_grid()
+        ## from here vector self.x,yz contains positions in the grid 
+        ## center at the middle (ex. self.x = [-3,-1,1,3])
         
         # read resistivities
         ln = fp.readline() 		# skip this line		
@@ -644,3 +654,32 @@ class modEM(object):
         plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
             orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
         plt.close(fig)
+
+    def extract_1D_prof(self, lat, lon):
+        #print(self.rho[1,2,:])
+        print(self.rho.shape)
+        #asdf    
+        # construct points and values 
+        points = np.zeros([self.nx*self.ny*self.nz, 3])
+        values = np.zeros([])
+        for i in range(self.nx):
+            for j in range(self.ny):
+                values = np.append(values,self.rho[i,j,:]) 
+
+        # for n in range(self.nx*self.ny*self.nz):
+        #     print(n)
+        #     for i in range(self.nx):
+        #         for j in range(self.ny):
+        #             for k in range(self.nz): 
+        #                 points[n] = [self.x[i], self.y[j], self.z[k]]
+
+        for n in range(self.nx*self.ny*self.nz):
+            print(n)
+            for i in range(self.nx):
+                for j in range(self.ny):
+                    for k in range(self.nz): 
+                        points[n][] = [self.x[i], self.y[j], self.z[k]]
+
+        #print(np.asarray(values).shape)
+        asdf
+        #grid_z2 = griddata(points, values, (grid_x, grid_y), method='cubic')

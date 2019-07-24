@@ -46,8 +46,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalSuse'
+	#pc = 'office'
+	pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
