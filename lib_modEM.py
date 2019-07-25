@@ -183,7 +183,7 @@ class modEM(object):
         self.ye = np.array(self.y) # list to array
         self.ze = np.array(self.z) # list to array
 
-        # change from cell size to postition onn grid
+        # change from cell size to postition on grid
         # horizontal coords
         y = 1.*self.ye
         self.ye = np.zeros((1,len(y)+1))[0]
@@ -195,7 +195,6 @@ class modEM(object):
         # center at the middle at the section  
         self.y -= ymin
         self.ye -= ymin
-        
         if self.dim == 2:
             # vertical coords
             z = 1.*self.ze
@@ -204,23 +203,27 @@ class modEM(object):
             self.ze[1:] = -np.cumsum(z)
             self.z = 0.5*(self.ze[1:]+self.ze[:-1])
         else:
-            # vertical coords
-            x = 1.*self.ye
+            # horizontal coords
+            x = 1.*self.xe
             self.xe = np.zeros((1,len(x)+1))[0]
             self.xe[0] = 0
+            # center at the left of the section
             self.xe[1:] = np.cumsum(x)
             self.x = 0.5*(self.xe[1:]+self.xe[:-1])
             xmin = 0.5*(np.min(self.x)+np.max(self.x))
             self.x -= xmin
             self.xe -= xmin
+
             # vertical coords
             z = 1.*self.ze
             self.ze = np.zeros((1,len(z)+1))[0]
             self.ze[0] = 0
             self.ze[1:] = -np.cumsum(z)
+            #self.ze[1:] = np.cumsum(z)
             self.z = 0.5*(self.ze[1:]+self.ze[:-1])
-            ## from here vector self.x,yz contains positions in the grid 
+            ## from here vector self.x,y,z contains positions in the grid 
             ## center at the middle (ex. self.x = [-3,-1,1,3])
+
     def read_input(self, filename):
         self.x = []
         self.y = []
@@ -289,11 +292,17 @@ class modEM(object):
                     keepLooping = False
                     break
             # condition to break from loop
-
+        #print(self.x)
+        #print(self.y)
+        #print(self.z)
+        
         # assemble grid
         self.assemble_grid()
-        ## from here vector self.x,yz contains positions in the grid 
+        ## from here vector self.x,y,z contains positions in the grid 
         ## center at the middle (ex. self.x = [-3,-1,1,3])
+        #print(self.x)
+        #print(self.y)
+        #print(self.z)
         
         # read resistivities
         ln = fp.readline() 		# skip this line		
@@ -305,7 +314,7 @@ class modEM(object):
             # for each number
             for num in nums:
                 if self.dim == 2: self.rho[j,k] = float(num)
-                else: self.rho[i,j,k] = float(num)
+                else: self.rho[i,j,k] = float(num) 
                 
                 i += 1
                 if i == self.nx: i = 0; j += 1
@@ -368,7 +377,8 @@ class modEM(object):
             ln = fp.readline().rstrip()[1:] # origin
             nums = ln.split()
             if len(nums) == 2:
-                self.x0 = 0.; self.y0 = float(nums[0]); self.z0 = float(nums[1])
+                #self.x0 = 0.; self.y0 = float(nums[0]); self.z0 = float(nums[1])
+                self.x0 = float(nums[0]); self.y0 = float(nums[1]); self.z0 = 0.
             else:
                 self.x0 = float(nums[0]); self.y0 = float(nums[1]); self.z0 = float(nums[2])
             ln = fp.readline().rstrip()[1:] # periods and stations
@@ -655,31 +665,45 @@ class modEM(object):
             orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
         plt.close(fig)
 
-    def extract_1D_prof(self, lat, lon):
-        #print(self.rho[1,2,:])
-        print(self.rho.shape)
-        #asdf    
-        # construct points and values 
+    def intp_1D_prof(self, x_intp, y_intp):
+        """
+        Inteporlate 1D profile at surface position lat,lon. 
+        Depths of interpolation are grid ones (self.z) 
+
+        Return: 
+            Vector containing interpolate values at depths given in self.z
+
+        """ 
+
+        ## construct vectors to be used in griddata
+        # construct 'points' and 'values' vectors
         points = np.zeros([self.nx*self.ny*self.nz, 3])
-        values = np.zeros([])
+        values = np.zeros([self.nx*self.ny*self.nz])
+        #
+        n = 0
         for i in range(self.nx):
             for j in range(self.ny):
-                values = np.append(values,self.rho[i,j,:]) 
+                for k in range(self.nz): 
+                    #print(n)
+                    points[n] = [self.x[i], self.y[j], self.z[k]]
+                    values[n] = self.rho[i,j,k]
+                    n+=1
+        ## save points in txt file
+        #t = open('points.txt', 'w')
+        #for i in range(n):
+        #    t.write('{}\t{}\t{}\n'.format(points[i][0],points[i][1],points[i][2]))
+        #t.close()
+        ##  construct 'xi' vector
+        xi = np.zeros([self.nz, 3])
+        for k in range(self.nz): 
+            xi[k,:] = [x_intp,y_intp,self.z[k]]
 
-        # for n in range(self.nx*self.ny*self.nz):
-        #     print(n)
-        #     for i in range(self.nx):
-        #         for j in range(self.ny):
-        #             for k in range(self.nz): 
-        #                 points[n] = [self.x[i], self.y[j], self.z[k]]
+        grid_z = griddata(points, values, xi, method='linear')
+        ax = plt.axes()
+        ax.plot(np.log10(grid_z), self.z)
+        plt.ylim([-4000,0])
+        plt.xlim([0,3])
+        plt.show()
 
-        for n in range(self.nx*self.ny*self.nz):
-            print(n)
-            for i in range(self.nx):
-                for j in range(self.ny):
-                    for k in range(self.nz): 
-                        points[n][] = [self.x[i], self.y[j], self.z[k]]
+        return grid_z
 
-        #print(np.asarray(values).shape)
-        asdf
-        #grid_z2 = griddata(points, values, (grid_x, grid_y), method='cubic')
