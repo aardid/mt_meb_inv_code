@@ -30,6 +30,7 @@ import corner, emcee
 import time
 from matplotlib import gridspec
 from scipy.interpolate import griddata
+from lib_sample_data import *
 #from SimPEG import Utils, Solver, Mesh, DataMisfit, Regularization, Optimization, InvProblem, Directives, Inversion
 J = cmath.sqrt(-1)
 
@@ -699,11 +700,58 @@ class modEM(object):
             xi[k,:] = [x_intp,y_intp,self.z[k]]
 
         grid_z = griddata(points, values, xi, method='linear')
-        ax = plt.axes()
-        ax.plot(np.log10(grid_z), self.z)
-        plt.ylim([-4000,0])
-        plt.xlim([0,3])
-        plt.show()
 
         return grid_z
+    
+    def plot_comp_mcmc(self, z_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc):
+
+        # create figure
+        f = plt.figure(figsize=[9.5,7.5])
+        ## plot profile
+        ax = plt.axes()
+        ax.plot(np.log10(z_intp), self.z -  z0,'m-', label='profile from 3D inv.')
+        #ax.plot(r2_mcmc[0],-1*z1_mcmc[0],'r*')
+        #ax.errorbar(r2_mcmc[0],-1*z1_mcmc[0],r2_mcmc[1],'r*')
+        ax.errorbar(r2_mcmc[0],-1*z1_mcmc[0],z1_mcmc[1],r2_mcmc[1],'r*', label = 'top bound. CC mcmc')
+        #ax.plot(r2_mcmc[0],-1*(z1_mcmc[0] + z2_mcmc[0]),'b*')
+        #ax.errorbar(r2_mcmc[0],-1*(z1_mcmc[0] + z2_mcmc[0]),r2_mcmc[1],'b*')
+        ax.errorbar(r2_mcmc[0],-1*(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],r2_mcmc[1],'b*', label = 'bottom bound. CC mcmc')
+        plt.ylim([-600,0])
+        plt.xlim([-1,3])
+        ax.legend(loc = 2)
+        ax.set_xlabel('Resistivity [Ohm m]')
+        ax.set_ylabel('Depth [m]')
+        #plt.show()
+
+        return f
+
+    def plot_uncert_comp(self, res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc): 
+
+        ## calculate positions of r2_mcmc in z_inerp (dephts in self.z)
+        # (0) resample  res_intp and self.z in dz ~ 1m. 
+        # vector to resample in 
+        z_rs = np.arange(self.z[0],self.z[-1]-1.,-1.)
+        log_r_rs = cubic_spline_interpolation(self.z,np.log10(res_intp),z_rs,rev = True)
+        #print(self.z)
+        #print(z_rs)
+        #print(res_intp)
+        #print(r_rs)
+        
+        ax = plt.axes()
+        ax.plot(np.log10(res_intp), self.z -  z0,'b*-', label='profile from 3D inv.')
+        ax.plot(log_r_rs, z_rs -  z0,'m-', label='rs profile')
+        plt.ylim([-1500,0])
+        plt.xlim([-1,3])
+        ax.legend(loc = 2)
+        ax.set_xlabel('log10 Resistivity [Ohm m]')
+        ax.set_ylabel('Depth [m]')
+        plt.show()
+        asdf
+
+
+
+
+
+
+
 

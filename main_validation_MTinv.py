@@ -45,8 +45,8 @@ textsize = 15.
 
 if __name__ == "__main__":
     ## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-    pc = 'office'
-    #pc = 'personalSuse'
+    #pc = 'office'
+    pc = 'personalSuse'
     #pc = 'personalWin'
 
     ## Set of data to work with 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
         ## depth vector for interpolation 
         #z_intp = np.linspace(0,2000,1000)
 
-        sta = 'WT111a' # 'WT502a'
+        sta = 'WT111a' 
         sta = 'WT502a'
 
         if sta == 'WT111a':
@@ -148,8 +148,39 @@ if __name__ == "__main__":
         # WT111a => pos: 11
         #x_intp = (modem.x0 - lat[4])*151111. # convert to meters
         #y_intp = (modem.y0 - lon[4])*111111. # convert to meters
-        print(x_intp)
-        print(y_intp)
+        #print(x_intp)
+        #print(y_intp)
 
         #modem.intp_1D_prof(2000,-2300)
-        modem.intp_1D_prof(x_intp, -1*y_intp)
+        res_intp = modem.intp_1D_prof(x_intp, -1*y_intp) # Vector containing interpolate values at depths given in self.z
+
+        ## compare results from 3D inversion and MCMC
+        # import results from station 'sta'
+        # /home/aardid/Documentos/PhD_19/workspace/wt_inv_code_rep/mcmc_inversions
+        sta_mcmc = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta+os.sep+'est_par.dat')
+        z1_mcmc = sta_mcmc[0,1:4] # mean, std, median 
+        z2_mcmc = sta_mcmc[1,1:4] # mean, std, median
+        r2_mcmc = sta_mcmc[3,1:4] # mean, std, median # resistivity second layer 
+
+        ## plot profile from 3D inversion and compare
+        f = modem.plot_comp_mcmc(res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc)
+        # check if station folder exist 
+        if not os.path.exists('.'+os.sep+'modEM_inv'+os.sep+sta):
+            os.makedirs('.'+os.sep+'modEM_inv'+os.sep+sta)        
+        # save figure in station folder 
+        f.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'comp_3Dinv_mcmcinv.png')   # save the figure to file
+        plt.close(f)    # close the figure
+
+        ## plot boundaries uncertainty from 3D inversion 
+        # 
+        f = modem.plot_uncert_comp(res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc)
+
+
+
+
+
+
+
+
+
+
