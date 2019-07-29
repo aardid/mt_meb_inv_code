@@ -173,7 +173,11 @@ if __name__ == "__main__":
 
         ## plot boundaries uncertainty from 3D inversion 
         # 
-        f = modem.plot_uncert_comp(res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc)
+        f, g = modem.plot_uncert_comp(res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc)
+        f.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'prof_intp.png')   # save the figure to file
+        plt.close(f)    # close the figure
+        g.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'comp_cc_bound.png')   # save the figure to file
+        plt.close(f)    # close the figure
 
 
 

@@ -31,6 +31,7 @@ import time
 from matplotlib import gridspec
 from scipy.interpolate import griddata
 from lib_sample_data import *
+from misc_functios import *
 #from SimPEG import Utils, Solver, Mesh, DataMisfit, Regularization, Optimization, InvProblem, Directives, Inversion
 J = cmath.sqrt(-1)
 
@@ -706,21 +707,24 @@ class modEM(object):
     def plot_comp_mcmc(self, z_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc):
 
         # create figure
-        f = plt.figure(figsize=[9.5,7.5])
-        ## plot profile
+        f = plt.figure(figsize=[5.5,5.5])
+        ## plot profile 3d inv
         ax = plt.axes()
         ax.plot(np.log10(z_intp), self.z -  z0,'m-', label='profile from 3D inv.')
+        ## plot mcmc inv 
         #ax.plot(r2_mcmc[0],-1*z1_mcmc[0],'r*')
         #ax.errorbar(r2_mcmc[0],-1*z1_mcmc[0],r2_mcmc[1],'r*')
-        ax.errorbar(r2_mcmc[0],-1*z1_mcmc[0],z1_mcmc[1],r2_mcmc[1],'r*', label = 'top bound. CC mcmc')
+        ax.errorbar(np.log10(r2_mcmc[0]),-1*z1_mcmc[0],z1_mcmc[1],np.log10(r2_mcmc[1]),'r*', label = 'top bound. CC mcmc')
         #ax.plot(r2_mcmc[0],-1*(z1_mcmc[0] + z2_mcmc[0]),'b*')
         #ax.errorbar(r2_mcmc[0],-1*(z1_mcmc[0] + z2_mcmc[0]),r2_mcmc[1],'b*')
-        ax.errorbar(r2_mcmc[0],-1*(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],r2_mcmc[1],'b*', label = 'bottom bound. CC mcmc')
+        ax.errorbar(np.log10(r2_mcmc[0]),-1*(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],np.log10(r2_mcmc[1]),'b*', label = 'bottom bound. CC mcmc')
         plt.ylim([-600,0])
         plt.xlim([-1,3])
         ax.legend(loc = 2)
         ax.set_xlabel('Resistivity [Ohm m]')
         ax.set_ylabel('Depth [m]')
+        ax.set_title('3Dinv profile and MCMC CC boundaries')
+        ax.grid(alpha = 0.3)
         #plt.show()
 
         return f
@@ -730,23 +734,94 @@ class modEM(object):
         ## calculate positions of r2_mcmc in z_inerp (dephts in self.z)
         # (0) resample  res_intp and self.z in dz ~ 1m. 
         # vector to resample in 
-        z_rs = np.arange(self.z[0],self.z[-1]-1.,-1.)
-        log_r_rs = cubic_spline_interpolation(self.z,np.log10(res_intp),z_rs,rev = True)
-        #print(self.z)
-        #print(z_rs)
-        #print(res_intp)
-        #print(r_rs)
-        
+        val, idx = find_nearest(self.z, -2000.)
+        z_rs = np.arange(self.z[0],self.z[idx]-1.,-1.)
+        if False: # cubic spline interpolation 
+            log_r_rs = cubic_spline_interpolation(self.z,np.log10(res_intp),z_rs,rev = True)
+        if True: # piecewise linear interpolation 
+            log_r_rs = piecewise_interpolation(self.z[::-1],np.log10(res_intp[::-1]),z_rs[::-1])
+            log_r_rs = log_r_rs[::-1]
+
+        # create figure
+        f = plt.figure(figsize=[5.5,5.5])
         ax = plt.axes()
         ax.plot(np.log10(res_intp), self.z -  z0,'b*-', label='profile from 3D inv.')
-        ax.plot(log_r_rs, z_rs -  z0,'m-', label='rs profile')
+        ax.plot(log_r_rs, z_rs[:-1] -  z0,'m-', label='rs profile')
         plt.ylim([-1500,0])
         plt.xlim([-1,3])
-        ax.legend(loc = 2)
+        ax.legend(loc = 3)
         ax.set_xlabel('log10 Resistivity [Ohm m]')
         ax.set_ylabel('Depth [m]')
-        plt.show()
-        asdf
+        ax.set_title('3Dinv profile interpolation')
+        ax.grid(alpha = 0.3)
+        #plt.show()
+
+        # (1) divide profile in 2 sections to look for upper and lower boundary
+        val_mid, idx_mid = find_nearest(abs(log_r_rs - np.min(log_r_rs)), 0.)
+        # (2) extract depth (index) of r2_mcmc in res_intp
+        
+        ## first ocurrence (upper bound)
+        # mean
+        val, idx = find_nearest(log_r_rs[0:idx_mid], np.log10(r2_mcmc[0]))
+        z1_3dinv_mean = z_rs[idx] - z0
+        # mean + std
+        val, idx = find_nearest(log_r_rs[0:idx_mid], np.log10(r2_mcmc[0]+r2_mcmc[1]))
+        z1_3dinv_mean_plus_std = z_rs[idx] - z0
+        # mean - std
+        val, idx = find_nearest(log_r_rs[0:idx_mid], np.log10(r2_mcmc[0]-r2_mcmc[1]))
+        z1_3dinv_mean_minus_std = z_rs[idx] - z0
+
+        ## second ocurrence 
+        # mean
+        val, idx = find_nearest(log_r_rs[idx_mid:], np.log10(r2_mcmc[0]))
+        z2_3dinv_mean = z_rs[idx+idx_mid] - z0
+        # mean + std
+        val, idx = find_nearest(log_r_rs[idx_mid:], np.log10(r2_mcmc[0]+r2_mcmc[1]))
+        z2_3dinv_mean_plus_std = z_rs[idx+idx_mid] - z0
+        # mean - std
+        val, idx = find_nearest(log_r_rs[idx_mid:], np.log10(r2_mcmc[0]-r2_mcmc[1]))
+        z2_3dinv_mean_minus_std = z_rs[idx+idx_mid] - z0
+
+        # create figure
+        g = plt.figure(figsize=[5.0,5.0])
+        ax = plt.axes()
+        # plot 3dinv bounds
+        ax.plot(0.,z1_3dinv_mean,'ro')
+        ax.plot(0.,z2_3dinv_mean,'bo')
+        ax.plot([0.,0.],[z1_3dinv_mean_plus_std,z1_3dinv_mean_minus_std],'r-', label = 'mcmc inv, top bound.')
+        ax.plot([0.,0.],[z2_3dinv_mean_plus_std,z2_3dinv_mean_minus_std],'b-', label = 'mcmc inv, bottom bound.')
+
+        # plot mcmc bounds
+        ax.plot(1.,-1*z1_mcmc[0],'r*')
+        ax.plot(1.,-1*(z1_mcmc[0] + z2_mcmc[0]),'b*')
+        ax.plot([1.,1.],[-1*(z1_mcmc[0] - z1_mcmc[1]),-1*(z1_mcmc[0] + z1_mcmc[1])],'r--', label = '3D inv, top bound.')
+        ax.plot([1.,1.],[-1*(z1_mcmc[0] + z2_mcmc[0] - z2_mcmc[1]),-1*(z1_mcmc[0] + z2_mcmc[0] + z2_mcmc[1])],'b--', label = '3D inv, bottom bound.')
+
+        #ax.plot(np.log10(res_intp), self.z -  z0,'b*-', label='profile from 3D inv.')
+        #ax.plot(log_r_rs, z_rs -  z0,'m-', label='rs profile')
+        #plt.ylim([-500,0.])
+        plt.xlim([-1,5])
+        ax.legend(loc = 0)
+        #ax.set_xlabel('log10 Resistivity [Ohm m]')
+        ax.set_ylabel('Depth [m]')
+        ax.set_title('Comparition CC bound: 3Dinv and MCMCinv')
+        ax.grid(alpha = 0.3)
+        frame1 = plt.gca()
+        frame1.axes.xaxis.set_ticklabels([])
+        plt.tight_layout()
+        #plt.show()
+
+        return f, g
+
+
+
+
+
+
+ 
+
+
+
 
 
 
