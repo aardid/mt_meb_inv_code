@@ -131,8 +131,11 @@ if __name__ == "__main__":
         ## depth vector for interpolation 
         #z_intp = np.linspace(0,2000,1000)
 
-        sta = 'WT111a' 
+        #sta = 'WT111a' 
         sta = 'WT502a'
+        #sta = 'WT024a'
+        #sta = 'WT070b'
+        #sta = 'WT107a'
 
         if sta == 'WT111a':
             x_intp = -3615.360
@@ -143,6 +146,21 @@ if __name__ == "__main__":
             x_intp = 1008.640
             y_intp = -578.359  
             z0 = -487.523 
+
+        if sta == 'WT024a':
+            x_intp = 2453.640
+            y_intp = -2312.359  
+            z0 = -487.523 
+
+        if sta == 'WT070b':
+            x_intp = -1303.360
+            y_intp = 1155.641
+            z0 = -487.523 
+
+        if sta == 'WT107a':
+            x_intp = -2459.360
+            y_intp = 2600.641
+            z0 = -380.028
 
         # WT502a => pos: 4
         # WT111a => pos: 11
@@ -172,7 +190,6 @@ if __name__ == "__main__":
         plt.close(f)    # close the figure
 
         ## plot boundaries uncertainty from 3D inversion 
-        # 
         f, g = modem.plot_uncert_comp(res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc)
         f.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'prof_intp.png')   # save the figure to file
         plt.close(f)    # close the figure

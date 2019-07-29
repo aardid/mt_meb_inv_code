@@ -4,6 +4,8 @@
 # Author: Alberto Ardid
 # Institution: University of Auckland
 # Date: 2019
+.. conventions::
+CC	: Clay Cap 
 """
 
 # ==============================================================================
@@ -669,19 +671,23 @@ class modEM(object):
 
     def intp_1D_prof(self, x_intp, y_intp):
         """
-        Inteporlate 1D profile at surface position lat,lon. 
+        Inteporlate 1D profile at surface position lat,lon
+        (from grid defined by self.x,y,z) 
         Depths of interpolation are grid ones (self.z) 
+
+        Inputs: 
+            x_intp: surface position in x axis on grid.
+            x_intp: surface position in y axis on grid.
 
         Return: 
             Vector containing interpolate values at depths given in self.z
-
         """ 
 
-        ## construct vectors to be used in griddata
-        # construct 'points' and 'values' vectors
+        ## construct vectors to be used in griddata: points, values and xi
+        # (i) construct 'points' and 'values' vectors
         points = np.zeros([self.nx*self.ny*self.nz, 3])
         values = np.zeros([self.nx*self.ny*self.nz])
-        #
+        # loop over self.nx, ny, nz to fill points and values
         n = 0
         for i in range(self.nx):
             for j in range(self.ny):
@@ -695,17 +701,24 @@ class modEM(object):
         #for i in range(n):
         #    t.write('{}\t{}\t{}\n'.format(points[i][0],points[i][1],points[i][2]))
         #t.close()
-        ##  construct 'xi' vector
+        
+        # (ii) construct 'xi' vector
         xi = np.zeros([self.nz, 3])
         for k in range(self.nz): 
             xi[k,:] = [x_intp,y_intp,self.z[k]]
 
+        ## (iii) griddata: create interpolate profile 
         grid_z = griddata(points, values, xi, method='linear')
 
         return grid_z
     
     def plot_comp_mcmc(self, z_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc):
+        """
+        Plot profile from 'intp_1D_prof' method with mcmc CC boundaries. 
 
+        Return:
+            figure
+        """
         # create figure
         f = plt.figure(figsize=[5.5,5.5])
         ## plot profile 3d inv
@@ -725,11 +738,19 @@ class modEM(object):
         ax.set_ylabel('Depth [m]')
         ax.set_title('3Dinv profile and MCMC CC boundaries')
         ax.grid(alpha = 0.3)
+        plt.tight_layout()
         #plt.show()
 
         return f
 
-    def plot_uncert_comp(self, res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc): 
+    def plot_uncert_comp(self, res_intp, z0, z1_mcmc, z2_mcmc, r2_mcmc):
+        """
+        a. Plot interpolated profile on new sample positions every 1 m 
+        b. Plot CC equivalent boundaries in 3Dinv profile compare to MCMC CC boundaries 
+
+        Return: 
+            Figures a. and b. 
+        """
 
         ## calculate positions of r2_mcmc in z_inerp (dephts in self.z)
         # (0) resample  res_intp and self.z in dz ~ 1m. 
@@ -748,12 +769,13 @@ class modEM(object):
         ax.plot(np.log10(res_intp), self.z -  z0,'b*-', label='profile from 3D inv.')
         ax.plot(log_r_rs, z_rs[:-1] -  z0,'m-', label='rs profile')
         plt.ylim([-1500,0])
-        plt.xlim([-1,3])
+        plt.xlim([-1,4])
         ax.legend(loc = 3)
         ax.set_xlabel('log10 Resistivity [Ohm m]')
         ax.set_ylabel('Depth [m]')
         ax.set_title('3Dinv profile interpolation')
         ax.grid(alpha = 0.3)
+        plt.tight_layout()
         #plt.show()
 
         # (1) divide profile in 2 sections to look for upper and lower boundary
