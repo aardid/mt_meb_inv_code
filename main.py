@@ -46,8 +46,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalSuse'
+	pc = 'office'
+	#pc = 'personalSuse'
 	#pc = 'personalWin'
 
 	## Set of data to work with 
@@ -174,7 +174,7 @@ if __name__ == "__main__":
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
 		if prof_WRKNW5:
-			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK404','WK408','WK401'] 
+			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404']
 			#wl2work = ['WK260'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
@@ -407,11 +407,11 @@ if __name__ == "__main__":
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 1000, prior_meb = prior_meb, range_p = [0.,1.0])
+				walk_jump = 1000, prior_meb = prior_meb, range_p = [0.,100.0])
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
-				#print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
+				print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
 			## run inversion 
 			mcmc_sta.inv()
 			## plot results (save in .png)

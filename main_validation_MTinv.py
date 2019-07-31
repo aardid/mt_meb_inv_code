@@ -130,22 +130,28 @@ if __name__ == "__main__":
         lon = sta_coord[:,4] 
         ## depth vector for interpolation 
         #z_intp = np.linspace(0,2000,1000)
-
-        #sta = 'WT111a' 
+        
         sta = 'WT502a'
+        #sta = 'WT223a'
+        #sta = 'WT111a' 
         #sta = 'WT024a'
         #sta = 'WT070b'
         #sta = 'WT107a'
-
-        if sta == 'WT111a':
-            x_intp = -3615.360
-            y_intp = 3178.641 
-            z0 = -380.028
 
         if sta == 'WT502a':
             x_intp = 1008.640
             y_intp = -578.359  
             z0 = -487.523 
+
+        if sta == 'WT223a':
+            x_intp = -1881.360
+            y_intp = 1733.641  
+            z0 = -380.028 
+
+        if sta == 'WT111a':
+            x_intp = -3615.360
+            y_intp = 3178.641 
+            z0 = -380.028
 
         if sta == 'WT024a':
             x_intp = 2453.640
@@ -170,7 +176,8 @@ if __name__ == "__main__":
         #print(y_intp)
 
         #modem.intp_1D_prof(2000,-2300)
-        res_intp = modem.intp_1D_prof(x_intp, -1*y_intp) # Vector containing interpolate values at depths given in self.z
+        #res_intp = modem.intp_1D_prof(x_intp, y_intp) # Vector containing interpolate values at depths given in self.z
+        res_intp = modem.intp_1D_prof(-1*x_intp, y_intp) # Vector containing interpolate values at depths given in self.z
 
         ## compare results from 3D inversion and MCMC
         # import results from station 'sta'

@@ -367,9 +367,11 @@ class mcmc_inv(object):
                         #prob = prob
                         #v = 0.15
                         dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
-                        weight = np.exp(-dist)
+                        if dist > 1.:
+                            dist = np.inf
+                        weight = np.exp(-dist+2.) # km
                         # prior over z1 (thickness layer 1)
-                        prob += weight**2. *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm \
+                        prob += weight**1. *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm \
                             /self.prior_meb_pars[0][1]**2 
                         # prior over z2 (thickness layer 2)
                         #prob += weight**0. *-((self.prior_meb_pars[1][0] - self.prior_meb_pars[0][0]) - pars[1])**self.norm \

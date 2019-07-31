@@ -326,7 +326,7 @@ class modEM(object):
                 cnt += 1
                 
             # condition to break from loop
-            if all(np.array([i,j,k]) == np.array([self.nx, self.ny, self.nz])): break
+            if all(np.array([i,j,k]) == np.array([self.nx, self.ny, self.nz])): break 
                 
             if cnt == (self.nx*self.ny*self.nz): break
                     
@@ -708,7 +708,7 @@ class modEM(object):
             xi[k,:] = [x_intp,y_intp,self.z[k]]
 
         ## (iii) griddata: create interpolate profile 
-        grid_z = griddata(points, values, xi, method='linear')
+        grid_z = griddata(points, values, xi, method='nearest')
 
         return grid_z
     
