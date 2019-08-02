@@ -45,7 +45,7 @@ textsize = 15.
 #  ModEM class
 # ==============================================================================
 
-class modEM(object):
+class Modem(object):
     """
     This class is for dealing with ModEM software
 	====================    ========================================== ==========
@@ -398,6 +398,7 @@ class modEM(object):
                 self.zs = np.zeros((1,nS))[0]	# station locations
                 
                 self.f = np.zeros((nT,nS))
+                self.T = np.zeros((nT,nS))
             
             dat = np.zeros((nT,nS), dtype = complex)
 
@@ -414,6 +415,7 @@ class modEM(object):
                         
                     if cnt == 0:
                         self.f[j,i] = 1./float(nums[0])
+                        self.T[j,i] = float(nums[0])
                         
                     # save station data
                     dat[j,i] = np.complex(float(nums[8]),float(nums[9]))
@@ -835,8 +837,656 @@ class modEM(object):
 
         return f, g
 
+# Functions for constructing resistivity model
+def f(x): 
+	return (1-6*x**2+4*x**3)/np.sqrt(1-12*x**2+24*x**3-12*x**4)
+def df(x): 
+	return (12*x**2-12*x)/np.sqrt(1-12*x**2+24*x**3-12*x**4) - (-48*x**3+72*x**2-24*x)*(4*x**3-6*x**2+1)/np.sqrt(1-12*x**2+24*x**3-12*x**4)**3/2.
+def rho(x, par):
+	xm, xw, xel, xer, rho0, rhoa = par
+	# check iterable
+	try: iter(x) 
+	except TypeError: x = [x]
+	x = np.array(x)
+	# apply transfer
+	rho = []
+	drho = np.log10(rhoa) - np.log10(rho0)
+	
+	for xi in x:
+		if (xi<(xm-xw/2-xel/2)) or (xi>(xm+xw/2+xer/2)): 
+			rho.append(rho0)
+		elif (xi>(xm-xw/2+xel/2)) and (xi<(xm+xw/2-xer/2)): 
+			rho.append(rhoa)
+		elif (xi<=(xm-xw/2+xel/2)) and (xi>=(xm-xw/2-xel/2)):
+			rho.append(10**(np.log10(rho0) + (1-f((xi - (xm-xw/2-xel/2))/xel))/2.*drho))
+		else:
+			rho.append(10**(np.log10(rho0) + (1+f((xi - (xm+xw/2-xer/2))/xer))/2.*drho))
+	return np.array(rho)
+def rho_noise(x, par, var_rho0, var_rhoa):
+	xm, xw, xel, xer, rho0, rhoa = par
+	
+# check iterable
+	try: iter(x) 
+	except TypeError: x = [x]
+	x = np.array(x)
+	# apply transfer
+	rho = []
+	drho = np.log10(rhoa) - np.log10(rho0)
+	
+	for xi in x:
+		if (xi<(xm-xw/2-xel/2)) or (xi>(xm+xw/2+xer/2)): 								# range 1 and 5
+			mu = rho0
+			sigma = np.sqrt(var_rho0)
+			noise = sigma * np.random.randn()
+			rho0_noise = rho0 + noise
+			rho.append(rho0_noise)
+		elif (xi>(xm-xw/2+xel/2)) and (xi<(xm+xw/2-xer/2)):  							# range 3
+			mu = rhoa
+			sigma = np.sqrt(var_rhoa)
+			noise = sigma * np.random.randn()
+			rhoa_noise = rhoa + noise
+			rho.append(rhoa_noise)
+		elif (xi<=(xm-xw/2+xel/2)) and (xi>=(xm-xw/2-xel/2)): 							# range 2
+			mu = rho0
+			sigma = np.sqrt(var_rho0)
+			noise = sigma * np.random.randn()
+			rho0_noise = rho0 + noise
+			rho.append(10**(np.log10(rho0_noise) + (1-f((xi - (xm-xw/2-xel/2))/xel))/2.*drho)) 
+		else:																			 # range 4
+			mu = rho0
+			sigma = np.sqrt(var_rho0)
+			noise = sigma * np.random.randn()
+			rho0_noise = rho0 + noise
+			rho.append(10**(np.log10(rho0_noise) + (1+f((xi - (xm+xw/2-xer/2))/xer))/2.*drho)) 
+	
+	return np.array(rho)
+def rho2(xi, xm, xw, xel, xer, rho0, rhoa):
+	if xw<0.: return 1.e32
+	drho = np.log10(rhoa) - np.log10(rho0)
+	if (xi<(xm-xw/2-xel)) or (xi>(xm+xw/2+xer)): 
+		return rho0
+	elif (xi>(xm-xw/2)) and (xi<(xm+xw/2)): 
+		return rhoa
+	elif (xi<=(xm-xw/2)) and (xi>=(xm-xw/2-xel)):
+		return 10**(np.log10(rho0) + (1-f((xi - (xm-xw/2-xel))/xel))/2.*drho)
+	else:
+		return 10**(np.log10(rho0) + (1+f((xi - (xm+xw/2))/xer))/2.*drho)
+def rho3(x, *par): return np.array([rho2(xi,*par) for xi in x])
+def setup_simulation(work_dir = None):
+	# use the same grid for all simulations
+	AUTOUGHGeo = r'D:\ModEM\modem_python\00_Temp_model_grid\g31kBlock_vEWA_BH.dat' # Office
+	#AUTOUGHGeo = r'C:\Users\ajara\Desktop\Temp_file\g31kBlock_vEWA_BH.dat' # House
 
+	geo = mulgrid(AUTOUGHGeo)		# get tough 2 geometry
 
+	# layer edges
+	ze = np.array([l.bottom for l in geo.layerlist])
+	ze -= np.max(ze)
+	# column edges
+	xe = np.unique([c.bounding_box[0][0] for c in geo.columnlist]+[c.bounding_box[1][0] for c in geo.columnlist])
+	ye = np.unique([c.bounding_box[0][1] for c in geo.columnlist]+[c.bounding_box[1][1] for c in geo.columnlist])
+	
+	# read temperature data and assign conductivity model
+	x,y,z,T = np.genfromtxt(r'D:\ModEM\modem_python\00_Temp_model_grid\31kBlockEWA_BH_final_xyz_T.dat', delimiter = ',').T # office
+	#x,y,z,T = np.genfromtxt(r'C:\Users\ajara\Desktop\Temp_file\31kBlockEWA_BH_final_xyz_T.dat', delimiter = ',').T  # house
+	
+	# get min x slice of data
+	xmin = np.min(x); tol = 1.e-6
+	inds = np.where(abs(x-xmin)<tol)
+	y = y[inds]
+	z = z[inds]
+	z = z - np.max(z)
+	T = T[inds]
+	
+	# interpolate temperatures to finer grid in z direction
+	ynew = np.unique(y)
+	
+	ymax = 5.e3
+	dy = 100.
+	yu = np.unique(y)
+	i = np.argmin(abs(yu - ymax))		
+	ynew = list(np.linspace(dy/2.,ymax+dy/2., abs(ymax)/dy+1))+ list(yu[i+1:])
+	ye = list(np.linspace(0,ye[i+1], abs(ye[i+1])/dy+1))+ list(ye[i+2:])
+	
+	zmin = -1.4e3
+	dz = 50.
+	zu = np.flipud(np.unique(z))
+	i = np.argmin(abs(zu - zmin))		
+	znew = list(np.linspace(-dz/2.,zmin-dz/2., abs(zmin)/dz+1))+ list(zu[i+1:])
+	ze = list(np.linspace(0,ze[i+1], abs(ze[i+1])/dz+1))+ list(ze[i+2:])
+			
+	[ynew,znew] = np.meshgrid(ynew, znew)
+	ynew = ynew.flatten()
+	znew = znew.flatten()
+	Tnew = griddata(np.array([y,z]).T,T,np.array([ynew,znew]).T, method='linear', fill_value = np.min(T))
+	yi,zi,Ti = np.array([ynew,znew,Tnew])
+	
+	# create a grid
+	dat = Modem(work_dir = work_dir)
+	x = []
+	base = 10
+	
+	ny = 10
+	y = np.array(list(ye) + list(np.logspace(np.log10(ye[-1]),np.log10(80.e3),ny+1,base))[1:])
+	y = list(reversed(-y))[:-1] + list(y)
+	
+	nz = 10
+	z = list(ze) + list(-np.logspace(np.log10(-ze[-1]),np.log10(80.e3),nz+1,base))[1:]
+	
+	dat.make_grid(x,y,z)
+	
+	nT = 41
+	nS = 41
+	base = 10
+	T = np.logspace(np.log(0.01)/np.log(base), np.log(400)/np.log(base), nT, base = base) 		
+	dat.stations(np.linspace(-10.e3,10.e3,nS),0.,1./T)
+	
+	return dat, [yi,zi,Ti]
+def set_rho(dat, yi, zi, rhoi, rhob):
+	rho_crust, rho_greywacke, rho_fill = rhob
+	dat.rho_box(rho_crust) 		# lower crust
+	dat.rho_box(rho_greywacke, box = [-80.e3,-10.e3,160.e3,8.3e3]) 	# greywacke
+	dat.rho_box(rho_fill, box = [-80.e3,-0.e3,160.e3,2.e3]) 	# fill
+	
+	dat.rho_blocks(rhoi, yi, zi[:np.floor(len(zi)/3)])
+	dat.rho_blocks(rhoi, -yi,zi[:np.floor(len(zi)/3)])
+	
+	#dat.plot_rho2D(dat.work_dir+os.sep+'rho.png', xlim = [-12., 12.], ylim = [-5.,0], gridlines = True, clim = [1,1000])
+			
+	return dat
+def run_simulation(dat, dir0 = None):
+	# run model
+	dat.run(input = 'in.dat', output = 'out.dat', exe = r'D:\ModEM\ModEM\f90\Mod2DMT.exe')		
+	# visualize input and output		
+	dat.read_data(dat.work_dir+os.sep+'out.dat')	
+	
+	if dir0 is None:
+		with open(dat.work_dir+os.sep+'TE_Resistivity0.txt','w') as fp:
+			for tei in dat.TE_Resistivity.flatten():
+				fp.write("%8.7e\n"%tei)
+		with open(dat.work_dir+os.sep+'TM_Resistivity0.txt','w') as fp:
+			for tei in dat.TM_Resistivity.flatten():
+				fp.write("%8.7e\n"%tei)
+	else:
+		TE_Resistivity0 = np.genfromtxt(dir0+os.sep+'TE_Resistivity0.txt')
+		TM_Resistivity0 = np.genfromtxt(dir0+os.sep+'TM_Resistivity0.txt')
+		
+		rms = np.sum((dat.TE_Resistivity.flatten() - TE_Resistivity0)**2)
+		rms += np.sum((dat.TM_Resistivity.flatten() - TM_Resistivity0)**2)
+		rms = np.sqrt(rms/(2.*dat.TE_Resistivity.shape[0]*dat.TM_Resistivity.shape[1]))
+	
+		with open(dat.work_dir+os.sep+'rms.txt','w') as fp:
+			fp.write("%8.7e\n"%rms)
+def resistivity_model(par, wd):
+	# run a proposed case
+	plt.clf()
+	fig = plt.figure(figsize=[7.5,5.5])
+	ax = plt.axes([0.18,0.25,0.70,0.50])
+			
+	T = np.linspace(50,300,1001)
+	ax.plot(T,rho(T, par),'b*')
+	ax.set_yscale('log')
+
+	ax.set_ylim(0.1,1000)
+	ax.set_ylabel(r'resistivity / $\Omega$ m', size = textsize)
+	ax.set_xlabel(r'temperature / $^\circ$C', size = textsize)
+	
+	plt.savefig(wd+os.sep+'resistivity_model.pdf', dpi=300, facecolor='w', edgecolor='w',
+		orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
+	plt.close(fig)
+	
+	# save parameter
+	with open(wd+os.sep+'parameters.txt','w') as fp:
+		fp.write("xm = %8.7f\n"%par[0])
+		fp.write("xw = %8.7f\n"%par[1])
+		fp.write("xel = %8.7f\n"%par[2])
+		fp.write("xer = %8.7f\n"%par[3])
+		fp.write("rhoa = %8.7f\n"%par[5])
+def resistivity_model_noise(par, wd, var_rho0, var_rhoa):
+	# run a proposed case
+	plt.clf()
+	fig = plt.figure(figsize=[7.5,5.5])
+	ax = plt.axes([0.18,0.25,0.70,0.50])
+			
+	T = np.linspace(50,300,1001)
+	ax.plot(T,rho_noise(T, par, var_rho0, var_rhoa),'r*')
+	ax.plot(T,rho(T, par),'b-')
+	ax.set_yscale('log')
+	
+	ax.set_ylim(1,3000)
+	ax.set_ylabel(r'resistivity [$\Omega$ m]', size = textsize)
+	ax.set_xlabel(r'temperature [$^\circ$C]', size = textsize)
+	ax.set_title(r'$\rho (T)$ model', size = textsize)
+	plt.savefig(wd+os.sep+'resistivity_model_noise.pdf', dpi=300, facecolor='w', edgecolor='w',
+		orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
+	plt.savefig(wd+os.sep+'resistivity_model_noise.png', dpi=300, facecolor='w', edgecolor='w',
+		orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+	plt.close(fig)
+	
+	# save parameter
+	with open(wd+os.sep+'parameters.txt','w') as fp:
+		fp.write("xm = %8.7f\n"%par[0])
+		fp.write("xw = %8.7f\n"%par[1])
+		fp.write("xel = %8.7f\n"%par[2])
+		fp.write("xer = %8.7f\n"%par[3])
+		fp.write("rhoa = %8.7f\n"%par[5])
+def	run_one_simulation(sample):
+	i, xm, xw, xel, xer, rhoa, rho_crust, rho_greywacke, rho_fill = sample
+	print("\n\nSAMPLE %i\n\n"%i)
+	par_run = [xm,xw,xel,xer,rho_fill,rhoa]
+	dat, t2t  = setup_simulation(work_dir = 'run%04i'%i)
+	yi,zi,Ti = t2t
+	rhoi = rho(Ti, par_run)
+	dat = set_rho(dat, yi, zi, rhoi, sample[-3:])
+	resistivity_model(par_run, dat.work_dir)				
+	run_simulation(dat, 'true')
+	os.remove(dat.work_dir+os.sep+'out_template.dat')
+def get_T(y,z,T,ystations,zinterp):
+	yi,zi = np.meshgrid(ystations, zinterp)	
+	Tinterp = griddata(np.array([y,z]).T,T,np.array([yi.flatten(),zi.flatten()]).T,method='linear')		
+	return zi,Tinterp.reshape([len(zinterp), len(ystations)]).T
+def get_rho(dat, ystations, zinterp):	
+	yi,zi = np.meshgrid(ystations, zinterp)	
+	yy,zz = np.meshgrid(dat.y, dat.z)
+	Tinterp = griddata(np.array([yy.flatten(),zz.flatten()]).T,dat.rho.T.flatten(),np.array([yi.flatten(),zi.flatten()]).T,method='linear')		
+	return zi,Tinterp.reshape([len(zinterp), len(ystations)]).T
+def cp(x, m, su, sl, a, b): 
+	return np.array([b-a*su*cauchy.pdf(xi, m, su) if xi>m else b-a*sl*cauchy.pdf(xi, m, sl) for xi in x])
+def Texp(z,a,b,c): return 275.*(np.exp(-a*(z-c)/b)-1)/(np.exp(a) - 1)+25.
+def normal(z, m, s, a, b): return b-a*np.exp(-(z-m)**2/(2*s**2))
+def Texp2(z,Zmax,Zmin,Tmin,Tmax,beta): return (Tmax - Tmin)*(np.exp(beta*(z-Zmin)/(Zmax-Zmin))-1)/(np.exp(beta)-1) + Tmin
+def find_nearest(array, value):
+	array = np.asarray(array)
+	idx = (np.abs(array - value)).argmin()
+	return array[idx]
+def T_est_demo(beta, z, Zmin, Zmax, Tmin, Tmax):
+	z = np.asarray(z)
+	# look where the normal estimation is negative: built the Test from there  
+	#if any(TT[:,sta_obj.pos] <= 0.):
+	# if sta_obj.pos >= 6:
+	if False:
+		inds_z_inicial_aux = np.where(TT[:,sta_obj.pos] <= 0. )
+		inds_z_inicial = np.min(inds_z_inicial_aux) + sta_obj.pos##+ (12 - abs(sta_obj.pos-8)) # + abs(j-11)*1
+		#if j == 4:
+		#	inds_z_inicial = np.min(inds_z_inicial_aux) + (j-3)*4
+						
+		# find index of boundaries (Z)				
+		#layer 1
+		inds_z = np.where(z == find_nearest(z, Zmax[0]))
+		inds_z_l1 = int(inds_z[0][0])
+		# layer 2
+		inds_z = np.where(z == find_nearest(z, Zmax[1]))
+		inds_z_l2 = int(inds_z[0][0])
+		# layer 3
+		inds_z = np.where(z == find_nearest(z, Zmax[2]))
+		inds_z_l3 = int(inds_z[0][0])
+		# construct profile by layer						
+		# def Texp2(z,Zmax,Zmin,Tmin,Tmax,beta): 
+		# return (Tmax - Tmin)*(np.exp(beta*(z-Zmin)/(Zmax-Zmin))-1)/(np.exp(beta)-1) + Tmin
+		Test_l1 = Texp2(z[inds_z_l1:len(z)],Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta[0])
+		Test_l2 = Texp2(z[inds_z_l2:inds_z_l1],Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta[1])
+		Test_l3 = Texp2(z[inds_z_l3:inds_z_l2],Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta[2])
+
+		Test = np.concatenate((Test_l3, Test_l2, Test_l1),axis=0)
+					
+		if inds_z_inicial < len(z):
+			Test[0:inds_z_inicial-1] = Test[len(z)-inds_z_inicial+1:len(z)]
+			Test[inds_z_inicial-1:len(z)] = Test[inds_z_inicial-2]
+	else: 
+		inds_z_inicial = len(z)
+		#print('hola')
+		# find index of boundaries (Z)				
+		#  layer 1
+		inds_z = np.where(z == find_nearest(z, Zmax[0]))
+		inds_z_l1 = int(inds_z[0][0])
+		# layer 2
+		inds_z = np.where(z == find_nearest(z, Zmax[1]))
+		inds_z_l2 = int(inds_z[0][0])
+		# layer 3
+		inds_z = np.where(z == find_nearest(z, Zmax[2]))
+		inds_z_l3 = int(inds_z[0][0])
+		# construct profile by layer
+		Test_l1 = Texp2(z[inds_z_l1:len(z)],Zmax[0],Zmin[0],Tmin[0],Tmax[0],beta[0])
+		Test_l2 = Texp2(z[inds_z_l2:inds_z_l1],Zmax[1],Zmin[1],Tmin[1],Tmax[1],beta[1])
+		Test_l3 = Texp2(z[inds_z_l3:inds_z_l2],Zmax[2],Zmin[2],Tmin[2],Tmax[2],beta[2])
+
+		Test = np.concatenate((Test_l3, Test_l2, Test_l1),axis=0)
+						
+	#print(np.mean(Test - sta_obj.temp_profile[1]))
+	return Test
+def T_BC_trans(Zmin, Zmax, slopes, obj):
+					
+	sigma = 5. # std from the isotherm value 
+					
+	Tmin_l1 = obj.temp_profile[1][-1]
+	Tmax_l1 = np.random.normal(levels[0], sigma, 1)[0] #levels[0] 
+					
+	Tmin_l2 = Tmax_l1
+	Tmax_l2 = np.random.normal(levels[1], sigma, 1)[0] #levels[1] 
+	Tmin_l3 = Tmax_l2
+	Tmax_l3 = Tmin_l3 + slopes[2]*(Zmin[2]-Zmax[2])
+					
+	Tmin = [Tmin_l1, Tmin_l2, Tmin_l3] 
+	Tmax = [Tmax_l1, Tmax_l2, Tmax_l3]
+					
+	#print(Tmax)
+	#print(sta_obj.temp_profile[1][0])
+
+	return Tmin, Tmax	
+	# Functions for MCMMC inversion  	
+def s_depth(period,rho):
+    return 500*np.sqrt(rho*period)
+def anaMT1D_f_nlayers(h,rho,T):
+    # Base parameters:
+    mu=4*math.pi*(10**-7)             # Electrical permitivity [Vs/Am]
+    phi = T.copy()
+    rho_ap = T.copy()
+
+    # Parameters:Thicknesses and resistivities (funtion of number of layers)
+    n_layers= len(h) # number of layers
+    #layers=np.linspace(1,n_layers,n_layers)
+    #h = np.linspace(1,n_layers,n_layers) # Thickness
+    #h[0] = h_1
+    #h[1] = h_2
+    #h[2] = h_3
+    #rho = np.linspace(1,n_layers+1,n_layers+1)
+    #rho[0] = rho_1
+    #rho[1] = rho_2
+    #rho[2] = rho_3
+    #rho_hs = rho_hs # half space
+
+    # Recursion
+    for k in range(0,len(T)):
+        pe=T[k]
+        omega=(2*math.pi)/pe
+        # Half space parameters
+        gamM = cmath.sqrt(1j*omega*mu*(1/rho[-1]))
+        C = 1/gamM
+        # Interaction: inferior layer -> superior layer
+        for l in range(0,n_layers):
+            gam = cmath.sqrt(1j*omega*mu*(1/rho[(n_layers-1)-l]))
+            r = (1-(gam*C))/(1+(gam*C))
+            C=(1-r*cmath.exp(-2*gam*h[n_layers-(l+1)]))/(gam*(1+r*cmath.exp(-2*gam*h[n_layers-(l+1)])))
+        Z=1j*omega*C                                              # Impedance
+        phi[k]= (math.atan(Z.imag/Z.real))*360/(2*math.pi)        # Phase in degrees
+        rho_ap[k]=(mu/omega)*(abs(Z)**2)                          # Apparent resistivity 
+    
+    return rho_ap, phi
+def anaMT1D_f_3layers(h_1,h_2,h_3,rho_1,rho_2,rho_3,rho_hs,T):
+    # Base parameters:
+    mu=4*math.pi*(10**-7)             # Electrical permitivity [Vs/Am]
+    phi = T.copy()
+    rho_ap = T.copy()
+
+    # Parameters:Thicknesses and resistivities (funtion of number of layers)
+    n_layers= 3 # number of layers
+    layers=np.linspace(1,n_layers,n_layers)
+    h = np.linspace(1,n_layers,n_layers) # Thickness
+    h[0] = h_1
+    h[1] = h_2
+    h[2] = h_3
+    rho = np.linspace(1,n_layers+1,n_layers+1)
+    rho[0] = rho_1
+    rho[1] = rho_2
+    rho[2] = rho_3
+    rho_hs = rho_hs # half space
+
+    # Recursion
+    for k in range(0,len(T)):
+        pe=T[k]
+        omega=(2*math.pi)/pe
+        # Half space parameters
+        gamM = cmath.sqrt(1j*omega*mu*(1/rho_hs))
+        C = 1/gamM
+        # Interaction: inferior layer -> superior layer
+        for l in range(0,n_layers):
+            gam = cmath.sqrt(1j*omega*mu*(1/rho[(n_layers-1)-l]))
+            r = (1-(gam*C))/(1+(gam*C))
+            C=(1-r*cmath.exp(-2*gam*h[n_layers-(l+1)]))/(gam*(1+r*cmath.exp(-2*gam*h[n_layers-(l+1)])))
+        Z=1j*omega*C                                              # Impedance
+        phi[k]= (math.atan(Z.imag/Z.real))*360/(2*math.pi)        # Phase in degrees
+        rho_ap[k]=(mu/omega)*(abs(Z)**2)                          # Apparent resistivity 
+    
+    return rho_ap, phi
+def anaMT1D_f_2layers(h_1,h_2,rho_1,rho_2,rho_hs,T):
+    # Base parameters:
+    mu=4*math.pi*(10**-7)             # Electrical permitivity [Vs/Am]
+    phi = T.copy()
+    rho_ap = T.copy()
+
+    # Parameters:Thicknesses and resistivities (funtion of number of layers)
+    n_layers= 2 # number of layers
+    layers=np.linspace(1,n_layers,n_layers)
+    h = np.linspace(1,n_layers,n_layers) # Thickness
+    h[0] = h_1
+    h[1] = h_2
+    rho = np.linspace(1,n_layers+1,n_layers+1)
+    rho[0] = rho_1
+    rho[1] = rho_2
+    rho_hs = rho_hs # half space
+
+    # Recursion
+    for k in range(0,len(T)):
+        pe=T[k]
+        omega=(2*math.pi)/pe
+        # Half space parameters
+        gamM = cmath.sqrt(1j*omega*mu*(1/rho_hs))
+        C = 1/gamM
+        # Interaction: inferior layer -> superior layer
+        for l in range(0,n_layers):
+            gam = cmath.sqrt(1j*omega*mu*(1/rho[(n_layers-1)-l]))
+            r = (1-(gam*C))/(1+(gam*C))
+            C=(1-r*cmath.exp(-2*gam*h[n_layers-(l+1)]))/(gam*(1+r*cmath.exp(-2*gam*h[n_layers-(l+1)])))
+        Z=1j*omega*C                                              # Impedance
+        phi[k]= (math.atan(Z.imag/Z.real))*360/(2*math.pi)        # Phase in degrees
+        rho_ap[k]=(mu/omega)*(abs(Z)**2)                          # Apparent resistivity 
+    
+    return rho_ap, phi
+def num_model_mesh(periods,target_depth,depth_layer1,depth_layer2,depth_layer3,rho_layer1,rho_layer2,rho_layer3,
+                   rho_hs,thickness_layer1,thickness_layer2,thickness_layer3): 
+    
+    p_min = np.min(periods)   # s
+    p_max = np.max(periods)   # s
+    
+    # skin depth 
+    s_depth_min = s_depth(p_min,rho_hs)
+    s_depth_max = s_depth(p_max,rho_hs)
+    cell_size =  s_depth_min/4   # m
+    depth_extantion = 2*s_depth_max # m 
+    
+    n_cells = int(np.floor(target_depth/cell_size))        # number of cells
+    p_cells = int(np.floor(n_cells/4))                     # padding cells
+    
+    v4TensorMesh =  [(cell_size, p_cells, -1.3), (cell_size, n_cells)]  # (?) -1.3
+    mesh = Mesh.TensorMesh([v4TensorMesh],'N') 
+    
+    # Model (layers)
+    sigma_model = 1./rho_hs * np.ones(mesh.nC)
+    
+    # find the indices of the layer 1
+    layer_inds_layer1 = (
+        (mesh.vectorCCx<=-depth_layer1) & 
+        (mesh.vectorCCx>-(depth_layer1+thickness_layer1))
+    )
+    
+    # find the indices of the layer 2
+    layer_inds_layer2 = (
+        (mesh.vectorCCx<=-depth_layer2) & 
+        (mesh.vectorCCx>-(depth_layer2+thickness_layer2))
+    )
+    # find the indices of the layer 3
+    layer_inds_layer3 = (
+        (mesh.vectorCCx<=-depth_layer3) & 
+        (mesh.vectorCCx>-(depth_layer3+thickness_layer3))
+    )
+    # Build de model
+    sigma_model[layer_inds_layer1] = 1./rho_layer1  # add layer 1
+    sigma_model[layer_inds_layer2] = 1./rho_layer2  # add layer 2
+    sigma_model[layer_inds_layer3] = 1./rho_layer3  # add layer 3
+    
+    return sigma_model, mesh	
+def find_nearest(array, value):
+	array = np.asarray(array)
+	idx = (np.abs(array - value)).argmin()
+	return int(idx), array[idx]
+def closest_wells(well_pos, pos):
+	# search left of the station
+	well_pos_left = []
+	for i in well_pos: 
+		if i < pos:
+			well_pos_left.append(i)
+	# search rigth of the station
+	well_pos_rigth = []
+	for i in well_pos: 
+		if i > pos:
+			well_pos_rigth.append(i)
+	closest_wells_2 = [well_pos_left[-1],well_pos_rigth[0]]
+	return closest_wells_2
+	
+
+def est_rest_cc_prior(pos, distances):
+	#(0) well to consider : 2 nearest
+	n = 2
+	n_wells =  [i for i in range(n)]
+	#(1) Search for two neighbor wells  # well_pos =  [0,3,9], sta_pos = [...rest...]
+	#dist_pos_well = [i-pos for i in well_pos]
+	#dist_pos_well = [abs(i) for i in  dist_pos_well]
+	#indx_sort = np.argsort(dist_pos_well)
+	#closest_wells = [well_pos[indx_sort[i]] for i in n_wells] # location of closest 2 wells (in ystation vector) 
+	
+	#search left of the station
+	well_pos_left = []
+	for i in well_pos: 
+		if i < pos:
+			well_pos_left.append(i)
+	#search rigth of the station
+	well_pos_rigth = []
+	for i in well_pos: 
+		if i > pos:
+			well_pos_rigth.append(i)
+	closest_wells = [well_pos_left[-1],well_pos_rigth[0]]
+	
+	#closest_wells = closest_wells(well_pos, pos)
+	
+	#(2) Calculate distance between station and wells (2)
+	dist_sta_wells = [distances[i] for i in closest_wells]	
+	#(3) Calculate resistivity for prior 
+	idx_aux = [find_nearest(well_pos,closest_wells[i]) for i in range(n)] # index of closest wells in well_pos
+	idx_aux = [idx_aux[i][0] for i in range(len(idx_aux))]
+	rest_cc_nwells = [well_objects[idx_aux[i]].clay_cap_resistivity for i in range(n)] # cc resistivities in closest wells
+	# (4) Calculate prior res for estation as ponderate sum of cc rest of closest wells  
+	rest_cc_wells_vec = [rest_cc_nwells[i][0]*(sum(dist_sta_wells)-dist_sta_wells[i])/sum(dist_sta_wells) for i in range(n)]
+	rest_cc_wells = sum(rest_cc_wells_vec)
+	return rest_cc_wells
+def est_rest_l1_l3_prior(pos, distances):
+	#(0) well to consider : 2 nearest
+	n = 2
+	n_wells =  [i for i in range(n)]
+	#(1) Search for two neighbor wells  # well_pos =  [0,3,9], sta_pos = [...rest...]
+	#dist_pos_well = [i-pos for i in well_pos]
+	#dist_pos_well = [abs(i) for i in  dist_pos_well]
+	#indx_sort = np.argsort(dist_pos_well)
+	#closest_wells = [well_pos[indx_sort[i]] for i in n_wells] # location of closest 2 wells (in ystation vector) 
+	# search left of the station
+	well_pos_left = []
+	for i in well_pos: 
+		if i < pos:
+			well_pos_left.append(i)
+	#search rigth of the station
+	well_pos_rigth = []
+	for i in well_pos: 
+		if i > pos:
+			well_pos_rigth.append(i)
+	closest_wells = [well_pos_left[-1],well_pos_rigth[0]]
+	
+	#closest_wells = closest_wells(well_pos, pos)
+	#(2) Calculate distance between station and wells (2)
+	dist_sta_wells = [distances[i] for i in closest_wells]	
+	#(3) Calculate resistivity for prior 
+	idx_aux = [find_nearest(well_pos,closest_wells[i]) for i in range(n)] # index of closest wells in well_pos
+	idx_aux = [idx_aux[i][0] for i in range(len(idx_aux))]
+	rest_l1_nwells = [well_objects[idx_aux[i]].l1_resistivity for i in range(n)] # layer 1 resistivities in closest wells
+	rest_hs_nwells = [well_objects[idx_aux[i]].hs_resistivity for i in range(n)] # layer 1 resistivities in closest wells
+	# (4) Calculate prior res for estation as ponderate sum of cc rest of closest wells  
+	# layer 1
+	rest_l1_wells_vec = [rest_l1_nwells[i]*(sum(dist_sta_wells)-dist_sta_wells[i])/sum(dist_sta_wells) for i in range(n)]
+	rest_l1_wells = sum(rest_l1_wells_vec)
+	# layer hs
+	rest_hs_wells_vec = [rest_hs_nwells[i]*(sum(dist_sta_wells)-dist_sta_wells[i])/sum(dist_sta_wells) for i in range(n)]
+	rest_hs_wells = sum(rest_hs_wells_vec)
+	return rest_l1_wells, rest_hs_wells
+def est_cc_bound_prior(pos, distances):
+	##(0) well to consider : 2 nearest
+	n = 2
+	n_wells =  [i for i in range(n)]
+	##(1) Search for two neighbor wells  # well_pos =  [0,3,9], sta_pos = [...rest...]
+	##dist_pos_well = [i-pos for i in well_pos]
+	##dist_pos_well = [abs(i) for i in  dist_pos_well]
+	##indx_sort = np.argsort(dist_pos_well)
+	##closest_wells = [well_pos[indx_sort[i]] for i in n_wells] # location of closest 2 wells (in ystation vector) 
+	# search left of the station
+	well_pos_left = []
+	for i in well_pos: 
+		if i < pos:
+			well_pos_left.append(i)
+	#search rigth of the station
+	well_pos_rigth = []
+	for i in well_pos: 
+		if i > pos:
+			well_pos_rigth.append(i)
+	closest_wells = [well_pos_left[-1],well_pos_rigth[0]]
+	
+	#closest_wells = closest_wells(well_pos, pos)
+	##(2) Calculate distance between station and wells (2)
+	dist_sta_wells = [distances[i] for i in closest_wells]	
+	##(3) Calculate boundaries for prior 
+	idx_aux = [find_nearest(well_pos,closest_wells[i]) for i in range(n)] # index of closest wells in well_pos
+	idx_aux = [idx_aux[i][0] for i in range(len(idx_aux))]
+	bounds_cc_nwells = [well_objects[idx_aux[i]].clay_cap_boundaries for i in range(n)] # cc resistivities in closest wells
+	##(4) Calculate prior res for estation as ponderate sum of cc rest of closest wells 
+	upper_bound_cc_wells_vec = [bounds_cc_nwells[i][0]*(sum(dist_sta_wells)-dist_sta_wells[i])/sum(dist_sta_wells) for i in range(n)]
+	upper_bound_cc_wells = sum(upper_bound_cc_wells_vec)
+	lower_bound_cc_wells_vec = [bounds_cc_nwells[i][1]*(sum(dist_sta_wells)-dist_sta_wells[i])/sum(dist_sta_wells) for i in range(n)]
+	lower_bound_cc_wells = sum(lower_bound_cc_wells_vec)
+	return upper_bound_cc_wells, lower_bound_cc_wells	
+def est_sigma_thickness_prior(pos, distances):
+	##(0) well to consider : 2 nearest
+	n = 2
+	n_wells =  [i for i in range(n)]
+	#search left of the station
+	well_pos_left = []
+	for i in well_pos: 
+		if i < pos:
+			well_pos_left.append(i)
+	#search rigth of the station
+	well_pos_rigth = []
+	for i in well_pos: 
+		if i > pos:
+			well_pos_rigth.append(i)
+	closest_wells = [well_pos_left[-1],well_pos_rigth[0]]
+	
+	#closest_wells = closest_wells(well_pos, pos)
+	
+	##(2) Search for values of paramter in wells and maximum variablity between them
+	idx_aux = [find_nearest(well_pos,closest_wells[i]) for i in range(n)] # index of closest wells in well_pos
+	idx_aux = [idx_aux[i][0] for i in range(len(idx_aux))]
+	bounds_cc_nwells = [well_objects[idx_aux[i]].clay_cap_boundaries for i in range(n)] # cc boundaries in closest wells
+	max_var_thick_l1 = [bounds_cc_nwells[i][0] for i in range(n)] # verctos of thickness of layer 1 in closest wells 
+	max_var_thick_l1 = abs(max_var_thick_l1[1]-max_var_thick_l1[0]) #np.std(max_var_thick_l1) # std dev for thickness of layer 1 in closest wells
+
+	max_var_thick_l2 = [bounds_cc_nwells[i][1] for i in range(n)] # verctos of thickness of layer 1 in closest wells 
+	max_var_thick_l2 = abs(max_var_thick_l2[1]-max_var_thick_l2[0])#np.std(max_var_thick_l2) # std dev for thickness of layer 1 in closest wells
+	##(3) Calculate distance between station and wells (2)
+	dist_sta_wells = [distances[i] for i in closest_wells]
+	half_dist_between_wells = sum(np.abs(dist_sta_wells))/len(dist_sta_wells)
+	## (4) Calculate sigma of thickness for each layer as a linear function of maximum variability from closest wells 
+	sigma_thick_l1 = .5*(-1.*(max_var_thick_l1/half_dist_between_wells)* abs(half_dist_between_wells - np.min(dist_sta_wells))+max_var_thick_l1) # two wells, 2D
+	#sigma_thick_l2 = .5*(-1.*(max_var_thick_l2/half_dist_between_wells)* abs(dist_sta_wells[1]-dist_sta_wells[0])+max_var_thick_l2) # two wells, 2D
+	sigma_thick_l2 = .5*(-1.*(max_var_thick_l2/half_dist_between_wells)* abs(half_dist_between_wells - np.min(dist_sta_wells))+max_var_thick_l2) # two wells, 2D
+	return sigma_thick_l1, sigma_thick_l2
+
+	
 
 
 

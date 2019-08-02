@@ -266,9 +266,9 @@ class Station(object):
 		## phase_deg = [phase_de_xx, phase_de_xy, phase_de_yx, phase_de_yy]
         [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er] = calc_app_res_phase(self.Z)
 
-    def plot_app_res_phase(self): 
+    def plot_app_res_phase(self, nondiag = None): 
         # plot apparent resistivity and phase (4 components of the tensor)
-        f = plot_Z_appres_phase(self.Z, title = self.name)
+        f = plot_Z_appres_phase(self.Z, title = self.name, non_diag = nondiag)
         return f
 
     def calc_max_Z(self): 
@@ -1077,34 +1077,71 @@ def calc_app_res_phase(Z):
     zyyi = Z[15]
     zyy = Z[16]
     zyy_var = Z[17]
+    
     ## Zxx
-    app_res_xx = p/5 * np.square(abs(zxx))
-    phase_ra_xx = np.arctan(zxxi/zxxr)
-    phase_de_xx = (360/(2*np.pi)) * phase_ra_xx
-    ## std. Error based on Egbert, 98
-    app_res_error_xx =  np.sqrt(2.*p*app_res_xx*(zxx_var**2.)/5.)
-    phase_error_xx = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
+    if zxxr is None:
+        app_res_xx = None
+        phase_ra_xx = None
+        phase_de_xx = None
+        ## std. Error based on Egbert, 98
+        app_res_error_xx =  None
+        phase_error_xx = None
+    else:
+        app_res_xx = p/5 * np.square(abs(zxx))
+        phase_ra_xx = np.arctan(zxxi/zxxr)
+        phase_de_xx = (360/(2*np.pi)) * phase_ra_xx
+        ## std. Error based on Egbert, 98
+        app_res_error_xx =  np.sqrt(2.*p*app_res_xx*(zxx_var**2.)/5.)
+        phase_error_xx = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
+
     ## Zxy
-    app_res_xy = p/5 * np.square(abs(zxy))
-    phase_ra_xy = np.arctan(zxyi/zxyr)      	# radians
-    phase_de_xy = (360/(2*np.pi)) * phase_ra_xy # degrees
-        ## std. Error based on Egbert, 98
-    app_res_error_xy =  np.sqrt(2.*p*app_res_xy*(zxy_var**2.)/5.)
-    phase_error_xy = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+    if zxyr is None:
+        app_res_xy = None
+        phase_ra_xy = None      	# radians
+        phase_de_xy = None # degrees
+            ## std. Error based on Egbert, 98
+        app_res_error_xy = None
+        phase_error_xy = None
+    else:
+        app_res_xy = p/5 * np.square(abs(zxy))
+        phase_ra_xy = np.arctan(zxyi/zxyr)      	# radians
+        phase_de_xy = (360/(2*np.pi)) * phase_ra_xy # degrees
+            ## std. Error based on Egbert, 98
+        app_res_error_xy =  np.sqrt(2.*p*app_res_xy*(zxy_var**2.)/5.)
+        phase_error_xy = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+    
     ## Zyx
-    app_res_yx = p/5 * np.square(abs(zyx))
-    phase_ra_yx = np.arctan(zyxi/zyxr)
-    phase_de_yx = (360/(2*np.pi)) * phase_ra_yx
-        ## std. Error based on Egbert, 98
-    app_res_error_yx =  np.sqrt(2.*p*app_res_yx*(zyx_var**2.)/5.)
-    phase_error_yx = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
+    if zyxr is None:
+        app_res_yx = None
+        phase_ra_yx = None
+        phase_de_yx = None
+            ## std. Error based on Egbert, 98
+        app_res_error_yx = None
+        phase_error_yx = None
+   
+    else: 
+        app_res_yx = p/5 * np.square(abs(zyx))
+        phase_ra_yx = np.arctan(zyxi/zyxr)
+        phase_de_yx = (360/(2*np.pi)) * phase_ra_yx
+            ## std. Error based on Egbert, 98
+        app_res_error_yx =  np.sqrt(2.*p*app_res_yx*(zyx_var**2.)/5.)
+        phase_error_yx = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
+   
     ## Zyy
-    app_res_yy = p/5 * np.square(abs(zyy))
-    phase_ra_yy = np.arctan(zyyi/zyyr)
-    phase_de_yy = (360/(2*np.pi)) * phase_ra_yy	
+    if zyyr is None:
+        app_res_yy = None
+        phase_ra_yy = None
+        phase_de_yy = None
         ## std. Error based on Egbert, 98
-    app_res_error_yy =  np.sqrt(2.*p*app_res_yy*(zyy_var**2.)/5.)
-    phase_error_yy = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
+        app_res_error_yy =  None
+        phase_error_yy = None
+    else:
+        app_res_yy = p/5 * np.square(abs(zyy))
+        phase_ra_yy = np.arctan(zyyi/zyyr)
+        phase_de_yy = (360/(2*np.pi)) * phase_ra_yy	
+            ## std. Error based on Egbert, 98
+        app_res_error_yy =  np.sqrt(2.*p*app_res_yy*(zyy_var**2.)/5.)
+        phase_error_yy = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
 
     rho_app = [app_res_xx, app_res_xy, app_res_yx, app_res_yy]
     phase_deg = [phase_de_xx, phase_de_xy, phase_de_yx, phase_de_yy]
@@ -1115,7 +1152,7 @@ def calc_app_res_phase(Z):
 # ==============================================================================
 # Plots
 # ==============================================================================
-def plot_Z_appres_phase(Z, title = None):
+def plot_Z_appres_phase(Z, title = None, non_diag = None):
     
     if title is None:
         title = name[len(name)-10:len(name)-4]
@@ -1141,98 +1178,149 @@ def plot_Z_appres_phase(Z, title = None):
     mu=4*np.pi/(10^7)       # electrical permeability [Vs/Am]
     omega = 2*np.pi/periods
     cte = 2* (mu/(2*np.pi))*(10^6)
-    
-    zxx_app_res = periods/5 * np.square(abs(zxx))
-    zxx_phase = (360/(2*np.pi)) * np.arctan(zxxi/ zxxr)
-    ## std. Error based on Egbert, 98
-    zxx_app_res_error =  np.sqrt(2.*periods*zxx_app_res*(zxx_var**2.)/5.)
-    zxx_phase_error = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
 
-    
-    zxy_app_res = periods/5 * np.square(abs(zxy))
-    zxy_phase = (360/(2*np.pi)) * np.arctan(zxyi/ zxyr)
-    ## std. Error based on Egbert, 98
-    zxy_app_res_error =  np.sqrt(2.*periods*zxy_app_res*(zxy_var**2.)/5.)
-    zxy_phase_error = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+    if non_diag: 
+        zxy_app_res = periods/5 * np.square(abs(zxy))
+        zxy_phase = (360/(2*np.pi)) * np.arctan(zxyi/ zxyr)
+        ## std. Error based on Egbert, 98
+        zxy_app_res_error =  np.sqrt(2.*periods*zxy_app_res*(zxy_var**2.)/5.)
+        zxy_phase_error = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
 
-    
-    zyx_app_res = periods/5 * np.square(abs(zyx))
-    zyx_phase = (360/(2*np.pi)) * np.arctan(zyxi/ zyxr)
-    ## std. Error based on Egbert, 98
-    zyx_app_res_error =  np.sqrt(2.*periods*zyx_app_res*(zyx_var**2.)/5.)
-    zyx_phase_error = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
-    
-    zyy_app_res = periods/5 * np.square(abs(zyy))
-    zyy_phase = (360/(2*np.pi)) * np.arctan(zyyi/ zyyr)
-    ## std. Error based on Egbert, 98
-    zyy_app_res_error =  np.sqrt(2.*periods*zyy_app_res*(zyy_var**2.)/5.)
-    zyy_phase_error = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
-  
-    #################################################
-    # Plot figure with subplots of different sizes
+        zyx_app_res = periods/5 * np.square(abs(zyx))
+        zyx_phase = (360/(2*np.pi)) * np.arctan(zyxi/ zyxr)
+        ## std. Error based on Egbert, 98
+        zyx_app_res_error =  np.sqrt(2.*periods*zyx_app_res*(zyx_var**2.)/5.)
+        zyx_phase_error = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
 
-    f,(ax1,ax2,ax3,ax4) = plt.subplots(4,1)
-    #plt.title(file)
-    #f = plt.figure(figsize=(12, 18)) 
-    f.set_size_inches(12,18)
-    f.suptitle(title, fontsize=22)
-    #gs = gridspec.GridSpec(2, 1, width_ratios=[3, 1]) 
-    
-    #ax1 = plt.subplot(gs[0])
-    ax1.set_xscale("log")
-    ax1.set_yscale("log")
-    #ax1.loglog(periods,app_res,'r*')
-    ax1.errorbar(periods,zxy_app_res,zxy_app_res_error, fmt='ro')
-    ax1.errorbar(periods,zyx_app_res,zyx_app_res_error, fmt='bo')
-    #ax1.set_xlim([np.min(periods), np.max(periods)])
-    ax1.set_xlim(1e-3, 1e3)
-    ax1.set_ylim([1e0,1.5e3])
-    ax1.set_xlabel('Period [s]', fontsize=18)
-    ax1.set_ylabel('Ap. Resistiviy [Ohm m]', fontsize=18)
-    ax1.legend(['RhoXY','RhoYX'])
-    ax1.grid(True, which='both', linewidth=0.4)
+        #################################################
+        # Plot figure with subplots of different sizes
 
-    #ax2.semilogx(periods,phase,'b*')
-    #ax2 = plt.subplot(gs[1])
-    ax2.set_xscale("log")
-    ax2.errorbar(periods,zxy_phase,zxy_phase_error, fmt='ro')
-    ax2.errorbar(periods,zyx_phase-180,zyx_phase_error, fmt='bo')
-    #ax2.set_xlim([np.min(periods), np.max(periods)])
-    ax2.set_xlim(1e-3, 1e3)
-    ax2.set_ylim([-190,190])
-    ax2.set_xlabel('Period [s]', fontsize=18)
-    ax2.set_ylabel('Phase [deg]', fontsize=18)
-    ax2.legend(['PhaseXY','PhaseYX'])
-    ax2.grid(True, which='both', linewidth=0.4)
-    
-    #ax1 = plt.subplot(gs[0])
-    ax3.set_xscale("log")
-    ax3.set_yscale("log")
-    #ax1.loglog(periods,app_res,'r*')
-    ax3.errorbar(periods,zxx_app_res,zxx_app_res_error, fmt='ro')
-    ax3.errorbar(periods,zyy_app_res,zyy_app_res_error, fmt='bo')
-    #ax1.set_xlim([np.min(periods), np.max(periods)])
-    ax3.set_xlim(1e-3, 1e3)
-    ax3.set_ylim([1e0,1e3])
-    ax3.set_xlabel('Period [s]', fontsize=18)
-    ax3.set_ylabel('Ap. Resistiviy [Ohm m]', fontsize=18)
-    ax3.legend(['RhoXX','RhoYY'])
-    ax3.grid(True, which='both', linewidth=0.4)
+        f,(ax1,ax2) = plt.subplots(2,1)
+        #plt.title(file)
+        #f = plt.figure(figsize=(12, 18)) 
+        f.set_size_inches(12,18)
+        f.suptitle(title, fontsize=22)
+        #gs = gridspec.GridSpec(2, 1, width_ratios=[3, 1]) 
 
-    #ax2.semilogx(periods,phase,'b*')
-    #ax2 = plt.subplot(gs[1])
-    ax4.set_xscale("log")
-    ax4.errorbar(periods,zxx_phase,zxx_phase_error, fmt='ro')
-    ax4.errorbar(periods,zyy_phase-180,zyy_phase_error, fmt='bo')
-    #ax2.set_xlim([np.min(periods), np.max(periods)])
-    ax4.set_xlim(1e-3, 1e3)
-    ax4.set_ylim([-190,190])
-    ax4.set_xlabel('Period [s]', fontsize=18)
-    ax4.set_ylabel('Phase [deg]', fontsize=18)
-    ax4.legend(['PhaseXX','PhaseYY'])
-    ax4.grid(True, which='both', linewidth=0.4)
+        #ax1 = plt.subplot(gs[0])
+        ax1.set_xscale("log")
+        ax1.set_yscale("log")
+        #ax1.loglog(periods,app_res,'r*')
+        ax1.errorbar(periods,zxy_app_res,zxy_app_res_error, fmt='ro')
+        ax1.errorbar(periods,zyx_app_res,zyx_app_res_error, fmt='bo')
+        #ax1.set_xlim([np.min(periods), np.max(periods)])
+        #ax1.set_xlim(1e-3, 1e3)
+        #ax1.set_ylim([1e0,1.5e3])
+        ax1.set_xlabel('Period [s]', fontsize=18)
+        ax1.set_ylabel('Ap. Resistiviy [Ohm m]', fontsize=18)
+        ax1.legend(['RhoXY','RhoYX'])
+        ax1.grid(True, which='both', linewidth=0.4)
+
+        #ax2.semilogx(periods,phase,'b*')
+        #ax2 = plt.subplot(gs[1])
+        ax2.set_xscale("log")
+        ax2.errorbar(periods,zxy_phase,zxy_phase_error, fmt='ro')
+        ax2.errorbar(periods,zyx_phase-180,zyx_phase_error, fmt='bo')
+        #ax2.set_xlim([np.min(periods), np.max(periods)])
+        #ax2.set_xlim(1e-3, 1e3)
+        #ax2.set_ylim([-190,190])
+        #ax2.set_xlabel('Period [s]', fontsize=18)
+        ax2.set_ylabel('Phase [deg]', fontsize=18)
+        ax2.legend(['PhaseXY','PhaseYX'])
+        ax2.grid(True, which='both', linewidth=0.4)
+
+        return f
+
+    else:       
+        zxx_app_res = periods/5 * np.square(abs(zxx))
+        zxx_phase = (360/(2*np.pi)) * np.arctan(zxxi/ zxxr)
+        ## std. Error based on Egbert, 98
+        zxx_app_res_error =  np.sqrt(2.*periods*zxx_app_res*(zxx_var**2.)/5.)
+        zxx_phase_error = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
+        
+        zxy_app_res = periods/5 * np.square(abs(zxy))
+        zxy_phase = (360/(2*np.pi)) * np.arctan(zxyi/ zxyr)
+        ## std. Error based on Egbert, 98
+        zxy_app_res_error =  np.sqrt(2.*periods*zxy_app_res*(zxy_var**2.)/5.)
+        zxy_phase_error = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+
+        zyx_app_res = periods/5 * np.square(abs(zyx))
+        zyx_phase = (360/(2*np.pi)) * np.arctan(zyxi/ zyxr)
+        ## std. Error based on Egbert, 98
+        zyx_app_res_error =  np.sqrt(2.*periods*zyx_app_res*(zyx_var**2.)/5.)
+        zyx_phase_error = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
+        
+        zyy_app_res = periods/5 * np.square(abs(zyy))
+        zyy_phase = (360/(2*np.pi)) * np.arctan(zyyi/ zyyr)
+        ## std. Error based on Egbert, 98
+        zyy_app_res_error =  np.sqrt(2.*periods*zyy_app_res*(zyy_var**2.)/5.)
+        zyy_phase_error = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
     
-    return f
+        #################################################
+        # Plot figure with subplots of different sizes
+
+        f,(ax1,ax2,ax3,ax4) = plt.subplots(4,1)
+        #plt.title(file)
+        #f = plt.figure(figsize=(12, 18)) 
+        f.set_size_inches(12,18)
+        f.suptitle(title, fontsize=22)
+        #gs = gridspec.GridSpec(2, 1, width_ratios=[3, 1]) 
+        
+        #ax1 = plt.subplot(gs[0])
+        ax1.set_xscale("log")
+        ax1.set_yscale("log")
+        #ax1.loglog(periods,app_res,'r*')
+        ax1.errorbar(periods,zxy_app_res,zxy_app_res_error, fmt='ro')
+        ax1.errorbar(periods,zyx_app_res,zyx_app_res_error, fmt='bo')
+        #ax1.set_xlim([np.min(periods), np.max(periods)])
+        ax1.set_xlim(1e-3, 1e3)
+        ax1.set_ylim([1e0,1.5e3])
+        ax1.set_xlabel('Period [s]', fontsize=18)
+        ax1.set_ylabel('Ap. Resistiviy [Ohm m]', fontsize=18)
+        ax1.legend(['RhoXY','RhoYX'])
+        ax1.grid(True, which='both', linewidth=0.4)
+
+        #ax2.semilogx(periods,phase,'b*')
+        #ax2 = plt.subplot(gs[1])
+        ax2.set_xscale("log")
+        ax2.errorbar(periods,zxy_phase,zxy_phase_error, fmt='ro')
+        ax2.errorbar(periods,zyx_phase-180,zyx_phase_error, fmt='bo')
+        #ax2.set_xlim([np.min(periods), np.max(periods)])
+        ax2.set_xlim(1e-3, 1e3)
+        ax2.set_ylim([-190,190])
+        ax2.set_xlabel('Period [s]', fontsize=18)
+        ax2.set_ylabel('Phase [deg]', fontsize=18)
+        ax2.legend(['PhaseXY','PhaseYX'])
+        ax2.grid(True, which='both', linewidth=0.4)
+        
+        #ax1 = plt.subplot(gs[0])
+        ax3.set_xscale("log")
+        ax3.set_yscale("log")
+        #ax1.loglog(periods,app_res,'r*')
+        ax3.errorbar(periods,zxx_app_res,zxx_app_res_error, fmt='ro')
+        ax3.errorbar(periods,zyy_app_res,zyy_app_res_error, fmt='bo')
+        #ax1.set_xlim([np.min(periods), np.max(periods)])
+        ax3.set_xlim(1e-3, 1e3)
+        ax3.set_ylim([1e0,1e3])
+        ax3.set_xlabel('Period [s]', fontsize=18)
+        ax3.set_ylabel('Ap. Resistiviy [Ohm m]', fontsize=18)
+        ax3.legend(['RhoXX','RhoYY'])
+        ax3.grid(True, which='both', linewidth=0.4)
+
+        #ax2.semilogx(periods,phase,'b*')
+        #ax2 = plt.subplot(gs[1])
+        ax4.set_xscale("log")
+        ax4.errorbar(periods,zxx_phase,zxx_phase_error, fmt='ro')
+        ax4.errorbar(periods,zyy_phase-180,zyy_phase_error, fmt='bo')
+        #ax2.set_xlim([np.min(periods), np.max(periods)])
+        ax4.set_xlim(1e-3, 1e3)
+        ax4.set_ylim([-190,190])
+        ax4.set_xlabel('Period [s]', fontsize=18)
+        ax4.set_ylabel('Phase [deg]', fontsize=18)
+        ax4.legend(['PhaseXX','PhaseYY'])
+        ax4.grid(True, which='both', linewidth=0.4)
+        
+        return f
 
 def Z_plot_appres_phase_indvec_ellip(Z, T):  #Z_full_response(Z, T):
     

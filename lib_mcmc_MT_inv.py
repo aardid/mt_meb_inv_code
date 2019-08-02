@@ -114,13 +114,14 @@ class mcmc_inv(object):
     prior_meb_wl_dist       distant to nearest wells consider for 
                             prior_meb_pars
                             [float1, ..., float2]
+    autocor_accpfrac        calc. and plot autocorrelation and aceptance fraction 
     =====================   =================================================================
     Methods                 Description
     =====================   =================================================================
 
     """
     def __init__(self, sta_obj, name= None, work_dir = None, num_lay = None , norm = None, \
-        prior = None, prior_input = None, prior_meb = None, walk_jump = None, inv_dat = None, ini_mod = None, range_p = None):
+        prior = None, prior_input = None, prior_meb = None, nwalkers = None, walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -168,6 +169,12 @@ class mcmc_inv(object):
             self.prior_meb_wl_names = sta_obj.prior_meb_wl_names
             self.prior_meb_pars = sta_obj.prior_meb  #
             self.prior_meb_wl_dist = sta_obj.prior_meb_wl_dist
+        
+        if nwalkers is None: # number of walkers 
+            self.nwalkers = 100
+        else:
+            self.nwalkers = nwalkers
+
         if walk_jump is None: 
             self.walk_jump = 3000
         else: 
@@ -184,12 +191,12 @@ class mcmc_inv(object):
         self.r1_pars = None
         self.r2_pars = None
         self.r3_pars = None
+
+        self.autocor_accpfrac = autocor_accpfrac
     # ===================== 
     # Methods               
     # =====================
     def inv(self):
-        nwalkers= 100               # number of walkers
-        self.nwalkers = nwalkers
         # Create chain.dat
         if self.num_lay == 3:
             ndim = 5               # parameter space dimensionality
@@ -203,10 +210,10 @@ class mcmc_inv(object):
                     self.rho_app_obs[2],self.phase_obs[2],\
                     self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs]).T
         cores = multiprocessing.cpu_count()
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
+        sampler = emcee.EnsembleSampler(self.nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
 		# set the initial location of the walkers
         pars = self.ini_mod  # initial guess
-        p0 = np.array([pars + 0.5e0*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.array([pars + 0.5e0*np.random.randn(ndim) for i in range(self.nwalkers)])  # add some noise
         p0 = np.abs(p0)
         #p0 = emcee.utils.sample_ball(p0, [20., 20.,], size=nwalkers)
 
@@ -219,23 +226,25 @@ class mcmc_inv(object):
 
         # check the mean acceptance fraction of the ensemble 
 
-        # check integrated autocorrelation tim
-        f = open("autocor_accpfrac.txt", "w")
-        f.write("# acceptance fraction: mean std thick1 thick2 res1 res2 res3 \n# autocorrelation time: mean std thick1 thick2 res1 res2 res3\n")
-        acpfrac = sampler.acceptance_fraction
-        self.aceprat = acpfrac
-        f.write("{:2.2f}\t{:2.2f}\t".format(np.mean(acpfrac),np.std(acpfrac)))
-        for j in range(ndim):
-        	f.write("{:2.2f}\t".format(acpfrac[j]))
-        f.write("\n")
-        autocor = sampler.get_autocorr_time(low=10, high=None, step=1, c=1, fast=False) # tau
-        self.autocor_tim = autocor
-        f.write("{:2.2f}\t{:2.2f}\t".format(np.mean(autocor),np.std(autocor)))
-        for j in range(ndim):
-        	f.write("{:2.2f}\t".format(autocor[j]))
-        f.close()
-        #print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
-        #print("Mean autocorrelation time: {0:.3f} steps".format(np.mean(sampler.get_autocorr_time(low=10, high=None, step=1, c=1, fast=False))))
+        if self.autocor_accpfrac: 
+            # check integrated autocorrelation tim
+            f = open("autocor_accpfrac.txt", "w")
+            f.write("# acceptance fraction: mean std thick1 thick2 res1 res2 res3 \n# autocorrelation time: mean std thick1 thick2 res1 res2 res3\n")
+            acpfrac = sampler.acceptance_fraction
+            self.aceprat = acpfrac
+            f.write("{:2.2f}\t{:2.2f}\t".format(np.mean(acpfrac),np.std(acpfrac)))
+            for j in range(ndim):
+                f.write("{:2.2f}\t".format(acpfrac[j]))
+            f.write("\n")
+            autocor = sampler.get_autocorr_time(low=10, high=None, step=1, c=1, fast=False) # tau
+            self.autocor_tim = autocor
+            f.write("{:2.2f}\t{:2.2f}\t".format(np.mean(autocor),np.std(autocor)))
+            for j in range(ndim):
+                f.write("{:2.2f}\t".format(autocor[j]))
+            f.close()
+            #print("Mean acceptance fraction: {0:.3f}".format(np.mean(sampler.acceptance_fraction)))
+            #print("Mean autocorrelation time: {0:.3f} steps".format(np.mean(sampler.get_autocorr_time(low=10, high=None, step=1, c=1, fast=False))))
+            shutil.move('autocor_accpfrac.txt', self.path_results+os.sep+'autocor_accpfrac.txt')
 
         f = open("chain.dat", "w")
         nk,nit,ndim=sampler.chain.shape
@@ -261,10 +270,10 @@ class mcmc_inv(object):
             
         self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
-        shutil.move('autocor_accpfrac.txt', self.path_results+os.sep+'autocor_accpfrac.txt')
+
 
         # # save text file with inversion parameters
-        if self.prior:
+        if self.prior_meb:
             a = ["Station name","Number of layers","Inverted data","Norm","Priors","Time(s)","MeB wells for prior", "Dist. (km) to MeB wells"] 
             b = [self.name,self.num_lay,self.inv_dat,self.norm,self.prior,int(self.time),self.prior_meb_wl_names, self.prior_meb_wl_dist] 
         else:
