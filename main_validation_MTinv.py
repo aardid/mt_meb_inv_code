@@ -56,9 +56,9 @@ if __name__ == "__main__":
     prof_NEMT2 = False
 
     ## Sections of the code tu run
-    set_up = True
+    set_up = False
     import_MT_stations = False
-    import_results_MT_modem = True
+    import_results_MT_modem = False
     validation_MT_mcmc_inv = True 
 
     if set_up: 
@@ -202,6 +202,69 @@ if __name__ == "__main__":
         plt.close(f)    # close the figure
         g.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'comp_cc_bound.png')   # save the figure to file
         plt.close(f)    # close the figure
+
+    if True: # test using model in validation_MT_mcmc_inv
+        # (1) Extract res. profile in MT station positions from modem results (3D model)
+        sta_coord = np.genfromtxt('MT_sta_latlon.txt')
+
+        stas = sta_coord[:,0]
+        lat = sta_coord[:,3] 
+        lon = sta_coord[:,4] 
+        ## depth vector for interpolation 
+        #z_intp = np.linspace(0,2000,1000)
+
+        # import model ()
+
+        model = np.genfromtxt('.'+os.sep+'modEM_inv'+os.sep+'validation_MT_mcmc_inv').T
+        
+        model_lat = model[1,:]
+        model_lon = model[0,:]
+        model_z  = model[2,:]
+        model_rho = model[3,:]
+
+        values = model[3,:]
+
+        # (i) construct 'points' and 'values' vectors
+        points = np.zeros([len(model_lat), 3])
+        values = np.zeros([len(model_lat)])
+
+
+        for i in range(len(model_lat)):
+            points[i,:] = model[0:-1,i]
+        values = model[3,:]
+
+        ## save points in txt file
+        #t = open('points.txt', 'w')
+        #for i in range(n):
+        #    t.write('{}\t{}\t{}\n'.format(points[i][0],points[i][1],points[i][2]))
+        #t.close()
+
+        y_intp = lat[4]
+        x_intp = lon[4]
+        
+        # (ii) construct 'xi' vector
+        z_vec = np.arange(min(model_z),max(model_z),25.)
+        xi = np.zeros([len(z_vec), 3])
+        for k in range(len(z_vec)): 
+            xi[k,:] = [x_intp,y_intp,z_vec[k]]
+
+        ## (iii) griddata: create interpolate profile 
+        grid_z = griddata(points, values, xi, method='linear')
+
+        ## plot profile 3d inv
+        ax = plt.axes()
+        ax.plot(np.log10(grid_z),-z_vec,'m-')
+        plt.ylim([-2000,1000])
+        plt.xlim([-1,4])
+        ax.legend(loc = 2)
+        ax.set_xlabel('Resistivity [Ohm m]')
+        ax.set_ylabel('Depth [m]')
+        ax.set_title('3Dinv profile and MCMC CC boundaries')
+        ax.grid(alpha = 0.3)
+        plt.tight_layout()
+        plt.show()
+
+
 
 
 
