@@ -60,8 +60,8 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
+	mcmc_MT_inv = False
+	prof_2D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
 
@@ -130,13 +130,13 @@ if __name__ == "__main__":
 				station_objects.append(sta_obj)
 				count  += 1
 
-		# save to .txt names of stations and coord. 
-		# f = open("MT_sta_latlon.txt", "w") # text file to save names of meb wells 
-		# f.write('# sta lat lon lat_dec lon_dec\n')
-		# for sta in station_objects: # loop over the meb wells (objects)
-		# 	f.write(sta.name+'\t'+str(sta.lat)+'\t'+str(sta.lon)+'\t'+str(sta.lat_dec)+'\t'+str(sta.lon_dec)+'\n')
-		# f.close()
-
+		#save to .txt names of stations and coord. 
+		f = open("MT_sta_latlon.txt", "w") # text file to save names of meb wells 
+		f.write('# sta lat lon lat_dec lon_dec elev\n')
+		for sta in station_objects: # loop over the meb wells (objects)
+			f.write(sta.name+'\t'+str(sta.lat)+'\t'+str(sta.lon)+'\t'+str(sta.lat_dec)+'\t'+str(sta.lon_dec)+'\t'+str(sta.elev)+'\n')
+		f.close()
+		
 		# plot sounding curves
 		# pp = PdfPages('MT_sound_curves.pdf')
 		# for sta_obj in station_objects: 

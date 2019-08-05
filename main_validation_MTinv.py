@@ -59,7 +59,7 @@ if __name__ == "__main__":
     set_up = False
     import_MT_stations = False
     import_results_MT_modem = False
-    validation_MT_mcmc_inv = True 
+    validation_MT_mcmc_inv = False 
 
     if set_up: 
         if pc == 'office': 
@@ -205,64 +205,86 @@ if __name__ == "__main__":
 
     if True: # test using model in validation_MT_mcmc_inv
         # (1) Extract res. profile in MT station positions from modem results (3D model)
+        # read MT_sta_latlon.txt file and extract name, lat and lon (decimal)
         sta_coord = np.genfromtxt('MT_sta_latlon.txt')
-
-        stas = sta_coord[:,0]
         lat = sta_coord[:,3] 
         lon = sta_coord[:,4] 
-        ## depth vector for interpolation 
-        #z_intp = np.linspace(0,2000,1000)
+        elev = -1*sta_coord[:,5] # -1* to change it to possitive downwards
+        t = open('MT_sta_latlon.txt','r')
+        next(t)
+        f1 = t.readlines()
+        stas_name = []
+        count = 0
+        for x in f1:
+            stas_name.append(x[0:6])
+        t.close()
 
-        # import model ()
+        # import resistivity model from 'inversion_model_xyzrho'
+        model, model_lat, model_lon, model_z, model_rho =  read_modem_model_column('.'+os.sep+'modEM_inv'+os.sep+'inversion_model_xyzrho')     
 
-        model = np.genfromtxt('.'+os.sep+'modEM_inv'+os.sep+'validation_MT_mcmc_inv').T
+        # loop over the stations to 
+        # extract 1D interpolated profile in 'stas_name' from 3D model
+        for i in range(len(stas_name)): 
+            # check is folder exist to save results for each station 
+            if not os.path.exists('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]):
+                os.makedirs('.'+os.sep+'modEM_inv'+os.sep+stas_name[i])     
+            # surface position 
+            x_surf = lon[i]
+            y_surf = lat[i]
+            # interpolate and save the profile in .png
+            res_z, z_vec, f = intp_1D_prof_from_model(model, x_surf, y_surf, method = None, dz = None ,fig = True, name = stas_name[i])
+            #plt.show()
+            f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'prof_intp.png')   # save the figure to file
+            plt.close(f)    # close the figure
+
+            ## figure comparing modEM results vs mcmc results 
+            
+            # import results from station 'sta'
+            # /home/aardid/Documentos/PhD_19/workspace/wt_inv_code_rep/mcmc_inversions
+            sta_mcmc = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'est_par.dat')
+            z1_mcmc = sta_mcmc[0,1:4] # mean, std, median 
+            z2_mcmc = sta_mcmc[1,1:4] # mean, std, median
+            r2_mcmc = sta_mcmc[3,1:4] # mean, std, median # resistivity second layer 
+
+            # create figure
+            f = plt.figure(figsize=[5.5,5.5])
+            ## plot profile 3d inv
+            ax = plt.axes()
+            # note: z_vec is + downward 
+            ax.plot(np.log10(res_z), z_vec -  elev[i] - 100.,'m-', label='profile from 3D inv.')
+            plt.ylim([0.,1200])
+            plt.xlim([-1,4])
+            plt.gca().invert_yaxis()
+            ## plot mcmc inv 
+            # top boundary
+            ax.errorbar(np.log10(r2_mcmc[0]),z1_mcmc[0],z1_mcmc[1],np.log10(r2_mcmc[1]),'r*', label = 'top bound. CC mcmc')
+            # bottom boundary
+            ax.errorbar(np.log10(r2_mcmc[0]),(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],np.log10(r2_mcmc[1]),'b*', label = 'bottom bound. CC mcmc')
+            ax.legend(loc = 3)
+            ax.set_xlabel('Resistivity [Ohm m]')
+            ax.set_ylabel('Depth [m]')
+            ax.set_title(stas_name[i]+': 3Dinv profile vs. MCMC CC boundaries')
+            ax.grid(alpha = 0.3)
+            plt.tight_layout()
+            #plt.show()
+            f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_1.png')   # save the figure to file
+            plt.close(f)    # close the figure
+
         
-        model_lat = model[1,:]
-        model_lon = model[0,:]
-        model_z  = model[2,:]
-        model_rho = model[3,:]
-
-        values = model[3,:]
-
-        # (i) construct 'points' and 'values' vectors
-        points = np.zeros([len(model_lat), 3])
-        values = np.zeros([len(model_lat)])
 
 
-        for i in range(len(model_lat)):
-            points[i,:] = model[0:-1,i]
-        values = model[3,:]
 
-        ## save points in txt file
-        #t = open('points.txt', 'w')
-        #for i in range(n):
-        #    t.write('{}\t{}\t{}\n'.format(points[i][0],points[i][1],points[i][2]))
-        #t.close()
 
-        y_intp = lat[4]
-        x_intp = lon[4]
-        
-        # (ii) construct 'xi' vector
-        z_vec = np.arange(min(model_z),max(model_z),25.)
-        xi = np.zeros([len(z_vec), 3])
-        for k in range(len(z_vec)): 
-            xi[k,:] = [x_intp,y_intp,z_vec[k]]
 
-        ## (iii) griddata: create interpolate profile 
-        grid_z = griddata(points, values, xi, method='linear')
 
-        ## plot profile 3d inv
-        ax = plt.axes()
-        ax.plot(np.log10(grid_z),-z_vec,'m-')
-        plt.ylim([-2000,1000])
-        plt.xlim([-1,4])
-        ax.legend(loc = 2)
-        ax.set_xlabel('Resistivity [Ohm m]')
-        ax.set_ylabel('Depth [m]')
-        ax.set_title('3Dinv profile and MCMC CC boundaries')
-        ax.grid(alpha = 0.3)
-        plt.tight_layout()
-        plt.show()
+
+
+
+         
+
+
+
+
 
 
 
