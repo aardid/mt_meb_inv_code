@@ -60,8 +60,8 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	prof_2D_MT = False
+	mcmc_MT_inv = True
+	prof_2D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
 
@@ -108,8 +108,8 @@ if __name__ == "__main__":
 			sta2work = ['WT091a','WT102a','WT111a','WT222a']
 			#sta2work = ['WT091a']
 		if prof_WRKNW5:
-			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']
-			#sta2work = ['WT223a']
+			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a','WT033c']
+			#sta2work = ['WT033c']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 
@@ -136,7 +136,6 @@ if __name__ == "__main__":
 		for sta in station_objects: # loop over the meb wells (objects)
 			f.write(sta.name+'\t'+str(sta.lat)+'\t'+str(sta.lon)+'\t'+str(sta.lat_dec)+'\t'+str(sta.lon_dec)+'\t'+str(sta.elev)+'\n')
 		f.close()
-		
 		# plot sounding curves
 		# pp = PdfPages('MT_sound_curves.pdf')
 		# for sta_obj in station_objects: 
@@ -407,7 +406,7 @@ if __name__ == "__main__":
 			#mcmc_sta = mcmc_inv(sta_obj)
   			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 1000, prior_meb = prior_meb, range_p = [0.,100.0])
+				walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,1.0], autocor_accpfrac = True)
 			if prior_meb:
 				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))

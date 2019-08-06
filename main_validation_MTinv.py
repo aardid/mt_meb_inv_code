@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     if import_results_MT_modem: 
         # create modem object 
-        modem = modEM(work_dir = path_modem)
+        modem = Modem(work_dir = path_modem)
         # load impedance (forward from final rho model)
         fls = glob(modem.work_dir + os.sep+'*.dat')
         # select newest
@@ -218,12 +218,29 @@ if __name__ == "__main__":
         for x in f1:
             stas_name.append(x[0:6])
         t.close()
+        
+        # read coordinates in the grid (modEM)
+        sta_coord_grid = np.genfromtxt('.'+os.sep+'modEM_inv'+os.sep+'sta_lat_lot_x_y_x_grid.txt')
+        x_grid = sta_coord_grid[:,3] 
+        y_grid = sta_coord_grid[:,4] 
+        z_grid = sta_coord_grid[:,5] 
+        t = open('.'+os.sep+'modEM_inv'+os.sep+'sta_lat_lot_x_y_x_grid.txt','r')
+        next(t)
+        f1 = t.readlines()
+        stas_name_grid = []
+        count = 0
+        for x in f1:
+            stas_name_grid.append(x[0:6])
+        t.close()
 
         # import resistivity model from 'inversion_model_xyzrho'
         model, model_lat, model_lon, model_z, model_rho =  read_modem_model_column('.'+os.sep+'modEM_inv'+os.sep+'inversion_model_xyzrho')     
 
         # loop over the stations to 
         # extract 1D interpolated profile in 'stas_name' from 3D model
+        pp = PdfPages('.'+os.sep+'modEM_inv'+os.sep+'comp_modEM_mcmc_meb.pdf')
+        plot_meb = True
+
         for i in range(len(stas_name)): 
             # check is folder exist to save results for each station 
             if not os.path.exists('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]):
@@ -236,22 +253,26 @@ if __name__ == "__main__":
             #plt.show()
             f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'prof_intp.png')   # save the figure to file
             plt.close(f)    # close the figure
-
             ## figure comparing modEM results vs mcmc results 
-            
             # import results from station 'sta'
             # /home/aardid/Documentos/PhD_19/workspace/wt_inv_code_rep/mcmc_inversions
             sta_mcmc = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'est_par.dat')
             z1_mcmc = sta_mcmc[0,1:4] # mean, std, median 
             z2_mcmc = sta_mcmc[1,1:4] # mean, std, median
             r2_mcmc = sta_mcmc[3,1:4] # mean, std, median # resistivity second layer 
-
+            # elevation of the station in the grid: z0_grid
+            count = 0
+            for sta in stas_name_grid: 
+                if sta == stas_name[i]: 
+                    z0_grid = z_grid[count]
+                count+=1    
             # create figure
-            f = plt.figure(figsize=[5.5,5.5])
+            f = plt.figure(figsize=[6.5,6.5])
             ## plot profile 3d inv
             ax = plt.axes()
             # note: z_vec is + downward 
-            ax.plot(np.log10(res_z), z_vec -  elev[i] - 100.,'m-', label='profile from 3D inv.')
+            #ax.plot(np.log10(res_z), z_vec -  elev[i] ,'m-', label='profile from 3D inv.')
+            ax.plot(np.log10(res_z), z_vec -  z0_grid ,'m-', label='profile from 3D inv.')
             plt.ylim([0.,1200])
             plt.xlim([-1,4])
             plt.gca().invert_yaxis()
@@ -260,15 +281,62 @@ if __name__ == "__main__":
             ax.errorbar(np.log10(r2_mcmc[0]),z1_mcmc[0],z1_mcmc[1],np.log10(r2_mcmc[1]),'r*', label = 'top bound. CC mcmc')
             # bottom boundary
             ax.errorbar(np.log10(r2_mcmc[0]),(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],np.log10(r2_mcmc[1]),'b*', label = 'bottom bound. CC mcmc')
-            ax.legend(loc = 3)
             ax.set_xlabel('Resistivity [Ohm m]')
             ax.set_ylabel('Depth [m]')
             ax.set_title(stas_name[i]+': 3Dinv profile vs. MCMC CC boundaries')
             ax.grid(alpha = 0.3)
+            if plot_meb: 
+                # plot for selected stations 
+                if stas_name[i] == 'WT111a':
+                    # import meb results 
+                    # note: z1 and z2 in MeB are depths (not thicknesess)
+                    sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'TH19'+os.sep+'est_par.dat')
+                    z1_meb = sta_meb[0,1:4] # mean, std, median 
+                    z2_meb = sta_meb[1,1:4] # mean, std, median
+                    # top boundary
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC')
+                    # bottom boundary
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC')
+                if stas_name[i] == 'WT502a':
+                    # import meb results 
+                    # note: z1 and z2 in MeB are depths (not thicknesess)
+                    sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK243'+os.sep+'est_par.dat')
+                    z1_meb = sta_meb[0,1:4] # mean, std, median 
+                    z2_meb = sta_meb[1,1:4] # mean, std, median
+                    # top boundary
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC')
+                    # bottom boundary
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC')
+                if stas_name[i] == 'WT033c':
+                    # import meb results 
+                    # note: z1 and z2 in MeB are depths (not thicknesess)
+                    sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK267A'+os.sep+'est_par.dat')
+                    z1_meb = sta_meb[0,1:4] # mean, std, median 
+                    z2_meb = sta_meb[1,1:4] # mean, std, median
+                    # top boundary
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC')
+                    # bottom boundary
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC')
+                if stas_name[i] == 'WT501':
+                    # import meb results 
+                    # note: z1 and z2 in MeB are depths (not thicknesess)
+                    sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK270'+os.sep+'est_par.dat')
+                    z1_meb = sta_meb[0,1:4] # mean, std, median 
+                    z2_meb = sta_meb[1,1:4] # mean, std, median
+                    # top boundary
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC')
+                    # bottom boundary
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC')
+
+            ax.legend(loc = 3)
             plt.tight_layout()
-            #plt.show()
+            plt.show()
             f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_1.png')   # save the figure to file
+            pp.savefig(f)
             plt.close(f)    # close the figure
+        
+        pp.close()
+
 
         
 

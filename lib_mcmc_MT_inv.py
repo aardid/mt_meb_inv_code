@@ -226,6 +226,10 @@ class mcmc_inv(object):
 
         # check the mean acceptance fraction of the ensemble 
 
+        self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
+        if not os.path.exists(self.path_results):
+            os.makedirs(self.path_results)   
+
         if self.autocor_accpfrac: 
             # check integrated autocorrelation tim
             f = open("autocor_accpfrac.txt", "w")
@@ -268,7 +272,6 @@ class mcmc_inv(object):
         if not os.path.exists('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion')):
             os.mkdir('.'+os.sep+str('mcmc_inversions')+os.sep+str('00_global_inversion'))
             
-        self.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+self.name
         shutil.move('chain.dat', self.path_results+os.sep+'chain.dat')
 
 
@@ -376,9 +379,9 @@ class mcmc_inv(object):
                         #prob = prob
                         #v = 0.15
                         dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
-                        if dist > 1.:
+                        if dist > 2.:
                             dist = np.inf
-                        weight = np.exp(-dist+2.) # km
+                        weight = np.exp(-dist+.8) # km
                         # prior over z1 (thickness layer 1)
                         prob += weight**1. *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm \
                             /self.prior_meb_pars[0][1]**2 
