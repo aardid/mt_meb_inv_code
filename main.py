@@ -54,14 +54,20 @@ if __name__ == "__main__":
 	full_dataset = False
 	prof_WRKNW6 = False
 	prof_WRKNW5 = True
+
 	prof_NEMT2 = False
+	
+	prof_THNW03 = False
+	prof_THNW04 = False
+	prof_THNW05 = False
 
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
+	mcmc_MT_inv = False
+	prof_2D_MT = False
+	surf_3D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
 
@@ -108,10 +114,19 @@ if __name__ == "__main__":
 			sta2work = ['WT091a','WT102a','WT111a','WT222a']
 			#sta2work = ['WT091a']
 		if prof_WRKNW5:
-			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a','WT033c']
+			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033c']
 			#sta2work = ['WT033c']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
+		
+		# Tauhara profiles
+		if prof_THNW03: 
+			sta2work= ['WT117b','WT127a','WT132a','WT142a','WT185a']
+		if prof_THNW04: 
+			sta2work= ['WT140a','WT151a', 'WT177a','WT184a','WT193a','WT197a','WT134a'] # ,'WT160a'
+		if prof_THNW05: 
+			sta2work= ['WT179a','WT189a', 'WT200a','WT198a','WT202a','WT181a','WT206a','WT014a','WT217a','WT194a'] 
+		
 
 		#########################################################################################
 		## Loop over the file directory to collect the data, create station objects and fill them
@@ -177,6 +192,14 @@ if __name__ == "__main__":
 			#wl2work = ['WK260'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
+
+		# Tauhara profiles
+		if prof_THNW03: 
+			wl2work= ['TH13']
+		if prof_THNW04: 
+			wl2work= ['TH12']
+		if prof_THNW05: 
+			wl2work= []
 		#########################################################################################
 		# ## Loop over the wells to create objects and assing data attributes 
 		wells_objects = []   # list to be fill with station objects
@@ -396,32 +419,38 @@ if __name__ == "__main__":
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = True
-		for sta_obj in station_objects: 
-			print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
+		prior_meb = False
+		for sta_obj in station_objects:
+			if sta_obj.ref <  161:
+		#	if False:
+				pass
+			else: 
+				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 
-			## range for the parameters
-			par_range = [[.1*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
-			## create object mcmc_inv 
-			#mcmc_sta = mcmc_inv(sta_obj)
-  			# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
-			mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-				walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,1.0], autocor_accpfrac = True)
-			if prior_meb:
-				print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
-				#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
-				print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
-			## run inversion 
-			mcmc_sta.inv()
-			## plot results (save in .png)
-			mcmc_sta.plot_results_mcmc(corner_plt = True, walker_plt = True)
-			## sample posterior
-			#mcmc_sta.sample_post()
-			f = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
-			pp.savefig(f)
-			plt.close("all")
-			## calculate estimate parameters
-			mcmc_sta.model_pars_est()
+				## range for the parameters
+				par_range = [[.1*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
+				## create object mcmc_inv 
+				#mcmc_sta = mcmc_inv(sta_obj)
+				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
+				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
+					walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,1.0], autocor_accpfrac = True)
+				if prior_meb:
+					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
+					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
+					print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
+				## run inversion 
+				mcmc_sta.inv()
+				## plot results (save in .png)
+				mcmc_sta.plot_results_mcmc(corner_plt = True, walker_plt = True)
+				## sample posterior
+				#mcmc_sta.sample_post()
+				f = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
+				#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
+				pp.savefig(f)
+				plt.close(f)
+				plt.clf()
+				## calculate estimate parameters
+				mcmc_sta.model_pars_est()
 
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
@@ -431,10 +460,6 @@ if __name__ == "__main__":
 		# move figure fit to global results folder
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
 
-		## create text file for google earth, containing names of MT stations considered 
-		#for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
-		#shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
-		#	+os.sep+'00_stations_4_google_earth.txt')
 	
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
@@ -455,6 +480,11 @@ if __name__ == "__main__":
 			file_name = 'autocor_accpfrac'
 			plot_profile_autocor_accpfrac(station_objects, pref_orient = 'EW', file_name = file_name)
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
+
+		## create text file for google earth, containing names of MT stations considered 
+		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
+		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
+			+os.sep+'00_stations_4_google_earth.txt')
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 

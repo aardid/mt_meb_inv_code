@@ -330,7 +330,7 @@ if __name__ == "__main__":
 
             ax.legend(loc = 3)
             plt.tight_layout()
-            plt.show()
+            #plt.show()
             f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_1.png')   # save the figure to file
             pp.savefig(f)
             plt.close(f)    # close the figure
