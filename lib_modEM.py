@@ -31,7 +31,7 @@ import cmath
 import corner, emcee
 import time
 from matplotlib import gridspec
-from scipy.interpolate import griddata
+#from scipy.interpolate import griddata
 from lib_sample_data import *
 from misc_functios import *
 #from SimPEG import Utils, Solver, Mesh, DataMisfit, Regularization, Optimization, InvProblem, Directives, Inversion
@@ -59,6 +59,8 @@ class Modem(object):
     z0
     work_dir
     rho
+    f
+    T
     =====================   =====================================================
     Methods                 Description
     =====================   =====================================================
@@ -361,7 +363,8 @@ class Modem(object):
                     if cnt == 19: fp.write("\n"); cnt = 0
                 if cnt !=0: fp.write("\n")
             if cnt !=0: fp.write("\n")
-    def read_data(self, filename, extract_origin = None):
+
+    def read_data(self, filename, add_noise = None):
         fp = open(filename,'r')
         
         keepReading = True
@@ -381,15 +384,11 @@ class Modem(object):
             ln = fp.readline().rstrip()[1:] # origin
             nums = ln.split()
             if len(nums) == 2:
-                #self.x0 = 0.; self.y0 = float(nums[0]); self.z0 = float(nums[1])
-                self.x0 = float(nums[0]); self.y0 = float(nums[1]); self.z0 = 0.
+                self.x0 = 0.; self.y0 = float(nums[0]); self.z0 = float(nums[1])
             else:
                 self.x0 = float(nums[0]); self.y0 = float(nums[1]); self.z0 = float(nums[2])
             ln = fp.readline().rstrip()[1:] # periods and stations
             nums = ln.split(); nT = int(float(nums[0])); nS = int(float(nums[1]))
-            
-            if extract_origin: 
-                return 
             
             # allocate space
             if cnt == 0:
@@ -401,7 +400,7 @@ class Modem(object):
                 self.T = np.zeros((nT,nS))
             
             dat = np.zeros((nT,nS), dtype = complex)
-
+                    
             for i in range(nS):					
                 for j in range(nT):
                     ln = fp.readline().rstrip()
@@ -427,8 +426,23 @@ class Modem(object):
                 keepReading = False
             cnt += 1
         
-        self.ys = self.ys - (self.ye[-1]-self.ye[0])/2.		
-        
+        self.ys = self.ys - (self.ye[-1]-self.ye[0])/2.				
+
+        if add_noise: 
+            # abs of 5% magnitud of each impedance
+            perc = add_noise/100.
+            TE_noise_values = abs(self.TE_Impedance*perc)
+            TM_noise_values = abs(self.TM_Impedance*perc)
+
+            # for each element, calculate its add_noise% 
+            for i in range(np.shape(self.TE_Impedance)[0]):# periods 
+                for k in range(np.shape(self.TE_Impedance)[1]):# stations
+                    # add half of the error to each component (real and complex) 
+                    self.TE_Impedance[i][k] = complex((TE_noise_values[i][k] *np.random.randn()) ,(TE_noise_values[i][k] *np.random.randn())) \
+                                            + self.TE_Impedance[i][k]
+                    self.TM_Impedance[i][k] = complex((TM_noise_values[i][k] *np.random.randn()) ,(TM_noise_values[i][k] *np.random.randn())) \
+                                            + self.TM_Impedance[i][k]
+		
         # compute apparent resistivity
         om = 2.*np.pi*self.f
         self.TE_Resistivity = np.real(np.conj(self.TE_Impedance)*self.TE_Impedance)/(om*4.*np.pi*1.e-7)
@@ -565,7 +579,7 @@ class Modem(object):
             raise
             
         os.chdir(odir)
-    def plot_rho2D(self, filename, xlim = None, ylim = None, gridlines = False, clim = None, overlay = None):
+    def plot_rho2D(self, filename, xlim = None, ylim = None, gridlines = False, clim = None, overlay = None, overlay_name = None, format = None):
         # check data available for plotting
         try: self.rho
         except:	raise ValueError("no resistivity data to plot")
@@ -578,7 +592,7 @@ class Modem(object):
         yy,zz = np.meshgrid(self.y,self.z)
         
         rho = self.rho*1.
-        rho = self.rho[25][:][:]
+        #rho = self.rho[25][:][:]
 
         if clim is None:
             lmin = np.floor(np.min(np.log10(rho)))
@@ -587,7 +601,7 @@ class Modem(object):
             lmin = np.floor(np.min(np.log10(clim[0])))
             lmax = np.ceil(np.max(np.log10(clim[1])))
         levels = 10**np.arange(lmin, lmax+0.25, 0.25)
-        
+
         CS = ax.contourf(yy.T/1.e3,zz.T/1.e3, rho, levels = levels, zorder = 1,norm = LogNorm(), cmap='jet_r')
         cax = plt.colorbar(CS, ax = ax)
         cax.set_label(r'resistivity [$\Omega$ m]', size = textsize)
@@ -598,12 +612,35 @@ class Modem(object):
         ax.set_title('Resistivity Distribution', size = textsize)
         
         if overlay is not None:			
-            dat = overlay[0]
-            level = overlay[1]
-            rho = dat.rho*1.
-            levels = [level,1.01*level]			
-            CS = ax.contour(yy.T/1.e3,zz.T/1.e3, rho, levels = levels, colors = [[0.4,0.4,0.4],], linewidths = 0.5, cmap='jet')
-
+            #dat = overlay[0]
+            #level = overlay[1]
+            #rho = dat.rho*1.
+            levels = [overlay[i] for i in range(len(overlay))]			
+            CS = ax.contour(yy.T/1.e3,zz.T/1.e3, rho, levels = levels, colors = [[0.4,0.4,0.4],], linewidths = 0.5)#, cmap='jet')
+        
+            for i in range(len(overlay)):
+                x = np.asarray([])
+                y = np.asarray([])
+                for k in range(len(CS.collections[0].get_paths())): 
+                    p = CS.collections[0].get_paths()[k]
+                    #p = CS.collections[0].get_paths()[k]
+                    v = p.vertices
+                    x_aux = v[:,0]
+                    y_aux = v[:,1]
+                    if len(x_aux) > 10.:
+                        x = np.append(x,x_aux)
+                        y = np.append(y,y_aux)
+                if len(x)<90.: 
+                    print(len(x))
+                    raise ValueError("overlay: few point for valid contour")
+                if overlay_name is None:
+                    f = open(self.work_dir+os.sep+"contour_res_{}.txt".format(str(levels[i])), "w")
+                else:
+                    f = open(overlay_name+'_res_{}.txt'.format(str(levels[i])), "w") 
+                f.write('# x\ty\n')
+                for j in range(len(x)): 
+                    f.write(str(x[j])+'\t'+str(y[j])+'\n')
+                f.close()
         
         for t in ax.get_xticklabels()+ax.get_yticklabels(): t.set_fontsize(textsize)
         for t in cax.ax.get_yticklabels(): t.set_fontsize(textsize)
@@ -617,8 +654,12 @@ class Modem(object):
             for x in self.ye[1:-1]: ax.plot([x/1.e3, x/1.e3],ylim, '-', color = [0.5,0.5,0.5], zorder = 10, lw = 0.5) 
             for y in self.ze[1:-1]: ax.plot(xlim,[y/1.e3, y/1.e3], '-', color = [0.5,0.5,0.5], zorder = 10, lw = 0.5) 
         
-        plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
-            orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
+        if format is 'png':
+            plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        else:
+            plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
             
         #plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
         #	orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
@@ -650,7 +691,7 @@ class Modem(object):
             lmin = np.floor(np.min(np.log10(clim[0])))
             lmax = np.ceil(np.max(np.log10(clim[1])))
         levels = 10**np.arange(lmin, lmax+0.25, 0.25)
-        
+
         CS = ax.contourf(xx,ff, rho, levels = levels, norm = LogNorm(), cmap='jet')
         cax = plt.colorbar(CS, ax = ax)
         cax.set_label(r'resistivity [$\Omega$ m]', size = textsize)
@@ -837,6 +878,51 @@ class Modem(object):
 
         return f, g
 
+    def plot_true_CC_bound(self,filename, xlim = None, ylim = None, gridlines = False):
+        # check data available for plotting
+        try: self.rho
+        except:	raise ValueError("no resistivity data to plot")
+                
+        # plot simple contours 
+        plt.clf()
+        fig = plt.figure(figsize=[7.5,5.5])
+        ax = plt.axes([0.18,0.25,0.70,0.50])
+        
+        yy,zz = np.meshgrid(self.y,self.z)
+
+        level = [1,10]
+  
+        CS = ax.contourf(yy.T/1.e3,zz.T/1.e3, rho, levels = level)
+        cax = plt.colorbar(CS, ax = ax)
+        cax.set_label(r'resistivity [$\Omega$ m]', size = textsize)
+        
+        ax.set_xlabel('y [km]', size = textsize)
+        ax.set_ylabel('z [km]', size = textsize)
+ 
+        plt.show()
+        asdf
+            
+        ax.set_title('Resistivity Distribution', size = textsize)
+        for t in ax.get_xticklabels()+ax.get_yticklabels(): t.set_fontsize(textsize)
+        for t in cax.ax.get_yticklabels(): t.set_fontsize(textsize)
+        
+        if xlim is not None: ax.set_xlim(xlim)		
+        if ylim is not None: ax.set_ylim(ylim)
+
+        if gridlines:
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            for x in self.ye[1:-1]: ax.plot([x/1.e3, x/1.e3],ylim, '-', color = [0.5,0.5,0.5], zorder = 10, lw = 0.5) 
+            for y in self.ze[1:-1]: ax.plot(xlim,[y/1.e3, y/1.e3], '-', color = [0.5,0.5,0.5], zorder = 10, lw = 0.5) 
+        
+        plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
+            
+        #plt.savefig(filename, dpi=300, facecolor='w', edgecolor='w',
+        #	orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+        plt.close(fig)
+
 # Functions for constructing resistivity model
 def f(x): 
 	return (1-6*x**2+4*x**3)/np.sqrt(1-12*x**2+24*x**3-12*x**4)
@@ -983,17 +1069,23 @@ def setup_simulation(work_dir = None):
 	
 	return dat, [yi,zi,Ti]
 def set_rho(dat, yi, zi, rhoi, rhob):
-	rho_crust, rho_greywacke, rho_fill = rhob
-	dat.rho_box(rho_crust) 		# lower crust
-	dat.rho_box(rho_greywacke, box = [-80.e3,-10.e3,160.e3,8.3e3]) 	# greywacke
-	dat.rho_box(rho_fill, box = [-80.e3,-0.e3,160.e3,2.e3]) 	# fill
-	
-	dat.rho_blocks(rhoi, yi, zi[:np.floor(len(zi)/3)])
-	dat.rho_blocks(rhoi, -yi,zi[:np.floor(len(zi)/3)])
-	
-	#dat.plot_rho2D(dat.work_dir+os.sep+'rho.png', xlim = [-12., 12.], ylim = [-5.,0], gridlines = True, clim = [1,1000])
-			
-	return dat
+    rho_crust, rho_greywacke, rho_fill = rhob
+    dat.rho_box(rho_crust) 		# lower crust
+    dat.rho_box(rho_greywacke, box = [-80.e3,-10.e3,160.e3,8.3e3]) 	# greywacke
+    dat.rho_box(rho_fill, box = [-80.e3,-0.e3,160.e3,2.e3]) 	# fill
+    # rigth side
+    dat.rho_blocks(rhoi, yi, zi[:np.floor(len(zi)/3)])
+    dat.rho_blocks(rhoi, -yi,zi[:np.floor(len(zi)/2)])
+
+    # left side
+    #dat.rho_blocks(rhoi, -yi,zi[:np.floor(len(zi)/1)])
+    #if mod == 2:
+    #    dat.rho_blocks(rhoi, -yi,zi[:np.floor(len(zi)/1)])
+    #else: 
+    #    dat.rho_blocks(rhoi, -yi,zi[:np.floor(len(zi)/3)])
+    #dat.plot_rho2D(dat.work_dir+os.sep+'rho.png', xlim = [-12., 12.], ylim = [-5.,0], gridlines = True, clim = [1,1000])	
+    return dat
+
 def run_simulation(dat, dir0 = None):
 	# run model
 	dat.run(input = 'in.dat', output = 'out.dat', exe = r'D:\ModEM\ModEM\f90\Mod2DMT.exe')		
@@ -1487,76 +1579,7 @@ def est_sigma_thickness_prior(pos, distances):
 	return sigma_thick_l1, sigma_thick_l2
 
 	
-def read_modem_model_column(file):
-    """
-    Read resistivity model from modEM inversion results in column format. 
-    Format: file should be # Long Lat Z(m) Rho 
-    """
-    model = np.genfromtxt(file).T
-    
-    model_lat = model[1,:]
-    model_lon = model[0,:]
-    model_z  = model[2,:]
-    model_rho = model[3,:]
 
-    return model, model_lat, model_lon, model_z, model_rho
-
-def intp_1D_prof_from_model(model, x_surf, y_surf, method = None, dz = None ,fig = None, name = None):
-    """
-    Interpolate a 1D profile from model in the surface position 
-    given by x_surf and y_surf 
-
-    fig: if True, return figure 
-    """
-    if method is None: 
-        method = 'linear'
-    if dz is None: 
-        dz = 25.
-
-    model_lat = model[1,:]
-    model_lon = model[0,:]
-    model_z  = model[2,:]
-    model_rho = model[3,:]
-
-    # (i) construct 'points' and 'values' vectors
-    points = np.zeros([len(model_lat), 3])
-    values = np.zeros([len(model_lat)])
-
-    for i in range(len(model_lat)):
-        points[i,:] = model[0:-1,i]
-    values = model[3,:]
-
-    # (ii) construct 'xi' vector
-    z_vec = np.arange(min(model_z),max(model_z),dz)
-    xi = np.zeros([len(z_vec), 3])
-    for k in range(len(z_vec)): 
-        xi[k,:] = [x_surf,y_surf,z_vec[k]]
-
-    ## (iii) griddata: create interpolate profile 
-    grid_z = griddata(points, values, xi, method=method)
-
-    if fig: 
-        ## plot profile 3d inv
-        # create figure
-        f = plt.figure(figsize=[5.5,5.5])
-        ax = plt.axes()
-        ax.plot(np.log10(grid_z),-z_vec,'m-')
-        plt.ylim([-2000,1000])
-        plt.xlim([-1,4])
-        #ax.legend(loc = 2)
-        ax.set_xlabel('Resistivity [Ohm m]')
-        ax.set_ylabel('Depth [m]')
-        if name is None:
-            ax.set_title('1D profile from 3D modEM inv.')
-        else: 
-            ax.set_title(name+': 1D profile from 3D modEM inv.')
-        ax.grid(alpha = 0.3)
-        plt.tight_layout()
-        #plt.show()
-        return grid_z, z_vec, f
-    
-    else: 
-        return grid_z
 
 
  

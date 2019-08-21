@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from Maping_functions import *
 import multiprocessing 
+from scipy.stats import norm
 from misc_functios import find_nearest
 import csv
 
@@ -319,13 +320,13 @@ class mcmc_inv(object):
                 v_vec[long_p_idx:] = np.inf
 
             # TE(xy): fitting sounding curves 
-            v = .1
+            v = .15
             
             TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm) /v
             if variance:
                 TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*self.rho_app_obs_er[1]**2) #/v
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(self.rho_app_obs_er[1])**2) #/v
             #v = self.phase_obs_er[1]**2             
             v = 100          
             TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
@@ -336,12 +337,12 @@ class mcmc_inv(object):
             
             # TM(yx): fitting sounding curves 
             #v = self.rho_app_obs_er[2]**2
-            v = .1
+            v = .15
             TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
                         -np.log10(rho_ap_est))/v_vec)**self.norm )/v
             if variance:
                 TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*self.rho_app_obs_er[2])**2 
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(self.rho_app_obs_er[2])**2) 
             #v = self.phase_obs_er[2]**2
             v = 100
             TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
@@ -399,17 +400,18 @@ class mcmc_inv(object):
                     if self.prior_meb: 
                         #prob = prob
                         #v = 0.15
-                        dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
-                        if dist > 1.:
-                            dist = np.inf
-                        weight = np.exp(-dist+2.) # km
+                        #dist = np.min(self.prior_meb_wl_dist) # distant to nearest well [km]
+                        #if dist > 1.:
+                        #    dist = np.inf
+                        #weight = np.exp(-dist+2.) # km
+                        weight = 1.
                         # prior over z1 (thickness layer 1)
-                        prob += weight**1. *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm \
-                            /self.prior_meb_pars[0][1]**2 
+                        prob += weight*-(self.prior_meb_pars[0][0] - pars[0])**self.norm \
+                            /2*self.prior_meb_pars[0][1]**2 
                         # prior over z2 (thickness layer 2)
                         #prob += weight**0. *-((self.prior_meb_pars[1][0] - self.prior_meb_pars[0][0]) - pars[1])**self.norm \
-                        prob += weight**1. *-((self.prior_meb_pars[1][0]) - pars[1])**self.norm \
-                            /self.prior_meb_pars[1][1]**2
+                        prob +=  weight*-(self.prior_meb_pars[1][0] - pars[1])**self.norm \
+                            /2*self.prior_meb_pars[1][1]**2
 
             else: # without priors
                 # estimate parameters
@@ -862,25 +864,74 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
             z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
             z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
             # calc. increment in std. in the position of the station
-            # std. dev. increases as get farder from the well. It double its values per 1 km.
-            z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/2.  + 1.)
-            z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/2.  + 1.)
-
+            # std. dev. increases as get farder from the well. It double its values per 2 km.
+            z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/4.  + 1.)
+            z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/4.  + 1.)
+            
             count+=1
+
         # calculete z1 normal prior parameters
-        z1_mean = np.dot(z1_mean_prior,dist_wels)/np.sum(dist_wels)
+        dist_weigth = [1./d for d in sta_obj.prior_meb_wl_dist]
+        z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
         # std. dev. increases as get farder from the well. It double its values per km.  
-        z1_std = np.dot(z1_std_prior_incre,dist_wels)/np.sum(dist_wels)
+        z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
         # calculete z2 normal prior parameters
         # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
         #z2_mean_prior = z2_mean_prior - z1_mean_prior
-        z2_mean = np.dot(z2_mean_prior,dist_wels)/np.sum(dist_wels)
-        z2_mean = z2_mean -  z1_mean
+        #print(z2_mean_prior)
+        z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
+        #z2_mean = z2_mean 
         if z2_mean < 0.:
             raise ValueError
-        z2_std = np.dot(z2_std_prior_incre,dist_wels)/np.sum(dist_wels)
+        z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
         # assign result to attribute
-        sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean,z2_std]]
+        sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean - z1_mean,z2_std]]
+
+        # create plot of meb prior and save in station folder. 
+
+        f = plt.figure(figsize=[7.5,5.5])
+        ax=plt.subplot(2, 1, 1)
+        ax1=plt.subplot(2, 1, 2)
+        # plot for z1
+        min_x = min([z1_mean - 3*z1_std, min(z1_mean_prior) - 3*max(z1_std_prior)])
+        max_x = max([z1_mean - 3*z1_std, max(z1_mean_prior) + 3*max(z1_std_prior)])
+        x_axis = np.arange(min_x, max_x, 1.)
+        count = 0
+        for wl in near_wls:
+            # values for mean a std for normal distribution representing the prior
+            #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+            #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+            ax.plot(x_axis, norm.pdf(x_axis,z1_mean_prior[count],z1_std_prior[count]), label = 'z1 well: '+wl.name)
+            count+=1
+        ax.plot(x_axis, norm.pdf(x_axis,z1_mean,z1_std),label = 'prior z1')
+        #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
+        ax.set_xlabel('z1 (top cc) [m]', size = textsize)
+        ax.set_ylabel('pdf', size = textsize)
+        ax.set_title('MeB prior for station: '+ sta_obj.name, size = textsize)
+        ax.legend(loc=1, prop={'size': 10})	
+        
+        # plot for z2
+        min_x = min([z2_mean - 3*z2_std, min(z2_mean_prior) - 3*max(z2_std_prior)])
+        max_x = max([z2_mean - 3*z2_std, max(z2_mean_prior) + 3*max(z2_std_prior)])
+        x_axis = np.arange(min_x, max_x, 1.)
+        count = 0
+        for wl in near_wls:
+            # values for mean a std for normal distribution representing the prior
+            #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+            #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+            ax1.plot(x_axis, norm.pdf(x_axis,z2_mean_prior[count],z2_std_prior[count]), label = 'z2 well: '+wl.name)
+            count+=1
+        ax1.plot(x_axis, norm.pdf(x_axis,z2_mean,z2_std),label = 'prior z2')
+        #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
+        ax1.set_xlabel('z2 (bottom cc) [m]', size = textsize)
+        ax1.set_ylabel('pdf', size = textsize)
+        #ax1.set_title('MeB prior for station: '+ sta_obj.name, size = textsize)
+        ax1.legend(loc=1, prop={'size': 10})	
+        plt.tight_layout()
+        sta_obj.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+sta_obj.name[:-4]
+        plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        plt.close()
 
 
 

@@ -62,18 +62,26 @@ def for_google_earth(list, name_file = 'for_google_earth.txt', type_obj = None):
         locations4gearth.write(obj.name[:-4]+'\t'+lon_dec+'\t'+lat_dec+'\t'+elev+'\n')
     locations4gearth.close()
 
-def dist_two_points(coord1, coord2, type_coord = 'decimal'): 
-    # coord = [lon, lat]
-    #Rp = 6.357e3 # Ecuator: radius of earth in km  
-    #Re = 6.378e3 # Pole: radius of earth in km 
-    R = 6373. # around 39° latitud
-    lon1, lat1 = [radians(coord1[0]),radians(coord1[1])]
-    lon2, lat2 = [radians(coord2[0]),radians(coord2[1])]
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = (sin(dlat/2.))**2. + cos(lat1) * cos(lat2) * (sin(dlon/2.))**2.
-    c = 2. * atan2(np.sqrt(a), np.sqrt(1.-a))
-    return R * c # (where R is the radius of the Earth)
+def dist_two_points(coord1, coord2, type_coord = None): 
+    '''
+    Calculate distance boetween two points 
+    '''
+    if type_coord == 'decimal':
+       # coord = [lon, lat]
+        #Rp = 6.357e3 # Ecuator: radius of earth in km  
+        #Re = 6.378e3 # Pole: radius of earth in km 
+        R = 6373. # around 39° latitud
+        lon1, lat1 = [radians(coord1[0]),radians(coord1[1])]
+        lon2, lat2 = [radians(coord2[0]),radians(coord2[1])]
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = (sin(dlat/2.))**2. + cos(lat1) * cos(lat2) * (sin(dlon/2.))**2.
+        c = 2. * atan2(np.sqrt(a), np.sqrt(1.-a))
+        return R * c # (where R is the radius of the Earth)
+    if type_coord == 'linear':
+       # coord = [x, y]
+        d = np.sqrt((coord2[1]-coord1[1])**2 + (coord2[0]-coord1[0])**2)
+        return d 
 
 ## test for dist_two_points function
 # from Maping_functions import *
@@ -136,6 +144,8 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
 
 
     ## plot envelopes 5% and 95% for cc boundaries
+
+    plt.clf()
     f = plt.figure(figsize=[7.5,5.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
 
@@ -168,13 +178,28 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
     plt.clf()
 
     
-def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_uncert', width_ref = None, prior_meb = None, plot_some_wells = None): 
+def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist = None, pref_orient = 'EW', sort = None, \
+    file_name = None, format_fig = None, width_ref = None, prior_meb = None, plot_some_wells = None, xlim = None, ylim = None, \
+    center_cero = None, km = None, export_fig = None, no_plot_clay_infered = None, mask_no_cc = None): 
     """
     width_ref: width of percetil of reference as dotted line centered at 50%. ex: '60%'
     prior_meb: full list of wells objects
     plot_some_wells: list of names of wells with MeB data to be plotted in the profile. ex: ['TH13','TH19']
-
+    type_coord: 'decimal' for lat/lon in decimal or 'linear' for x,y cartesian coord. 
+    unit_dist: just for linear. 'km' for kilometers and 'm' for meters. If 'm', x_axis is converted to 'km' for plotting.
+    mask_no_cc: mask section between two stations where no consuctive layer is found. The value of mask_no_cc indicates the criteria:
+        if the thickness of the second layer in meters is less than 'mask_no_cc', consider it as no conductive layer. 
     """
+    if type_coord is None: 
+        type_coord = 'decimal' # 'linear'
+    else:
+        type_coord = type_coord 
+    if unit_dist is None: 
+        unit_dist = 'km'
+    if file_name is None: 
+        file_name = 'z1_z2_uncert'
+    if format_fig is None: 
+        format_fig = 'png'
     # check for correct width plot reference input 
     if width_ref is None:
         width_plot = False
@@ -200,13 +225,12 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
     z2_per = np.zeros(s)
     # vector for negligeble stations in plot (based on second layer)
     stns_negli = np.zeros(len(sta_objects))
-
     i = 0
     for sta in sta_objects:
         coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
         coord2 = [sta.lon_dec, sta.lat_dec]
         ## calculate distances from first station to the others, save in array
-        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = type_coord)
         ## vectors for plotting 
         topo[i] = sta.elev
         z1_med[i] = topo[i] - sta.z1_pars[2]
@@ -215,24 +239,32 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
         for j in range(len(sta.z1_pars[3])): # i station, j percentil
             z1_per[i][j] = topo[i] - sta.z1_pars[3][j]
             z2_per[i][j] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][j])
-        # criteria for being negligible
-        if abs(sta.z1_pars[0] - sta.z2_pars[0]) < 20.: 
-            stns_negli[i] = True
-        else:
-            stns_negli[i] = False
+        if mask_no_cc: 
+            # criteria for being negligible
+            if abs(sta.z2_pars[0]) < mask_no_cc: 
+                stns_negli[i] = True
+            else:
+                stns_negli[i] = False
         i+=1
 
-    # mask sections were second layer is negligible
+    if center_cero: 
+        mid_val = (abs(x_axis[0] - x_axis[-1]))/2
+        x_axis = x_axis - mid_val
+
+    if unit_dist is 'm': # transfor data to km
+        x_axis = x_axis/1e3
     
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[7.5,5.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
-    ax.plot(x_axis, topo,'g-')
-    ax.plot(x_axis, z2_med,'b.-', label='bottom')
-    ax.plot(x_axis, z1_med,'r.-', label='top')
-    # plot orange section between means of z1 and z2 (indicating clay cap)
-    ax.fill_between(x_axis, z2_med, z1_med,  alpha=.3, facecolor='orange', edgecolor='orange', label='clay')
+    ax.plot(x_axis, topo,'g-', label='Topography')
+    ax.plot(x_axis, z1_med,'r.-', label='Est. MCMC: top cc')
+    ax.plot(x_axis, z2_med,'b.-', label='Est. MCMC: bottom cc')
+    if no_plot_clay_infered:
+        pass
+    else: # plot orange section between means of z1 and z2 (indicating clay cap)
+        ax.fill_between(x_axis, z2_med, z1_med,  alpha=.3, facecolor='orange', edgecolor='orange', label='clay')
     # plot percentils
     n_env = 9 # len(sta.z1_pars[3])/2 +1
     #for i in range(len(sta_objects)):
@@ -248,7 +280,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             z2_inf.append(z2_per[i][-j-1])
         ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), facecolor='r', edgecolor='r')
         ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), facecolor='b', edgecolor='b')
-    
+
     if width_plot: 
         ## plot 5% and 95% percetils as dotted lines 
         if width_ref == '90%': 
@@ -288,10 +320,21 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             ax.text(x_axis[-1],z2_per[-1,8],'20%',size = 8., color = 'b')
             ax.plot(x_axis, z2_per[:,12],'b--',linewidth=.5)
             ax.text(x_axis[-1],z2_per[-1,12],'80%',size = 8.,color = 'b')
+
+    # mask sections were second layer is negligible
+    if mask_no_cc: 
+        for k in range(len(sta_objects)-1):
+            if stns_negli[k] and stns_negli[k+1]: 
+                x_mask = [x_axis[k], x_axis[k+1]]
+                #y_mask = [topo[k]-10, -2000.]
+                y_mask_top = [z1_per[k,0]+25,z1_per[k+1,0]+25]
+                y_mask_bottom = [z2_per[k,-1]-50,z2_per[k+1,-1]-50]
+                ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.9, facecolor='w', zorder=3)
+
     # plot station names    
     i = 0
     for sta in sta_objects:
-            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
+            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1), ) 
             i+=1
 
     if prior_meb:
@@ -349,28 +392,43 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, pref_orient = 'EW', file_name 
             e = 2.*wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior] # 2 time std (66%)
             ax.errorbar(x, y, e, color='cyan', linestyle='--',zorder=3, marker='_')
             i+=1
-
-    ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
-    if prior_meb:
-        ax.set_ylim([-1.0e3, max(topo)+600.])
+    
+    if xlim:
+        ax.set_xlim([xlim[0], xlim[1]])
     else:
-        ax.set_ylim([-1.0e3, max(topo)+600.])
+        ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
+    if prior_meb:
+        if ylim:
+            ax.set_ylim([ylim[0], ylim[1]])
+        else:
+            ax.set_ylim([-1.0e3, max(topo)+600.])
+    else:
+        if ylim:
+            ax.set_ylim([ylim[0], ylim[1]])
+        else:
+            ax.set_ylim([-1.0e3, max(topo)+600.])
+
     ax.set_xlabel('y [km]', size = textsize)
-    ax.set_ylabel('depth [m]', size = textsize)
+    ax.set_ylabel('z [m]', size = textsize)
     ax.set_title('Clay cap boundaries depth  ', size = textsize)
-    ax.legend(loc=3, prop={'size': 8})	
+
     #ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
-    ax.grid(color='c', linestyle='-', linewidth=.1)
+    ax.grid(color='c', linestyle='-', linewidth=.1, zorder=4)
+    #plt.grid(True)
     
+    if export_fig:
+        return f, ax
+
+    ax.legend(loc=3, prop={'size': 8})	
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
-    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
-        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+    plt.savefig(file_name+'.'+format_fig, dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format=format_fig,transparent=True, bbox_inches=None, pad_inches=.1)	
     plt.close(f)
     plt.clf()
 
-def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = None): 
+def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = None, center_cero = None, unit_dist = 'm'): 
     """
     """
     ## sta_objects: list of station objects
@@ -390,7 +448,7 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
         coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
         coord2 = [sta.lon_dec, sta.lat_dec]
         ## calculate distances from first station to the others, save in array
-        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'linear')
         ## vectors for plotting 
         #topo[i] = sta.elev
         af_med[i] = sta.af_mcmcinv[0] 
@@ -398,8 +456,16 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
         act_med[i] = sta.act_mcmcinv[0] 
         act_std[i] = sta.act_mcmcinv[1] 
         i+=1
+    
+    if center_cero: 
+        mid_val = (abs(x_axis[0] - x_axis[-1]))/2
+        x_axis = x_axis - mid_val
+
+    if unit_dist is 'm': # transfor data to km
+        x_axis = x_axis/1e3
 
     ## plot af and act for profile 
+    plt.clf()
     f = plt.figure(figsize=[7.5,5.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
@@ -417,7 +483,11 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
     i = 0
     for sta in sta_objects:
         # load samples information 
-        samp_inf = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'samples_info.txt')
+        # if station comes from edi file (.edi)
+        if sta.name[-4:] == '.edi': 
+            samp_inf = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'samples_info.txt')
+        else: 
+            samp_inf = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name+os.sep+'samples_info.txt')
         n_samples = int(samp_inf[0])
         ax2.text(x_axis[i], 1100., sta.name[:-4]+': '+str(n_samples)+' samples', rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
         i+=1
@@ -436,6 +506,7 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
     plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+
     plt.close(f)
     plt.clf()
 

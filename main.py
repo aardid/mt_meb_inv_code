@@ -66,8 +66,8 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = False
-	surf_3D_MT = True
+	prof_2D_MT = True
+	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
 
@@ -112,10 +112,11 @@ if __name__ == "__main__":
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
 			sta2work = ['WT091a','WT102a','WT111a','WT222a']
-			#sta2work = ['WT091a']
+			#sta2work = ['WT102a']
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033c']
-			#sta2work = ['WT033c']
+			#sta2work = ['WT223a','WT107a','WT111a']
+			#sta2work = ['WT111a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 		
@@ -421,23 +422,24 @@ if __name__ == "__main__":
 		start_time = time.time()
 		prior_meb = False
 		for sta_obj in station_objects:
-			if sta_obj.ref <  161:
+			if sta_obj.ref <  0:
 		#	if False:
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 
 				## range for the parameters
-				par_range = [[.1*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,.5*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.1*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,1.*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
-				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,1.0], autocor_accpfrac = True)
+				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0], prior_input=par_range, \
+					walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,1.], autocor_accpfrac = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
-					print("	distances = {} \n".format(sta_obj.prior_meb_wl_dist)) 
+					print("	distances = {}".format(sta_obj.prior_meb_wl_dist)) 
+					print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
 				## run inversion 
 				mcmc_sta.inv()
 				## plot results (save in .png)
@@ -459,7 +461,6 @@ if __name__ == "__main__":
 		pp.close()
 		# move figure fit to global results folder
 		shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
-
 	
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
@@ -472,7 +473,7 @@ if __name__ == "__main__":
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '90%', prior_meb = wells_objects)#, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 50.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 

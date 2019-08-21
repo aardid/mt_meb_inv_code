@@ -19,7 +19,11 @@ def load_sta_est_par(station_objects, autocor_accpfrac = None):
     # for each station, and assign those values to station object attributes.
     for sta_obj in station_objects: 
         # load pars
-        est_par = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'est_par.dat')
+        # if station comes from edi file (.edi)
+        if sta_obj.name[-4:] == '.edi': 
+                est_par = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'est_par.dat')
+        else: 
+                est_par = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name+os.sep+'est_par.dat')
         est_par = est_par[:,1:]
         idx_first_per = 3
         len_line = len(est_par[0][:])  
@@ -35,7 +39,10 @@ def load_sta_est_par(station_objects, autocor_accpfrac = None):
                             [float(est_par[4][i]) for i in np.arange(idx_first_per,len_line)]]
         
         if autocor_accpfrac: 
-                act_af = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'autocor_accpfrac.txt')
+                if sta_obj.name[-4:] == '.edi': 
+                        act_af = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'autocor_accpfrac.txt')
+                else: 
+                        act_af = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name+os.sep+'autocor_accpfrac.txt')
                 sta_obj.af_mcmcinv = act_af[0,:]
                 sta_obj.act_mcmcinv = act_af[1,:]
 
