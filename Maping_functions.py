@@ -372,12 +372,25 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             x_axis_wl[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
             ## vectors for plotting 
             topo_wl[i] = wl.elev
+            print(wl.name)
+            print(wl.elev)
             i+=1
 
         i = 0
-        for wl in wls_obj: 
-            # plot well names 
-            ax.text(x_axis_wl[i], topo_wl[i]-0.9e3, wl.name, rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
+        for wl in wls_obj:
+            # near distance from well to stations in the profile
+            dist_wl_prof = []
+            for sta in sta_objects: 
+                # distance between station and well
+                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta.lon_dec, sta.lat_dec], type_coord = 'decimal')
+                if not dist_wl_prof:
+                    dist_wl_prof = dist
+                # check if distance is longer than the previous wel 
+                if dist <= dist_wl_prof: 
+                    dist_wl_prof = dist
+
+            # plot well names and distance to the profile (near station) 
+            ax.text(x_axis_wl[i], topo_wl[i]-0.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 

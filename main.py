@@ -115,7 +115,7 @@ if __name__ == "__main__":
 			#sta2work = ['WT102a']
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033c']
-			#sta2work = ['WT223a','WT107a','WT111a']
+			sta2work = ['WT223a','WT107a','WT111a']
 			#sta2work = ['WT111a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
@@ -189,8 +189,8 @@ if __name__ == "__main__":
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
 		if prof_WRKNW5:
-			wl2work = ['WK260','WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404']
-			#wl2work = ['WK260'] 
+			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
+			wl2work = ['WK401','TH19', 'WK404'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 
@@ -420,21 +420,21 @@ if __name__ == "__main__":
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = False
+		prior_meb = True
 		for sta_obj in station_objects:
+
 			if sta_obj.ref <  0:
 		#	if False:
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
-
 				## range for the parameters
-				par_range = [[.1*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,1.*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.05*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,1.*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
-				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,1.], autocor_accpfrac = True)
+				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
+					walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,100.], autocor_accpfrac = True, data_error = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))

@@ -1109,6 +1109,8 @@ def calc_app_res_phase(Z):
             ## std. Error based on Egbert, 98
         app_res_error_xy =  np.sqrt(2.*p*app_res_xy*(zxy_var**2.)/5.)
         phase_error_xy = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+        #phase_error_xy = (1/(1*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+
     
     ## Zyx
     if zyxr is None:
