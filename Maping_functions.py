@@ -12,7 +12,7 @@
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
 import numpy as np
-from math import sin, cos, sqrt, atan2, radians
+from math import sin, cos, sqrt, atan2, radians, isnan
 import glob
 import os
 import shutil
@@ -372,8 +372,6 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             x_axis_wl[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
             ## vectors for plotting 
             topo_wl[i] = wl.elev
-            print(wl.name)
-            print(wl.elev)
             i+=1
 
         i = 0
@@ -441,7 +439,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     plt.close(f)
     plt.clf()
 
-def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = None, center_cero = None, unit_dist = 'm'): 
+def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = None, center_cero = None, unit_dist = None): 
     """
     """
     ## sta_objects: list of station objects
@@ -461,7 +459,7 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
         coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
         coord2 = [sta.lon_dec, sta.lat_dec]
         ## calculate distances from first station to the others, save in array
-        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'linear')
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'linear')*100
         ## vectors for plotting 
         #topo[i] = sta.elev
         af_med[i] = sta.af_mcmcinv[0] 
@@ -522,6 +520,86 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
 
     plt.close(f)
     plt.clf()
+
+def plot_profile_KL_divergence(sta_objects, pref_orient = 'EW', file_name = None, center_cero = None, unit_dist = None): 
+    """
+    plot KL divergence values (posterior vs meb prior) for parameters z1 and z2.  
+    """
+    ## sta_objects: list of station objects
+    ## sort list by longitud (min to max - East to West)
+    sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    # vectors to be fill and plot 
+    x_axis = np.zeros(len(sta_objects))
+    #topo = np.zeros(len(sta_objects))
+    KL_z1 = np.zeros(len(sta_objects)) # Kl for z1 for sta.
+    KL_z2 = np.zeros(len(sta_objects)) # Kl for z2 for sta.
+
+    i = 0
+    for sta in sta_objects:
+        # load acceptance fraction and autocorrelation time for station
+        coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+        coord2 = [sta.lon_dec, sta.lat_dec]
+        ## calculate distances from first station to the others, save in array
+        x_axis[i] = dist_two_points(coord1, coord2, type_coord = 'linear')*100.
+        ## vectors for plotting 
+        #topo[i] = sta.elev
+        if sta.name[-4:] == '.edi': 
+            KL = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'KL_value.txt')
+        else: 
+            KL = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name+os.sep+'KL_value.txt')
+        # z1
+        if isnan(KL[0]): # condition if KL value is nan. Default '0'
+            KL_z1[i] = 0.
+        else: 
+            KL_z1[i] = KL[0]
+        # z2
+        if isnan(KL[1]): # condition if KL value is nan. Default '0'
+            KL_z2[i] = 0.
+        else: 
+            KL_z2[i] = KL[1]
+        i+=1
+    
+    if center_cero: 
+        mid_val = (abs(x_axis[0] - x_axis[-1]))/2
+        x_axis = x_axis - mid_val
+
+    if unit_dist is 'm': # transfor data to km
+        x_axis = x_axis/1e3
+
+    ## plot af and act for profile 
+    plt.clf()
+    f = plt.figure(figsize=[7.5,5.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+    # plot meadian and topo
+    #ax.plot(x_axis, topo,'g-')
+    ax.plot(x_axis,KL_z1, '-o', color = 'r', label = 'KL div. z1')
+    ax.plot(x_axis,KL_z2, '-o', color = 'b', label = 'KL div. z2')
+    #ax.tick_params(axis='y', labelcolor='r')
+    
+    ## plot station names  
+    i = 0
+    for sta in sta_objects:
+        ax.text(x_axis[i], np.max(KL_z1) + 7., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
+        i+=1
+
+    #ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
+    ax.set_ylim([-7,  np.max(KL_z1) + 10])
+    ax.set_xlabel('y [km]', size = textsize)
+    ax.set_ylabel('[]', size = textsize)
+    ax.set_title('KL divergence: z1 and z2 pars.', size = textsize)
+    ax.legend(loc = 3,prop={'size': 8})	
+    ax.grid(True)
+    #(color='r', linestyle='-', linewidth=2)
+    ax.grid(color='c', linestyle='-', linewidth=.1)
+    
+    #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
+    #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
+    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+
+    plt.close(f)
+    plt.clf()
+
 
 def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', file_name = None, \
      width_ref = None, isotherms = None, percentiels = None, sc_intp = False): 

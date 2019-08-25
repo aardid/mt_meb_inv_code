@@ -108,6 +108,7 @@ class mcmc_inv(object):
                             [par1,...,par5]
     prior_meb               consider MeB priors (boolean), for z1 and       False
                             z2 pars
+    prior_meb_weigth        weigth of meb prior in posterio                 0.1
     prior_meb_wl_names      wells considered for MeB prior            
     prior_meb_pars          mean and std of normal dist. priors for 
                             pars z1 and z2 based on MeB data mcmc inv.
@@ -122,7 +123,7 @@ class mcmc_inv(object):
 
     """
     def __init__(self, sta_obj, dim_inv = None, name= None, work_dir = None, num_lay = None , norm = None, \
-        prior = None, prior_input = None, prior_meb = None, nwalkers = None, walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None):
+        prior = None, prior_input = None, prior_meb = None, prior_meb_weigth = None, nwalkers = None, walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -181,7 +182,10 @@ class mcmc_inv(object):
             self.prior_meb_wl_names = sta_obj.prior_meb_wl_names
             self.prior_meb_pars = sta_obj.prior_meb  #
             self.prior_meb_wl_dist = sta_obj.prior_meb_wl_dist
-        
+        if prior_meb_weigth:
+            self.prior_meb_weigth = prior_meb_weigth
+        else: 
+            self.prior_meb_weigth = 0.1
         if nwalkers is None: # number of walkers 
             self.nwalkers = 100
         else:

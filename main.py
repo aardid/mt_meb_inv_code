@@ -115,7 +115,7 @@ if __name__ == "__main__":
 			#sta2work = ['WT102a']
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033c']
-			sta2work = ['WT223a','WT107a','WT111a']
+			#sta2work = ['WT223a','WT107a','WT111a']
 			#sta2work = ['WT111a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
@@ -137,7 +137,10 @@ if __name__ == "__main__":
 			if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
 				file = file_aux[pos_ast:] # name on the file
 				sta_obj = Station(file, count, path_files)
-				sta_obj.read_edi_file() 
+				sta_obj.read_edi_file()
+				## correction in elevation for discrepancy between elev in wells and MT stations (temporal solition, to check)
+				sta_obj.elev = float(sta_obj.elev) - 42.
+				##
 				sta_obj.rotate_Z()
 				# import PT derotated data 
 				sta_obj.read_PT_Z(pc = pc) 
@@ -190,7 +193,7 @@ if __name__ == "__main__":
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
 		if prof_WRKNW5:
 			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
-			wl2work = ['WK401','TH19', 'WK404'] 
+			#wl2work = ['WK401','TH19', 'WK404'] 
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 
@@ -216,7 +219,7 @@ if __name__ == "__main__":
 					if wl_obj.name == wl_name: 
 						wl_obj.lat_dec = wells_location[i][2]
 						wl_obj.lon_dec = wells_location[i][1]
-						wl_obj.elev = wells_location[i][3]
+						wl_obj.elev = wells_location[i][3] 
 				## load data attributes
 				## filter the data to the most recent one (well has overlap data cooresponding to reintepretations)
 				filter_by_date = True
@@ -422,8 +425,7 @@ if __name__ == "__main__":
 		start_time = time.time()
 		prior_meb = True
 		for sta_obj in station_objects:
-
-			if sta_obj.ref <  0:
+			if sta_obj.ref < 0:
 		#	if False:
 				pass
 			else: 
@@ -434,7 +436,7 @@ if __name__ == "__main__":
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, range_p = [0.,100.], autocor_accpfrac = True, data_error = True)
+					walk_jump = 2000, prior_meb = prior_meb,range_p = [0.,100.], autocor_accpfrac = True, data_error = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -464,7 +466,7 @@ if __name__ == "__main__":
 	
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
-		print('(4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)')
+		print('(4) Plot 2D profile of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
 		# quality inversion pars. plot (acceptance ratio and autocorrelation time)
 		autocor_accpfrac = True
 		# load mcmc results and assign to attributes of pars to station attributes 
@@ -473,13 +475,19 @@ if __name__ == "__main__":
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 50.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 80.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
 		if autocor_accpfrac:
 			file_name = 'autocor_accpfrac'
 			plot_profile_autocor_accpfrac(station_objects, pref_orient = 'EW', file_name = file_name)
+			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
+
+		# plot profile of KL divergence 
+		if True:
+			file_name = 'KL_div_prof'
+			plot_profile_KL_divergence(station_objects, pref_orient = 'EW', file_name = file_name)
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		## create text file for google earth, containing names of MT stations considered 

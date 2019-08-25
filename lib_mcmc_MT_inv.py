@@ -110,6 +110,7 @@ class mcmc_inv(object):
                             [par1,...,par5]
     prior_meb               consider MeB priors (boolean), for z1 and       False
                             z2 pars
+    prior_meb_weigth        weigth of meb prior in posterio                 0.1
     prior_meb_wl_names      wells considered for MeB prior            
     prior_meb_pars          mean and std of normal dist. priors for 
                             pars z1 and z2 based on MeB data mcmc inv.
@@ -124,8 +125,8 @@ class mcmc_inv(object):
 
     """
     def __init__(self, sta_obj, dim_inv = None, name= None, work_dir = None, num_lay = None , norm = None, \
-        prior = None, prior_input = None, prior_meb = None, nwalkers = None, walk_jump = None, inv_dat = None,\
-             ini_mod = None, range_p = None, autocor_accpfrac = None, data_error = None):
+        prior = None, prior_input = None, prior_meb = None, prior_meb_weigth = None, nwalkers = None, \
+            walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None, data_error = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -188,7 +189,12 @@ class mcmc_inv(object):
             self.prior_meb_wl_names = sta_obj.prior_meb_wl_names
             self.prior_meb_pars = sta_obj.prior_meb  #
             self.prior_meb_wl_dist = sta_obj.prior_meb_wl_dist
-        
+            
+            if prior_meb_weigth:
+                self.prior_meb_weigth = prior_meb_weigth
+            else: 
+                self.prior_meb_weigth = 0.1
+
         if nwalkers is None: # number of walkers 
             self.nwalkers = 100
         else:
@@ -437,8 +443,8 @@ class mcmc_inv(object):
                         #if dist > 1.:
                         #    dist = np.inf
                         #weight = np.exp(-dist+2.) # km
-                        weight_z1 = .1
-                        weight_z2 = weight_z1*0.1
+                        weight_z1 = self.prior_meb_weigth
+                        weight_z2 = weight_z1
                         # prior over z1 (thickness layer 1)
                         prob += weight_z1**1. *-((self.prior_meb_pars[0][0]) - pars[0])**self.norm \
                             /self.prior_meb_pars[0][1]**2 
@@ -780,6 +786,75 @@ class mcmc_inv(object):
         f.close()
         shutil.move('est_par.dat',path+os.sep+"est_par.dat")
 
+        if self.prior_meb: 
+           ## plot posterior and prior distribution side-by-side
+            f = plt.figure(figsize=[7.5,5.5])
+            ax=plt.subplot(2, 1, 1)
+            ax1=plt.subplot(2, 1, 2)
+            
+            # z1 
+            min_x = self.z1_pars[0] - 3*self.z1_pars[1] 
+            min_aux = self.prior_meb_pars[0][0] - 3*self.prior_meb_pars[0][1]
+            if min_x > min_aux: 
+                min_x = min_aux
+            max_x = self.z1_pars[0] + 3*self.z1_pars[1] 
+            max_aux = self.prior_meb_pars[0][0] + 3*self.prior_meb_pars[0][1]
+            if max_x < max_aux: 
+                max_x = max_aux
+            x_axis = np.arange(min_x, max_x, 1.)
+            ax.plot(x_axis, norm.pdf(x_axis,self.z1_pars[0],self.z1_pars[1] ), label = '~ Posterior')
+            ax.plot(x_axis, norm.pdf(x_axis,self.prior_meb_pars[0][0],self.prior_meb_pars[0][1] ), label = '~ Prior')
+
+            ax.set_xlabel('z1 (top cc) [m]', size = textsize)
+            ax.set_ylabel('pdf', size = textsize)
+            ax.set_title('Posterior vs Prior: '+ self.name, size = textsize)
+            ax.legend(loc=1, prop={'size': 10})	
+
+            # z2
+            min_x = self.z2_pars[0] - 3*self.z2_pars[1] 
+            min_aux = self.prior_meb_pars[1][0] - 3*self.prior_meb_pars[1][1]
+            if min_x > min_aux: 
+                min_x = min_aux
+            max_x = self.z2_pars[0] + 3*self.z2_pars[1] 
+            max_aux = self.prior_meb_pars[1][0] + 3*self.prior_meb_pars[1][1]
+            if max_x < max_aux: 
+                max_x = max_aux
+            x_axis = np.arange(min_x, max_x, 1.)
+            ax1.plot(x_axis, norm.pdf(x_axis,self.z2_pars[0],self.z2_pars[1] ), label = '~ Posterior')
+            ax1.plot(x_axis, norm.pdf(x_axis,self.prior_meb_pars[1][0],self.prior_meb_pars[1][1] ), label = '~ Prior')
+
+            #ax1.set_title('Posterior vs Prior: z2 bottom .bound'+ self.name, size = textsize)            
+            ax1.set_xlabel('z2 (bottom cc) [m]', size = textsize)
+            ax1.set_ylabel('pdf', size = textsize)
+            #ax.set_title('Posterior vs Prior: '+ self.name, size = textsize)
+            ax1.legend(loc=1, prop={'size': 10})
+            plt.tight_layout()
+            plt.savefig(self.path_results+os.sep+'post_vs_prior.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            plt.close()
+
+            KL_div = True
+            if KL_div:
+                # create file
+                f = open("KL_value.txt", "w")
+                f.write("# Kullback-Leibler divergence value in station position (for z1 and z1 parameters)\n")
+                # calc. value for station 
+                # z1
+                P = norm.pdf(x_axis,self.z1_pars[0],self.z1_pars[1])
+                Q = norm.pdf(x_axis,self.prior_meb_pars[0][0],self.prior_meb_pars[0][1])
+                KL_z1 = np.sum([P[i]*np.log(P[i]/Q[i]) for i in range(len(P)) if Q[i] > 0])
+                # z2
+                P = norm.pdf(x_axis,self.z2_pars[0],self.z2_pars[1])
+                Q = norm.pdf(x_axis,self.prior_meb_pars[1][0],self.prior_meb_pars[1][1])
+                KL_z2 = np.sum([P[i]*np.log(P[i]/Q[i]) for i in range(len(P)) if Q[i] > 0])
+                # save value in txt 
+                f.write("{:2.2f}\n".format(KL_z1))
+                f.write("{:2.2f}\n".format(KL_z2))
+                # close KL_div file       
+                f.close()
+                # move file 
+                shutil.move('KL_value.txt', self.path_results+os.sep+'KL_value.txt')
+
     # ===================== 
     # Functions               
     # =====================
@@ -794,6 +869,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
     First, for each quadrant around the station, the nearest well with MeB data is found. 
     Second, using the MeB mcmcm results, the prior is calculated as a weigthed average of the nearest wells. 
     Third, the results are assigned as attributes to the MT objects. 
+    KL_div: calculate Kullback-Leibler divergence. Save in txt. 
     Attributes generated:
     sta_obj.prior_meb_wl_names      : list of names of nearest wells with MeB 
                                     ['well 1',... , 'ẃell 4']
@@ -966,6 +1042,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
         plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',
             orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
         plt.close()
+
 
 
 
