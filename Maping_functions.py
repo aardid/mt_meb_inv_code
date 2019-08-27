@@ -725,6 +725,90 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     plt.close(f)
     plt.clf()
 
+def triangulation_meb_results(station_objects, well_objects): 
+    import chart_studio.plotly as py
+    import plotly.graph_objs as go
+    import numpy as np
+    import matplotlib.cm as cm
+    from scipy.spatial import Delaunay
+    import functools
+    from mpl_toolkits.mplot3d import Axes3D
+    from scipy.interpolate import griddata
+    from matplotlib import cm
+    import matplotlib.image as mpimg
+
+    lon_stas = []
+    lat_stas = []
+    for sta in station_objects:
+        lon_stas.append(sta.lon_dec)
+        lat_stas.append(sta.lat_dec)
+    lon_stas = np.asarray(lon_stas)
+    lat_stas = np.asarray(lat_stas)
+    
+    # (0) Define grid:
+    # borders given by well objects
+
+    # define dominio
+    lon_dom = []
+    lat_dom = []
+    z1_dom_mean = []   
+    points = []
+    values = []
+    count=0
+    for wl in well_objects:
+        if wl.meb:
+            # load well pars from meb inversion 
+            meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+            wl.meb_z1_pars = meb_mcmc_results[0,1:]
+            wl.meb_z2_pars = meb_mcmc_results[1,1:]
+            # fill dom vectors 
+            #lon_dom.append(wl.lon_dec)
+            #lat_dom.append(wl.lat_dec)
+            #z1_dom_mean.append(wl.meb_z1_pars[0]) # means of z1 
+            points.append([wl.lon_dec,wl.lat_dec])
+            values.append(wl.meb_z1_pars[0])
+            #z2_dom_mean.append(wl.meb_z2_pars[0]) # means of z1 
+            #z1_dom_std.append(wl.meb_z1_pars[1]) # stds of z2 
+            #z2_dom_std.append(wl.meb_z2_pars[1]) # stds of z2 
+
+    f = plt.figure(figsize=[9.5,7.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+    img=mpimg.imread('WT_area_gearth_hd.jpg')
+    ext = [175.934859, 176.226398, -38.722805, -38.567571]
+    ax.imshow(img, extent = ext)
+    ax.set_xlim(ext[:2])
+    ax.set_ylim(ext[-2:])
+    points = np.asarray(points)
+    tri = Delaunay(points)
+    #print(tri.simplices)
+    #print(points[tri.simplices])
+    plt.triplot(points[:,0], points[:,1], tri.simplices.copy(), linewidth=.8)
+    plt.plot(points[:,0], points[:,1], 'o', label = 'MeB well', ms = 2)
+    plt.plot(lon_stas, lat_stas, '*', label = 'MT sta.', ms = 2)
+
+    ax.legend(loc=1, prop={'size': 6})	
+    ax.set_xlabel('latitud [°]', size = textsize)
+    ax.set_ylabel('longitud [°]', size = textsize)
+    ax.set_title('Triangulation of MeB wells', size = textsize)
+
+    # save figure
+    file_name = 'Trig_meb_wells_WRKNW5'
+    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+    shutil.move(file_name+'.png', '.'+os.sep+'meb_info'+os.sep+file_name+'.png')
+
+    plt.clf()
+
+
+
+
+
+
+        
+
+        
+
+
 
 
 

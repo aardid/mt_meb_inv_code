@@ -416,6 +416,8 @@ if __name__ == "__main__":
 		# (prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells)
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb_quadrant(station_objects, wells_objects)
+		# plot surface of prior
+		triangulation_meb_results(station_objects, wells_objects)
 
 	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 

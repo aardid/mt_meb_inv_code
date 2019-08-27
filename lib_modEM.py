@@ -31,6 +31,8 @@ import cmath
 import corner, emcee
 import time
 from matplotlib import gridspec
+from matplotlib.backends.backend_pdf import PdfPages
+
 #from scipy.interpolate import griddata
 from lib_sample_data import *
 from misc_functios import *
@@ -364,7 +366,7 @@ class Modem(object):
                 if cnt !=0: fp.write("\n")
             if cnt !=0: fp.write("\n")
 
-    def read_data(self, filename, add_noise = None):
+    def read_data(self, filename, add_noise = None, polar = None, plot_noise = None):
         fp = open(filename,'r')
         
         keepReading = True
@@ -429,19 +431,91 @@ class Modem(object):
         self.ys = self.ys - (self.ye[-1]-self.ye[0])/2.				
 
         if add_noise: 
-            # abs of 5% magnitud of each impedance
-            perc = add_noise/100.
-            TE_noise_values = abs(self.TE_Impedance*perc)
-            TM_noise_values = abs(self.TM_Impedance*perc)
+            if polar: 
+                # add noise in polar coordinates. ratio noise amplitud to noise phase = 10/3 
+                # calc. amplitud and phase 
+                # from xy to polar
+                TE_amp = abs(self.TE_Impedance)
+                TE_phase = np.arctan(self.TE_Impedance.imag/self.TE_Impedance.real)
+                TM_amp = abs(self.TM_Impedance)
+                TM_phase = np.arctan(self.TM_Impedance.imag/self.TM_Impedance.real)
 
-            # for each element, calculate its add_noise% 
-            for i in range(np.shape(self.TE_Impedance)[0]):# periods 
+                # add noise to phase 
+                # abs of perc_noise % magnitud of each impedance
+                perc = add_noise/100.
+                mu = 0.
+                sigma = 1.
+                error_TE_amp = 0*TE_amp
+                error_TM_amp = 0*TE_amp
+                error_TE_phase = 0*TE_amp
+                error_TM_phase = 0*TE_amp
+
+                if plot_noise:
+                    pp = PdfPages('noise_per_station.pdf')
+
+                # for each element, calculate its add_noise% 
                 for k in range(np.shape(self.TE_Impedance)[1]):# stations
-                    # add half of the error to each component (real and complex) 
-                    self.TE_Impedance[i][k] = complex((TE_noise_values[i][k] *np.random.randn()) ,(TE_noise_values[i][k] *np.random.randn())) \
-                                            + self.TE_Impedance[i][k]
-                    self.TM_Impedance[i][k] = complex((TM_noise_values[i][k] *np.random.randn()) ,(TM_noise_values[i][k] *np.random.randn())) \
-                                            + self.TM_Impedance[i][k]
+                    for i in range(np.shape(self.TE_Impedance)[0]):# periods 
+                        # add error to amplitudes
+                        error_TE_amp[i][k] = perc * np.max(TE_amp[i][k])*(sigma*np.random.randn()+mu)
+                        error_TM_amp[i][k] = perc * np.max(TM_amp[i][k])*(sigma*np.random.randn()+mu)
+                        TE_amp[i][k] =  TE_amp[i][k] + error_TE_amp[i][k]
+                        TM_amp[i][k] =  TM_amp[i][k] + error_TM_amp[i][k]
+                        # add error to phases
+                        error_TE_phase[i][k] = .5*perc * np.max(TE_phase[i][k])*(sigma*np.random.randn()+mu)
+                        error_TM_phase[i][k] = .5*perc * np.max(TM_phase[i][k])*(sigma*np.random.randn()+mu)
+                        TE_phase[i][k] =  TE_phase[i][k] + error_TE_phase[i][k]
+                        TM_phase[i][k] =  TM_phase[i][k] + error_TM_phase[i][k]
+
+                    if plot_noise:
+                        # plot histograms of errors per stations
+                        f = plt.figure()
+                        f.set_size_inches(8,8)
+                         
+                        #f.suptitle(self.name, size = textsize)
+                        errors = [error_TE_amp[:,k], error_TM_amp[:,k], error_TE_phase[:,k], error_TM_phase[:,k]]
+                        e_x_label = ['noise TE amp.','noise TM amp.', 'noise TE phase', 'noise TE phase']
+                        for i in range(len(errors)): 
+                            ax = plt.subplot(2, 2, i+1)
+                            b1 = errors[i]
+                            bins = np.linspace(np.min(b1), np.max(b1[:-1]), 3*int(np.sqrt(len(b1))))
+                            h,e = np.histogram(b1, bins, density = True)
+                            m = 0.5*(e[:-1]+e[1:])
+                            plt.bar(e[:-1], h, e[1]-e[0])
+                            ax.set_xlabel(e_x_label[i], fontsize=10)
+                            ax.set_ylabel('freq.', fontsize=10)
+                            plt.grid(True, which='both', linewidth=0.1)
+                        
+                        f.suptitle('station: {:}'.format(k), fontsize=14)
+                        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+                        pp.savefig(f)
+                        plt.close(f)
+
+                if plot_noise:
+                    pp.close()
+                    shutil.move('noise_per_station.pdf','.'+os.sep+self.work_dir +os.sep+'noise_per_station.pdf')
+
+                # from polar to xy 
+                for i in range(np.shape(self.TE_Impedance)[0]):# periods 
+                    for k in range(np.shape(self.TE_Impedance)[1]):# stations
+                        # add half of the error to each component (real and complex) 
+                        self.TE_Impedance[i][k] = complex(TE_amp[i][k]*np.cos(TE_phase[i][k]) ,TE_amp[i][k]*np.sin(TE_phase[i][k])) 
+                        self.TM_Impedance[i][k] = complex(TM_amp[i][k]*np.cos(TM_phase[i][k]) ,TM_amp[i][k]*np.sin(TM_phase[i][k]))                                   
+
+            else: 
+                # abs of perc_noise % magnitud of each impedance
+                perc = add_noise/100.
+                TE_noise_values = abs(self.TE_Impedance*perc)
+                TM_noise_values = abs(self.TM_Impedance*perc)
+
+                # for each element, calculate its add_noise% 
+                for i in range(np.shape(self.TE_Impedance)[0]):# periods 
+                    for k in range(np.shape(self.TE_Impedance)[1]):# stations
+                        # add half of the error to each component (real and complex) 
+                        self.TE_Impedance[i][k] = complex((TE_noise_values[i][k] *np.random.randn()) ,(TE_noise_values[i][k] *np.random.randn())) \
+                                                + self.TE_Impedance[i][k]
+                        self.TM_Impedance[i][k] = complex((TM_noise_values[i][k] *np.random.randn()) ,(TM_noise_values[i][k] *np.random.randn())) \
+                                                + self.TM_Impedance[i][k]
 		
         # compute apparent resistivity
         om = 2.*np.pi*self.f
@@ -463,17 +537,15 @@ class Modem(object):
                 nS = len(self.ys)
                 nT = len(self.f[:,0])
                 fp.write("> %i %i \n"%(nT, nS))
-                
                 dat = self.__getattribute__(dtype)
                 for i in range(nS):					
                     for j in range(nT):
                         T = 1./self.f[j,i]
                         xs,ys,zs = [self.xs[i]-self.x0, self.ys[i]-self.y0,self.zs[i]-self.z0]
                         ys = ys + (self.ye[-1]-self.ye[0])/2.
-                        
-                        fp.write(" %8.7e %03i 0.00 0.00 %8.7e %8.7e %8.7e %s %8.7e %8.7e %8.7e\n"%(T,i+1,xs,ys,zs, dtype[:2], np.real(dat[j,i]), np.imag(dat[j,i]), 1.e-3))
-                
+                        fp.write(" %8.7e %03i 0.00 0.00 %8.7e %8.7e %8.7e %s %8.7e %8.7e %8.7e\n"%(T,i+1,xs,ys,zs, dtype[:2], dat[j,i].real, dat[j,i].imag, 1.e-3))
             fp.write("\n")
+
     def run(self, input, output, exe, verbose = True):
                 
         self.verbose = verbose		

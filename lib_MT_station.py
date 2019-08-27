@@ -1109,8 +1109,6 @@ def calc_app_res_phase(Z):
             ## std. Error based on Egbert, 98
         app_res_error_xy =  np.sqrt(2.*p*app_res_xy*(zxy_var**2.)/5.)
         phase_error_xy = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
-        #phase_error_xy = (1/(1*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
-
     
     ## Zyx
     if zyxr is None:
@@ -1221,12 +1219,12 @@ def plot_Z_appres_phase(Z, title = None, non_diag = None):
         #ax2.semilogx(periods,phase,'b*')
         #ax2 = plt.subplot(gs[1])
         ax2.set_xscale("log")
-        ax2.errorbar(periods,zxy_phase,zxy_phase_error, fmt='ro')
-        ax2.errorbar(periods,zyx_phase-180,zyx_phase_error, fmt='bo')
+        ax2.errorbar(periods,abs(zxy_phase),zxy_phase_error, fmt='ro')
+        ax2.errorbar(periods,abs(zyx_phase),zyx_phase_error, fmt='bo')
         #ax2.set_xlim([np.min(periods), np.max(periods)])
         #ax2.set_xlim(1e-3, 1e3)
-        #ax2.set_ylim([-190,190])
-        #ax2.set_xlabel('Period [s]', fontsize=18)
+        ax2.set_ylim([0,90])
+        ax2.set_xlabel('Period [s]', fontsize=18)
         ax2.set_ylabel('Phase [deg]', fontsize=18)
         ax2.legend(['PhaseXY','PhaseYX'])
         ax2.grid(True, which='both', linewidth=0.4)

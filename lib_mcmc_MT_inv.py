@@ -977,7 +977,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
             # std. dev. increases as get farder from the well. It double its values per 2 km.
             z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/4.  + 1.)
             z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/4.  + 1.)
-            
+            # load pars in well 
             count+=1
 
         # calculete z1 normal prior parameters
