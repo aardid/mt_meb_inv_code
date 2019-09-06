@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
+	mcmc_MT_inv = True
 	prof_2D_MT = True
 	surf_3D_MT = False
 	wells_temp_fit = False
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 			sta2work = ['WT091a','WT102a','WT111a','WT222a']
 			#sta2work = ['WT102a']
 		if prof_WRKNW5:
-			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033c']
+			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a','WT033c']
 			#sta2work = ['WT223a','WT107a','WT111a']
 			#sta2work = ['WT111a']
 		if prof_NEMT2:
@@ -128,7 +128,6 @@ if __name__ == "__main__":
 		if prof_THNW05: 
 			sta2work= ['WT179a','WT189a', 'WT200a','WT198a','WT202a','WT181a','WT206a','WT014a','WT217a','WT194a'] 
 		
-
 		#########################################################################################
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
@@ -194,6 +193,7 @@ if __name__ == "__main__":
 		if prof_WRKNW5:
 			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
 			#wl2work = ['WK401','TH19', 'WK404'] 
+			wl2work = ['WK260','WK261','WK263', 'WK267A','TH19','WK401']
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 
@@ -362,7 +362,27 @@ if __name__ == "__main__":
 		# 		pp.savefig(f)
 		# 		plt.close("all")
 		# pp.close()
-		
+
+		## Figure of station and well positons on top of satelite image of the field (save in current folder)
+		# plot over topography
+		if False:
+			file_name = 'map_stations_wells'
+			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+			x_lim = [176.0,176.1]
+			y_lim = [-38.68,-38.58]
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
+			map_stations_wells(station_objects, wells_objects, file_name = file_name, format = 'png', \
+				path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file)
+			
+			# plot over resistivity boundary 
+			file_name = 'map_res_bound_stations_wells'
+			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+			x_lim = [176.0,176.1]
+			y_lim = [-38.68,-38.58]
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth.jpg'
+			map_stations_wells(station_objects, wells_objects, file_name = file_name, format = 'png', \
+				path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file)
+
 	# (1) Run MCMC for MeB priors  
 	if mcmc_meb_inv:
 		pp = PdfPages('fit.pdf')
@@ -375,7 +395,7 @@ if __name__ == "__main__":
 			if wl.meb: 
 				#if wl.name == 'WK401':
 				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
-				mcmc_wl = mcmc_meb(wl)
+				mcmc_wl = mcmc_meb(wl)#, norm = 1.)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
 				#
@@ -417,7 +437,7 @@ if __name__ == "__main__":
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb_quadrant(station_objects, wells_objects)
 		# plot surface of prior
-		triangulation_meb_results(station_objects, wells_objects)
+		#triangulation_meb_results(station_objects, wells_objects)
 
 	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
@@ -438,7 +458,7 @@ if __name__ == "__main__":
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb,range_p = [0.,100.], autocor_accpfrac = True, data_error = True)
+					walk_jump = 2000, prior_meb = prior_meb,range_p = None, autocor_accpfrac = True, data_error = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))

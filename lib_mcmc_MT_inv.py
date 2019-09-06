@@ -21,6 +21,7 @@ from scipy.stats import norm
 import multiprocessing 
 from misc_functios import find_nearest
 import csv
+import matplotlib.mlab as mlab
 
 textsize = 15.
 min_val = 1.e-7
@@ -640,9 +641,13 @@ class mcmc_inv(object):
                 return y_axis
             # depths to plot
             z_model = np.arange(0.,1500.,2.)
-            f,(ax) = plt.subplots(1,1)
-            f.set_size_inches(8,4) 
-            f.suptitle(self.name, size = textsize)
+            #f,(ax) = plt.subplots(1,1)
+            #f.set_size_inches(8,3) 
+            f = plt.figure(figsize=(10, 4))
+            #f.suptitle('Model: '+self.name, size = textsize)
+            gs = gridspec.GridSpec(nrows=2, ncols=5, height_ratios=[3, 1])
+            # model 
+            ax = f.add_subplot(gs[0, :])
             for par in pars_order:
                 #if all(x > 0. for x in par):
                 sq_prof_est = square_fn([par[2],par[2]+par[3],par[4],par[5],par[6]], x_axis=z_model)
@@ -650,16 +655,103 @@ class mcmc_inv(object):
             ax.plot(z_model,sq_prof_est,'b-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
             # labels
             ax.set_xlim([np.min(z_model), np.max(z_model)])
-            #ax.set_xlim([1E-3,1e3])
-            ax.set_ylim([1E-1,1e4])
+            ax.set_xlim([0,np.mean(pars_order[2]) + np.mean(pars_order[3]) + 150.])
+            ax.set_ylim([1E-1,1e3])
+            #ax.set_ylim([1E-1,1.5e3])
             ax.set_xlabel('depth [s]', size = textsize)
             ax.set_ylabel('resistivity [Ohm m]', size = textsize)
+            ax.legend()
             ### layout figure
-            plt.tight_layout()
-            plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
-					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
-            plt.close(f)
-            plt.clf()
+            ax.grid(True, which='both', linewidth=0.1)
+            #plt.tight_layout()
+            #plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
+			#		orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            #plt.clf()
+
+            if True:
+                # plot histograms for pars
+                ax1 = f.add_subplot(gs[1, 0])
+                ax2 = f.add_subplot(gs[1, 1])
+                ax3 = f.add_subplot(gs[1, 2])
+                ax4 = f.add_subplot(gs[1, 3])
+                ax5 = f.add_subplot(gs[1, 4])
+                #f,(ax1,ax2,ax3,ax4,ax5) = plt.subplots(1,5)
+                #f.set_size_inches(12,2)
+                #f.set_size_inches(10,2)  
+                texts = textsize
+                #f.suptitle(self.name, size = textsize)
+                # z1
+                z1 = pars_order[:,2]
+                bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(z1))))
+                h,e = np.histogram(z1, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax1.bar(e[:-1], h, e[1]-e[0])
+                ax1.set_xlabel('z1 [m]', size = texts)
+                ax1.set_ylabel('freq.', size = texts)
+                #ax1.grid(True, which='both', linewidth=0.1)
+                # plot normal fit 
+                (mu, sigma) = norm.fit(z1)
+                y = mlab.normpdf(bins, mu, sigma)
+                ax1.plot(bins, y, 'r-', linewidth=1)
+                # z2
+                z2 = pars_order[:,3]
+                bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(z2))))
+                h,e = np.histogram(z2, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax2.bar(e[:-1], h, e[1]-e[0])
+                ax2.set_xlabel('z2 [m]', size = texts)
+                ax2.set_ylabel('freq.', size = texts)
+                #ax1.grid(True, which='both', linewidth=0.1)
+                # plot normal fit 
+                (mu, sigma) = norm.fit(z2)
+                y = mlab.normpdf(bins, mu, sigma)
+                ax2.plot(bins, y, 'r-', linewidth=1)
+                # r1
+                r1 = pars_order[:,4]
+                bins = np.linspace(np.min(r1), np.max(r1), int(np.sqrt(len(r1))))
+                h,e = np.histogram(r1, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax3.bar(e[:-1], h, e[1]-e[0])
+                ax3.set_xlabel('r1 [Ohm m]', size = texts)
+                ax3.set_ylabel('freq.', size = texts)
+                #ax1.grid(True, which='both', linewidth=0.1)
+                # plot normal fit 
+                (mu, sigma) = norm.fit(r1)
+                y = mlab.normpdf(bins, mu, sigma)
+                ax3.plot(bins, y, 'r-', linewidth=1)
+                # r2
+                r2 = pars_order[:,5]
+                bins = np.linspace(np.min(r2), np.max(r2), int(np.sqrt(len(r2))))
+                h,e = np.histogram(r2, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax4.bar(e[:-1], h, e[1]-e[0])
+                ax4.set_xlabel('r2 [Ohm m]', size = texts)
+                ax4.set_ylabel('freq.', size = texts)
+                #ax1.grid(True, which='both', linewidth=0.1)
+                # plot normal fit 
+                (mu, sigma) = norm.fit(r2)
+                y = mlab.normpdf(bins, mu, sigma)
+                ax4.plot(bins, y, 'r-', linewidth=1)
+                # r3
+                r3 = pars_order[:,6]
+                bins = np.linspace(np.min(r3), np.max(r3), int(np.sqrt(len(r3))))
+                h,e = np.histogram(r3, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax5.bar(e[:-1], h, e[1]-e[0])
+                ax5.set_xlabel('r3 [Ohm m]', size = texts)
+                ax5.set_ylabel('freq.', size = texts)
+                #ax1.grid(True, which='both', linewidth=0.1)
+                # plot normal fit 
+                (mu, sigma) = norm.fit(r3)
+                y = mlab.normpdf(bins, mu, sigma)
+                ax5.plot(bins, y, 'r-', linewidth=1)
+                ### layout figure
+                
+                plt.tight_layout()
+                #plt.show()
+                plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
+                        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+                plt.clf()
 
         if plot_fit: 
             f,(ax, ax1) = plt.subplots(2,1)
@@ -679,13 +771,13 @@ class mcmc_inv(object):
                     Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
                         self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
                     ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0, label = 'sample')
+            ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.3, alpha=0.5, zorder=0, label = 'sample')
             #plot observed
-            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TE (xy)')
+            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zxy')
             ax.errorbar(self.T_obs,self.rho_app_obs[1],self.rho_app_obs_er[1], fmt='r*')
-            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TM (yx)')
+            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zyx')
             ax.errorbar(self.T_obs,self.rho_app_obs[2],self.rho_app_obs_er[2], fmt='g*')
-            ax.legend(loc='lower right', shadow=False, fontsize='small')
+            ax.legend(loc='upper right', shadow=False, fontsize='small')
             ### ax: phase
             ax1.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
             ax1.set_xlim([1E-3,1e3])
@@ -699,11 +791,11 @@ class mcmc_inv(object):
                     Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
                         self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
                     ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0, label = 'sample')
+            ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.3, alpha=0.5, zorder=0, label = 'sample')
             #plot observed
-            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TE (xy)')
+            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zxy')
             ax1.errorbar(self.T_obs,self.phase_obs[1],self.phase_obs_er[1], fmt='r*')
-            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. TM (yx)')
+            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zyx')
             ax1.errorbar(self.T_obs,self.phase_obs[2],self.phase_obs_er[2], fmt='g*')
             ax1.legend(loc='lower right', shadow=False, fontsize='small')
             ax1.set_xscale('log')
@@ -714,6 +806,8 @@ class mcmc_inv(object):
             ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
             ### layout figure
             #plt.tight_layout()
+            ax.grid(True, which='both', linewidth=0.1)
+            ax1.grid(True, which='both', linewidth=0.1)
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
         if exp_fig == None:

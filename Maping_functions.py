@@ -17,6 +17,16 @@ import glob
 import os
 import shutil
 from lib_sample_data import*
+import chart_studio.plotly as py
+import plotly.graph_objs as go
+import numpy as np
+import matplotlib.cm as cm
+from scipy.spatial import Delaunay
+import functools
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.interpolate import griddata
+from matplotlib import cm
+import matplotlib.image as mpimg
 textsize = 15.
 
 # ==============================================================================
@@ -726,16 +736,6 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     plt.clf()
 
 def triangulation_meb_results(station_objects, well_objects): 
-    import chart_studio.plotly as py
-    import plotly.graph_objs as go
-    import numpy as np
-    import matplotlib.cm as cm
-    from scipy.spatial import Delaunay
-    import functools
-    from mpl_toolkits.mplot3d import Axes3D
-    from scipy.interpolate import griddata
-    from matplotlib import cm
-    import matplotlib.image as mpimg
 
     lon_stas = []
     lat_stas = []
@@ -799,7 +799,75 @@ def triangulation_meb_results(station_objects, well_objects):
 
     plt.clf()
 
+def map_stations_wells(station_objects, wells_objects, file_name = None, format = None, \
+    path_base_image = None, ext_img = None, xlim = None, ylim = None):
+    
+    if file_name is None:
+        f_name = 'map_stations_wells'
+    if format is None:
+        format = 'png'
+    if path_base_image is None:
+        path_base_image = '.'
+    if ext_img is None: 
+        raise 'ext_img not given'
+    else:
+        ext = ext_img
 
+    # sort stations and wells by longitud (for plotting)
+    station_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    wells_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+
+    lon_stas = []
+    lat_stas = []
+    for sta in station_objects:
+        lon_stas.append(sta.lon_dec)
+        lat_stas.append(sta.lat_dec)
+    lon_stas = np.asarray(lon_stas)
+    lat_stas = np.asarray(lat_stas)
+
+    lon_wls = []
+    lat_wls = []
+    for wl in wells_objects:
+        if wl.meb:
+            lon_wls.append(wl.lon_dec)
+            lat_wls.append(wl.lat_dec)
+    lon_wls = np.asarray(lon_wls)
+    lat_wls = np.asarray(lat_wls)
+
+    f = plt.figure(figsize=[9.5,7.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+    img=mpimg.imread(path_base_image)
+    ax.imshow(img, extent = ext)
+
+    plt.plot(lon_stas, lat_stas, 'r*', label = 'MT sta.', ms = 12)
+    for i, sta in enumerate(station_objects):
+        plt.text(sta.lon_dec, sta.lat_dec, str(i), color = 'k', fontsize=7, ha = 'center', va = 'center')
+    plt.plot(lon_wls, lat_wls, 'c*', label = 'MeB well.', ms = 12)
+    import string
+    alpha = list(string.ascii_lowercase)
+    for i, wl in enumerate(wells_objects):
+        plt.text(wl.lon_dec, wl.lat_dec, alpha[i], color = 'k', fontsize=7, ha = 'center', va = 'center')
+
+    ax.legend(loc=1, prop={'size': 12})	
+    ax.set_xlabel('latitud [°]', size = textsize)
+    ax.set_ylabel('longitud [°]', size = textsize)
+    #ax.set_title('MT', size = textsize)
+    if xlim is None: 
+        ax.set_xlim(ext[:2])
+    else:
+        ax.set_xlim(xlim)
+    if ylim is None: 
+        ax.set_ylim(ext[-2:])
+    else:
+        ax.set_ylim(ylim)
+
+    #plt.show()
+    # save figure
+    plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+    shutil.move(file_name+'.png', '.'+os.sep+'base_map_img'+os.sep+file_name+'.png')
+
+    plt.clf()
 
 
 
