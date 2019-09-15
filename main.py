@@ -114,8 +114,8 @@ if __name__ == "__main__":
 			sta2work = ['WT091a','WT102a','WT111a','WT222a']
 			#sta2work = ['WT102a']
 		if prof_WRKNW5:
-			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT033a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a','WT033c']
-			#sta2work = ['WT223a','WT107a','WT111a']
+			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
+			#sta2work = ['WT039a','WT024a','WT030a']
 			#sta2work = ['WT111a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
@@ -193,7 +193,7 @@ if __name__ == "__main__":
 		if prof_WRKNW5:
 			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
 			#wl2work = ['WK401','TH19', 'WK404'] 
-			wl2work = ['WK260','WK261','WK263', 'WK267A','TH19','WK401']
+			wl2work = ['WK260','WK261','TH19','WK401','WK267A','WK270']#WK263' ,'WK267A'
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 
@@ -435,9 +435,16 @@ if __name__ == "__main__":
 		# Calculate prior values for boundaries of the cc in station
 		# (prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells)
 		# Function assign results as attributes for MT stations in station_objects (list)
-		calc_prior_meb_quadrant(station_objects, wells_objects)
+		calc_prior_meb_quadrant(station_objects, wells_objects, slp = .6)
 		# plot surface of prior
-		#triangulation_meb_results(station_objects, wells_objects)
+		if False:
+			file_name = 'Trig_meb_wells_WRKNW5'
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
+			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+			x_lim = [176.0,176.1]
+			y_lim = [-38.68,-38.58]
+			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+				file_name = file_name, format = 'png')
 
 	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
@@ -453,12 +460,12 @@ if __name__ == "__main__":
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.05*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e-3,1.*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.05*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e0,1.*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb,range_p = None, autocor_accpfrac = True, data_error = True)
+					walk_jump = 2000, prior_meb = prior_meb,range_p = [0,100.], autocor_accpfrac = True, data_error = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -497,7 +504,7 @@ if __name__ == "__main__":
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 80.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 125.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
@@ -509,13 +516,20 @@ if __name__ == "__main__":
 		# plot profile of KL divergence 
 		if True:
 			file_name = 'KL_div_prof'
-			plot_profile_KL_divergence(station_objects, pref_orient = 'EW', file_name = file_name)
+			plot_profile_KL_divergence(station_objects, wells_objects, pref_orient = 'EW', file_name = file_name)
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		## create text file for google earth, containing names of MT stations considered 
 		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
 		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
 			+os.sep+'00_stations_4_google_earth.txt')
+
+		# plot uncertaity in boundary depths
+		if True:
+			file_name = 'bound_uncert'
+			plot_bound_uncert(station_objects, file_name = file_name) #
+			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
+
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 

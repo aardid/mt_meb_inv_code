@@ -531,7 +531,7 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
     plt.close(f)
     plt.clf()
 
-def plot_profile_KL_divergence(sta_objects, pref_orient = 'EW', file_name = None, center_cero = None, unit_dist = None): 
+def plot_profile_KL_divergence(sta_objects, wells_objects, pref_orient = 'EW', file_name = None, center_cero = None, unit_dist = None): 
     """
     plot KL divergence values (posterior vs meb prior) for parameters z1 and z2.  
     """
@@ -592,6 +592,8 @@ def plot_profile_KL_divergence(sta_objects, pref_orient = 'EW', file_name = None
         ax.text(x_axis[i], np.max(KL_z1) + 7., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
         i+=1
 
+    # plot wells names
+
     #ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
     ax.set_ylim([-7,  np.max(KL_z1) + 10])
     ax.set_xlabel('y [km]', size = textsize)
@@ -634,6 +636,7 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
         isotherms = ['150','210']
     if percentiels is None:
         percentiels = np.arange(5.,100.,5.) 
+
     ## sort list by longitud (min to max - East to West)
     sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
     # vectors to be fill and plot 
@@ -735,7 +738,8 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     plt.close(f)
     plt.clf()
 
-def triangulation_meb_results(station_objects, well_objects): 
+def triangulation_meb_results(station_objects, well_objects, path_base_image = None, ext_img = None, xlim = None, ylim = None, \
+     file_name = None, format = None ): 
 
     lon_stas = []
     lat_stas = []
@@ -773,11 +777,24 @@ def triangulation_meb_results(station_objects, well_objects):
 
     f = plt.figure(figsize=[9.5,7.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
-    img=mpimg.imread('WT_area_gearth_hd.jpg')
-    ext = [175.934859, 176.226398, -38.722805, -38.567571]
+    if path_base_image:
+        img=mpimg.imread(path_base_image)
+    else:
+        raise 'no path base image'
+    if ext_img:
+        ext = ext_img
+    else:
+        raise 'no external (bound) values for image image'
     ax.imshow(img, extent = ext)
-    ax.set_xlim(ext[:2])
-    ax.set_ylim(ext[-2:])
+    if xlim is None:
+        ax.set_xlim(ext[:2])
+    else: 
+        ax.set_xlim(xlim)
+    if ylim is None:
+        ax.set_ylim(ext[-2:])
+    else: 
+        ax.set_ylim(ylim)
+    
     points = np.asarray(points)
     tri = Delaunay(points)
     #print(tri.simplices)
@@ -792,11 +809,16 @@ def triangulation_meb_results(station_objects, well_objects):
     ax.set_title('Triangulation of MeB wells', size = textsize)
 
     # save figure
-    file_name = 'Trig_meb_wells_WRKNW5'
+    if file_name is None:
+        file_name = 'Trig_meb_wells_WRKNW5'
+    if format is None: 
+        format = 'png'
+
+    # save figure
     plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
-    shutil.move(file_name+'.png', '.'+os.sep+'meb_info'+os.sep+file_name+'.png')
-
+    shutil.move(file_name+'.png', '.'+os.sep+'base_map_img'+os.sep+file_name+'.png')
+    plt.close(f)
     plt.clf()
 
 def map_stations_wells(station_objects, wells_objects, file_name = None, format = None, \

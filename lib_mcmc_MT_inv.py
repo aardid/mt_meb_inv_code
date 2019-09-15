@@ -806,10 +806,12 @@ class mcmc_inv(object):
             ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
             ### layout figure
             #plt.tight_layout()
-            ax.grid(True, which='both', linewidth=0.1)
-            ax1.grid(True, which='both', linewidth=0.1)
+            ax.grid()
+            ax1.grid()
+
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            
         if exp_fig == None:
             plt.close(f)
             plt.clf()
@@ -957,13 +959,14 @@ class mcmc_inv(object):
 #  Functions
 # ==============================================================================
 
-def calc_prior_meb_quadrant(station_objects, wells_objects): 
+def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None): 
     """
     Function that calculate MeB prior for each MT station based on MeB mcmc results on wells. 
     First, for each quadrant around the station, the nearest well with MeB data is found. 
     Second, using the MeB mcmcm results, the prior is calculated as a weigthed average of the nearest wells. 
     Third, the results are assigned as attributes to the MT objects. 
     KL_div: calculate Kullback-Leibler divergence. Save in txt. 
+    slp: slope of std increase as fn. of distance from well (default .25)
     Attributes generated:
     sta_obj.prior_meb_wl_names      : list of names of nearest wells with MeB 
                                     ['well 1',... , 'ẃell 4']
@@ -976,6 +979,8 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
     : distances in meters
     : MeB methylene blue
     """
+    if slp is None:
+        slp = .25
 
     for sta_obj in station_objects:
         dist_pre_q1 = []
@@ -1069,8 +1074,8 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
             z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
             # calc. increment in std. in the position of the station
             # std. dev. increases as get farder from the well. It double its values per 2 km.
-            z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/4.  + 1.)
-            z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]/4.  + 1.)
+            z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
+            z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
             # load pars in well 
             count+=1
 
@@ -1137,6 +1142,61 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
             orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
         plt.close()
 
+def plot_bound_uncert(station_objects, file_name = None): 
+    '''Plot uncertainty in boundary depths
+        Average of standard deviations 
+    '''
+    # calc mean of stds for pars z1 and z2
+    # import std
+    stds_z1 = [sta.z1_pars[1] for sta in station_objects]
+    stds_z2 = [sta.z2_pars[1] for sta in station_objects]
+    mean_std_z1 = np.mean(stds_z1)
+    mean_std_z2 = np.mean(stds_z2)
+    # create figure 
+    #f = plt.figure(figsize=[9.0,2.5])
+    fig, axs = plt.subplots(1, 2, constrained_layout=True, figsize=[7.5,2.5])
+    #ax=plt.subplot(1, 2, 1, constrained_layout=True)
+    #ax1=plt.subplot(1, 2, 2, constrained_layout=True)
+    # plot normal distributions
+    # z1
+    bins = np.linspace(-mean_std_z1*4, mean_std_z1*4, 100)
+    mu, sigma = 0, mean_std_z1
+    y = mlab.normpdf(bins, mu, sigma)
+    axs[0].plot(bins, y, 'r-', linewidth=2)
+    # plot refence lines
+    xticks = [0]
+    for i in range(3):
+        axs[0].plot([mean_std_z1*(i+1), mean_std_z1*(i+1)],[0,max(y)],'--',linewidth=1, label = r'{}$\sigma$'.format(i+1))
+        xticks.append(int(np.floor(mean_std_z1*(i+1))))
+    axs[0].legend()
+    axs[0].set_xlabel('z1 [m]', size = textsize)
+    axs[0].set_ylabel('pdf', size = textsize)
+    axs[0].set_xticks(xticks)
+    axs[0].grid(linewidth=.5)
+    # z2
+    bins = np.linspace(-mean_std_z2*4, mean_std_z2*4, 100)
+    mu, sigma = 0, mean_std_z2
+    y = mlab.normpdf(bins, mu, sigma)
+    axs[1].plot(bins, y, 'b-', linewidth=2)
+    # plot refence lines
+    xticks = [0]
+    for i in range(3):
+        axs[1].plot([mean_std_z2*(i+1), mean_std_z2*(i+1)],[0,max(y)],'--',linewidth=1, label = r'{}$\sigma$'.format(i+1))
+        xticks.append(int(np.floor(mean_std_z2*(i+1))))
+    axs[1].legend()
+    axs[1].set_xlabel('z2 [m]', size = textsize)
+    axs[1].set_ylabel('pdf', size = textsize)
+    axs[1].set_xticks(xticks)
+    axs[1].grid(linewidth=.5)
+    #plt.tight_layout()
+
+    fig.suptitle('Uncertainty in boundary depths', fontsize=16)
+    # save figure
+    #plt.show()
+    plt.savefig('.'+os.sep+file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+    plt.close()
+    
 
 
 

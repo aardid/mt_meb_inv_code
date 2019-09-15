@@ -1651,7 +1651,77 @@ def est_sigma_thickness_prior(pos, distances):
 	return sigma_thick_l1, sigma_thick_l2
 
 	
+def read_modem_model_column(file):
+    """
+    Read resistivity model from modEM inversion results in column format. 
+    Format: file should be # Long Lat Z(m) Rho 
+    """
+    model = np.genfromtxt(file).T
+ 
+    model_lat = model[1,:]
+    model_lon = model[0,:]
+    model_z  = model[2,:]
+    model_rho = model[3,:]
 
+    return model, model_lat, model_lon, model_z, model_rho
+
+def intp_1D_prof_from_model(model, x_surf, y_surf, method = None, dz = None ,fig = None, name = None):
+    """
+    Interpolate a 1D profile from model in the surface position 
+    given by x_surf and y_surf 
+ 
+    fig: if True, return figure 
+    """
+    if method is None: 
+        method = 'linear'
+    if dz is None: 
+        dz = 25.
+
+    model_lat = model[1,:]
+    model_lon = model[0,:]
+    model_z  = model[2,:]
+    model_rho = model[3,:]
+
+    # (i) construct 'points' and 'values' vectors
+    points = np.zeros([len(model_lat), 3])
+    values = np.zeros([len(model_lat)])
+
+    for i in range(len(model_lat)):
+        points[i,:] = model[0:-1,i]
+    values = model[3,:]
+
+    # (ii) construct 'xi' vector
+    z_vec = np.arange(min(model_z),max(model_z),dz)
+    xi = np.zeros([len(z_vec), 3])
+    for k in range(len(z_vec)): 
+        xi[k,:] = [x_surf,y_surf,z_vec[k]]
+
+    ## (iii) griddata: create interpolate profile 
+    grid_z = griddata(points, values, xi, method=method)
+
+    if fig: 
+        ## plot profile 3d inv
+        # create figure
+        f = plt.figure(figsize=[5.5,5.5])
+        ax = plt.axes()
+        ax.plot(np.log10(grid_z),-z_vec,'m-')
+        plt.ylim([-2000,1000])
+        plt.xlim([-1,4])
+        #ax.legend(loc = 2)
+        ax.set_xlabel('Resistivity [Ohm m]', size = textsize)
+        ax.set_ylabel('Depth [m]', size = textsize)
+        if name is None:
+            ax.set_title('1D prof. from 3D model', size = textsize)
+        else: 
+            ax.set_title(name+': 1D prof. from 3D model', size = textsize)
+        ax.grid(alpha = 0.3)
+        plt.tight_layout()
+        #plt.show()
+        
+        return grid_z, z_vec, f
+    
+    else: 
+        return grid_z
 
 
  
