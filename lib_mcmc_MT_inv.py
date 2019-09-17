@@ -643,24 +643,25 @@ class mcmc_inv(object):
             z_model = np.arange(0.,1500.,2.)
             #f,(ax) = plt.subplots(1,1)
             #f.set_size_inches(8,3) 
-            f = plt.figure(figsize=(10, 4))
+            f = plt.figure(figsize=(9, 9))
             #f.suptitle('Model: '+self.name, size = textsize)
-            gs = gridspec.GridSpec(nrows=2, ncols=5, height_ratios=[3, 1])
+            gs = gridspec.GridSpec(nrows=3, ncols=3, height_ratios=[2, 1, 1])
             # model 
             ax = f.add_subplot(gs[0, :])
             for par in pars_order:
                 #if all(x > 0. for x in par):
                 sq_prof_est = square_fn([par[2],par[2]+par[3],par[4],par[5],par[6]], x_axis=z_model)
-                ax.semilogy(z_model,sq_prof_est,'b-', lw = 0.5, alpha=0.1, zorder=0)
-            ax.plot(z_model,sq_prof_est,'b-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
+                ax.semilogy(z_model,sq_prof_est,'c-', lw = 0.5, alpha=0.1, zorder=0)
+            ax.plot(z_model,sq_prof_est,'c-', lw = 1.5, alpha=0.5, zorder=0, label = 'samples')
+
             # labels
             ax.set_xlim([np.min(z_model), np.max(z_model)])
-            ax.set_xlim([0,np.mean(pars_order[2]) + np.mean(pars_order[3]) + 150.])
+            ax.set_xlim([0,np.mean(pars_order[2]) + np.mean(pars_order[3]) + 100.])
             ax.set_ylim([1E-1,1e3])
             #ax.set_ylim([1E-1,1.5e3])
-            ax.set_xlabel('depth [s]', size = textsize)
-            ax.set_ylabel('resistivity [Ohm m]', size = textsize)
-            ax.legend()
+            ax.set_xlabel('depth [m]', size = textsize)
+            ax.set_ylabel(r'$\rho$ [$\Omega$ m]', size = textsize)
+            #ax.legend()
             ### layout figure
             ax.grid(True, which='both', linewidth=0.1)
             #plt.tight_layout()
@@ -672,9 +673,9 @@ class mcmc_inv(object):
                 # plot histograms for pars
                 ax1 = f.add_subplot(gs[1, 0])
                 ax2 = f.add_subplot(gs[1, 1])
-                ax3 = f.add_subplot(gs[1, 2])
-                ax4 = f.add_subplot(gs[1, 3])
-                ax5 = f.add_subplot(gs[1, 4])
+                ax3 = f.add_subplot(gs[2, 0])
+                ax4 = f.add_subplot(gs[2, 1])
+                ax5 = f.add_subplot(gs[2, 2])
                 #f,(ax1,ax2,ax3,ax4,ax5) = plt.subplots(1,5)
                 #f.set_size_inches(12,2)
                 #f.set_size_inches(10,2)  
@@ -686,33 +687,41 @@ class mcmc_inv(object):
                 h,e = np.histogram(z1, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
                 ax1.bar(e[:-1], h, e[1]-e[0])
-                ax1.set_xlabel('z1 [m]', size = texts)
+                ax1.set_xlabel('$z_1$ [m]', size = texts)
                 ax1.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
                 y = mlab.normpdf(bins, mu, sigma)
-                ax1.plot(bins, y, 'r-', linewidth=1)
+                ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
+                # plot lines for mean of z1 and z2 (top plot)
+                ax.plot([mu,mu],[1e-1,1e3],'r--', label = 'mean $z_1$', linewidth=1.5)
+                ax1.plot([mu,mu],[0,max(y)],'r--', label = 'mean $z_1$', linewidth=1.5)
+
                 # z2
                 z2 = pars_order[:,3]
                 bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(z2))))
                 h,e = np.histogram(z2, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
                 ax2.bar(e[:-1], h, e[1]-e[0])
-                ax2.set_xlabel('z2 [m]', size = texts)
+                ax2.set_xlabel('$z_2$ [m]', size = texts)
                 ax2.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
-                (mu, sigma) = norm.fit(z2)
-                y = mlab.normpdf(bins, mu, sigma)
-                ax2.plot(bins, y, 'r-', linewidth=1)
+                (mu2, sigma) = norm.fit(z2)
+                y = mlab.normpdf(bins, mu2, sigma)
+                ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
+                # plot lines for mean of z1 and z2 (top plot)
+                ax.plot([mu+mu2,mu+mu2],[1e-1,1e3],'b--', label = 'mean $z_2$', linewidth=1.5)
+                ax2.plot([mu2,mu2],[0,max(y)],'b--', label = 'mean $z_2$', linewidth=1.5)
+                
                 # r1
                 r1 = pars_order[:,4]
                 bins = np.linspace(np.min(r1), np.max(r1), int(np.sqrt(len(r1))))
                 h,e = np.histogram(r1, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
                 ax3.bar(e[:-1], h, e[1]-e[0])
-                ax3.set_xlabel('r1 [Ohm m]', size = texts)
+                ax3.set_xlabel(r'$\rho_1$ [$\Omega$ m]', size = texts)
                 ax3.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
@@ -725,7 +734,7 @@ class mcmc_inv(object):
                 h,e = np.histogram(r2, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
                 ax4.bar(e[:-1], h, e[1]-e[0])
-                ax4.set_xlabel('r2 [Ohm m]', size = texts)
+                ax4.set_xlabel(r'$\rho_2$ [$\Omega$ m]', size = texts)
                 ax4.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
@@ -738,7 +747,7 @@ class mcmc_inv(object):
                 h,e = np.histogram(r3, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
                 ax5.bar(e[:-1], h, e[1]-e[0])
-                ax5.set_xlabel('r3 [Ohm m]', size = texts)
+                ax5.set_xlabel(r'$\rho_3$ [$\Omega$ m]', size = texts)
                 ax5.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
@@ -746,8 +755,21 @@ class mcmc_inv(object):
                 y = mlab.normpdf(bins, mu, sigma)
                 ax5.plot(bins, y, 'r-', linewidth=1)
                 ### layout figure
-                
+                ax.tick_params(labelsize=textsize)
+                ax1.tick_params(labelsize=textsize)
+                ax2.tick_params(labelsize=textsize)
+                ax3.tick_params(labelsize=textsize)
+                ax4.tick_params(labelsize=textsize)
+                ax5.tick_params(labelsize=textsize)
+
+                ax.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+                #ax1.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+                #ax2.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+                #ax3.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+                #ax4.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+                #ax5.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
                 plt.tight_layout()
+                
                 #plt.show()
                 plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
                         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
@@ -763,7 +785,7 @@ class mcmc_inv(object):
             ax.set_xlim([1E-3,1e3])
             ax.set_ylim([1e0,1e3])
             ax.set_xlabel('period [s]', size = textsize)
-            ax.set_ylabel('app. res. [Ohm m]', size = textsize)
+            ax.set_ylabel(r'$\rho_{app}$ [$\Omega$ m]', size = textsize)
             #ax.set_title('Apparent Resistivity (TM and TE)', size = textsize)
             # plot samples
             for par in pars:
@@ -771,19 +793,19 @@ class mcmc_inv(object):
                     Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
                         self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
                     ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.3, alpha=0.5, zorder=0, label = 'sample')
+            ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'sample')
             #plot observed
-            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zxy')
+            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
             ax.errorbar(self.T_obs,self.rho_app_obs[1],self.rho_app_obs_er[1], fmt='r*')
-            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zyx')
+            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{yx}$')
             ax.errorbar(self.T_obs,self.rho_app_obs[2],self.rho_app_obs_er[2], fmt='g*')
-            ax.legend(loc='upper right', shadow=False, fontsize='small')
+            ax.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
             ### ax: phase
             ax1.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
             ax1.set_xlim([1E-3,1e3])
-            ax1.set_ylim([0.e0,.9e2])
+            ax1.set_ylim([0.e0,1.1e2])
             ax1.set_xlabel('period [s]', size = textsize)
-            ax1.set_ylabel('phase [°]', size = textsize)
+            ax1.set_ylabel('$\phi$ [°]', size = textsize)
             #ax1.set_title('Phase (TM and TE)', size = textsize)
             # plot samples
             for par in pars:
@@ -791,13 +813,13 @@ class mcmc_inv(object):
                     Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
                         self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
                     ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.3, alpha=0.5, zorder=0, label = 'sample')
+            ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'sample')
             #plot observed
-            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zxy')
+            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
             ax1.errorbar(self.T_obs,self.phase_obs[1],self.phase_obs_er[1], fmt='r*')
-            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'obs. Zyx')
+            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{yx}$')
             ax1.errorbar(self.T_obs,self.phase_obs[2],self.phase_obs_er[2], fmt='g*')
-            ax1.legend(loc='lower right', shadow=False, fontsize='small')
+            ax1.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
             ax1.set_xscale('log')
             # plot reference for periods consider in inversion (range_p)
             ax.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
@@ -805,13 +827,17 @@ class mcmc_inv(object):
             ax1.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
             ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
             ### layout figure
-            #plt.tight_layout()
+            #
             ax.grid()
             ax1.grid()
+            ax.tick_params(labelsize=textsize)
+            ax1.tick_params(labelsize=textsize)
+            #plt.tight_layout()
 
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             
+
         if exp_fig == None:
             plt.close(f)
             plt.clf()
@@ -1102,7 +1128,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
         ax=plt.subplot(2, 1, 1)
         ax1=plt.subplot(2, 1, 2)
         # plot for z1
-        min_x = min([z1_mean - 3*z1_std, min(z1_mean_prior) - 3*max(z1_std_prior)])
+        min_x = 0#min([z1_mean - 3*z1_std, min(z1_mean_prior) - 3*max(z1_std_prior)])
         max_x = max([z1_mean - 3*z1_std, max(z1_mean_prior) + 3*max(z1_std_prior)])
         x_axis = np.arange(min_x, max_x, 1.)
         count = 0
@@ -1110,14 +1136,14 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
             # values for mean a std for normal distribution representing the prior
             #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
             #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-            ax.plot(x_axis, norm.pdf(x_axis,z1_mean_prior[count],z1_std_prior[count]), label = 'z1 well: '+wl.name)
+            ax.plot(x_axis, norm.pdf(x_axis,z1_mean_prior[count],z1_std_prior[count]), label = '$z_1$ well: '+wl.name)
             count+=1
-        ax.plot(x_axis, norm.pdf(x_axis,z1_mean,z1_std),label = 'prior z1')
+        ax.plot(x_axis, norm.pdf(x_axis,z1_mean,z1_std),label = 'prior $z_1$')
         #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
-        ax.set_xlabel('z1 (top cc) [m]', size = textsize)
+        ax.set_xlabel('$z_1$ [m]', size = textsize)
         ax.set_ylabel('pdf', size = textsize)
-        ax.set_title('MeB prior for station: '+ sta_obj.name, size = textsize)
-        ax.legend(loc=1, prop={'size': 10})	
+        ax.set_title('MeB prior for MT station '+ sta_obj.name[:-4], size = textsize)
+        ax.legend(loc=1, prop={'size': textsize})	
         
         # plot for z2
         min_x = min([z2_mean - 3*z2_std, min(z2_mean_prior) - 3*max(z2_std_prior)])
@@ -1128,14 +1154,21 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
             # values for mean a std for normal distribution representing the prior
             #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
             #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-            ax1.plot(x_axis, norm.pdf(x_axis,z2_mean_prior[count],z2_std_prior[count]), label = 'z2 well: '+wl.name)
+            ax1.plot(x_axis, norm.pdf(x_axis,z2_mean_prior[count],z2_std_prior[count]), label = '$z_2$ well: '+wl.name)
             count+=1
-        ax1.plot(x_axis, norm.pdf(x_axis,z2_mean,z2_std),label = 'prior z2')
+        ax1.plot(x_axis, norm.pdf(x_axis,z2_mean,z2_std),label = 'prior $z_2$')
         #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
-        ax1.set_xlabel('z2 (bottom cc) [m]', size = textsize)
+        ax1.set_xlabel('$z_2$ [m]', size = textsize)
         ax1.set_ylabel('pdf', size = textsize)
         #ax1.set_title('MeB prior for station: '+ sta_obj.name, size = textsize)
-        ax1.legend(loc=1, prop={'size': 10})	
+        ax1.legend(loc=1, prop={'size': textsize})
+
+        ax.tick_params(axis="x", labelsize=textsize)
+        ax.tick_params(axis="y", labelsize=textsize)
+
+        ax1.tick_params(axis="x", labelsize=textsize)
+        ax1.tick_params(axis="y", labelsize=textsize)
+        
         plt.tight_layout()
         sta_obj.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+sta_obj.name[:-4]
         plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',

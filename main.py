@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
+	mcmc_MT_inv = False
 	prof_2D_MT = True
 	surf_3D_MT = False
 	wells_temp_fit = False
@@ -365,7 +365,7 @@ if __name__ == "__main__":
 
 		## Figure of station and well positons on top of satelite image of the field (save in current folder)
 		# plot over topography
-		if False:
+		if True:
 			file_name = 'map_stations_wells'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
 			x_lim = [176.0,176.1]
@@ -395,15 +395,15 @@ if __name__ == "__main__":
 			if wl.meb: 
 				#if wl.name == 'WK401':
 				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
-				mcmc_wl = mcmc_meb(wl)#, norm = 1.)
+				mcmc_wl = mcmc_meb(wl, norm = 1.)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
 				#
-				f = mcmc_wl.sample_post(exp_fig = False, plot_fit_temp = True, wl_obj = wl, \
+				f = mcmc_wl.sample_post(exp_fig = True, plot_hist_bounds = True, plot_fit_temp = False, wl_obj = wl, \
 					temp_full_list_z1 = temp_full_list_z1, temp_full_list_z2 = temp_full_list_z2) # Figure with fit to be add in pdf pp
 				#f = mcmc_wl.sample_post_temp(exp_fig = True) # Figure with fit to be add in pdf 
 				pp.savefig(f)
-				plt.close("all")
+				plt.close(f)
 				## calculate estimate parameters (percentiels)
 				mcmc_wl.model_pars_est()
 				count += 1

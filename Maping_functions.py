@@ -265,16 +265,16 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         x_axis = x_axis/1e3
     
     ## plot envelopes 5% and 95% for cc boundaries
-    f = plt.figure(figsize=[7.5,5.5])
+    f = plt.figure(figsize=[8.5,5.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-', label='Topography')
-    ax.plot(x_axis, z1_med,'r.-', label='Est. MCMC: top cc')
-    ax.plot(x_axis, z2_med,'b.-', label='Est. MCMC: bottom cc')
+    ax.plot(x_axis, z1_med,'r.-', label='$z_1$ estimated')
+    ax.plot(x_axis, z2_med,'b.-', label='$z_2$ estimated')
     if no_plot_clay_infered:
         pass
     else: # plot orange section between means of z1 and z2 (indicating clay cap)
-        ax.fill_between(x_axis, z2_med, z1_med,  alpha=.3, facecolor='orange', edgecolor='orange', label='clay')
+        ax.fill_between(x_axis, z2_med, z1_med,  alpha=.3, facecolor='orange', edgecolor='orange', label='Inferred clay')
     # plot percentils
     n_env = 9 # len(sta.z1_pars[3])/2 +1
     #for i in range(len(sta_objects)):
@@ -344,7 +344,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     # plot station names    
     i = 0
     for sta in sta_objects:
-            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1), ) 
+            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=8, bbox=dict(facecolor='red', alpha=0.1), ) 
             i+=1
 
     if prior_meb:
@@ -417,7 +417,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     if xlim:
         ax.set_xlim([xlim[0], xlim[1]])
     else:
-        ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
+        ax.set_xlim([x_axis[0]-2, x_axis[-1]+1])
     if prior_meb:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
@@ -429,19 +429,22 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         else:
             ax.set_ylim([-1.0e3, max(topo)+600.])
 
+    #plt.xticks(np.linspace(0,10,10))
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('z [m]', size = textsize)
-    ax.set_title('Clay cap boundaries depth  ', size = textsize)
+    ax.set_title('LRA uncertain boundaries', size = textsize)
 
     #ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
     ax.grid(color='c', linestyle='-', linewidth=.1, zorder=4)
+    #ax.tick_params(labelsize=textsize)
+
     #plt.grid(True)
     
     if export_fig:
         return f, ax
 
-    ax.legend(loc=3, prop={'size': 8})	
+    ax.legend(loc=3, prop={'size': 10})	
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
     plt.savefig(file_name+'.'+format_fig, dpi=300, facecolor='w', edgecolor='w',
@@ -494,7 +497,7 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
     color = 'r'
     ax.errorbar(x_axis,af_med, yerr= af_std, fmt='-o', color = color)
     ax.tick_params(axis='y', labelcolor=color)
-    ax.set_ylim([0.,1.0])
+    ax.set_ylim([0.,1.3])
     ax2 = ax.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'b'
     ax2.errorbar(x_axis, act_med, yerr= act_std, fmt='-o', color = color)
@@ -510,19 +513,24 @@ def plot_profile_autocor_accpfrac(sta_objects, pref_orient = 'EW', file_name = N
         else: 
             samp_inf = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name+os.sep+'samples_info.txt')
         n_samples = int(samp_inf[0])
-        ax2.text(x_axis[i], 1100., sta.name[:-4]+': '+str(n_samples)+' samples', rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
+        ax2.text(x_axis[i], 1100., sta.name[:-4]+': '+str(n_samples)+' samples', rotation=90, size=8, bbox=dict(facecolor='red', alpha=0.1)) 
         i+=1
 
     #ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('acceptance ratio', size = textsize)
     ax2.set_ylabel('autocorrelate time', size = textsize)
-    ax.set_title('Quality parameters of mcmc inversion', size = textsize)
+    ax.set_title('Quality parameters of MT inversion', size = textsize)
     #ax.legend(loc=4, prop={'size': 8})	
     ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
     ax.grid(color='c', linestyle='-', linewidth=.1)
     
+    ax.tick_params(labelsize=textsize-2)
+    #plt.yticks([0.,.2,.4,.6,.8,1.])
+    ax2.tick_params(labelsize=textsize-2)
+
+
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
     plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
@@ -582,30 +590,30 @@ def plot_profile_KL_divergence(sta_objects, wells_objects, pref_orient = 'EW', f
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     #ax.plot(x_axis, topo,'g-')
-    ax.plot(x_axis,KL_z1, '-o', color = 'r', label = 'KL div. z1')
-    ax.plot(x_axis,KL_z2, '-o', color = 'b', label = 'KL div. z2')
+    ax.plot(x_axis,KL_z1, '-o', color = 'r', label = '$z_1$')
+    ax.plot(x_axis,KL_z2, '-o', color = 'b', label = '$z_2$')
     #ax.tick_params(axis='y', labelcolor='r')
     
     ## plot station names  
     i = 0
     for sta in sta_objects:
-        ax.text(x_axis[i], np.max(KL_z1) + 7., sta.name[:-4], rotation=90, size=6, bbox=dict(facecolor='red', alpha=0.1)) 
+        ax.text(x_axis[i], np.max(KL_z1) + 4., sta.name[:-4], rotation=90, size=textsize-5, bbox=dict(facecolor='red', alpha=0.1)) 
         i+=1
 
     # plot wells names
 
     #ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
-    ax.set_ylim([-7,  np.max(KL_z1) + 10])
+    ax.set_ylim([-1,  np.max(KL_z1) + 5])
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('[]', size = textsize)
-    ax.set_title('KL divergence: z1 and z2 pars.', size = textsize)
-    ax.legend(loc = 3,prop={'size': 8})	
+    ax.set_title('KL divergence', size = textsize)
+    ax.legend(prop={'size': textsize-2}, fancybox=True, framealpha=0.5, loc ='center right')	
     ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
+    #plt.yticks(np.arange(0,10,2))
     ax.grid(color='c', linestyle='-', linewidth=.1)
-    
-    #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
-    #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
+    ax.tick_params(labelsize=textsize)
+
     plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
@@ -837,7 +845,7 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
 
     # sort stations and wells by longitud (for plotting)
     station_objects.sort(key=lambda x: x.lon_dec, reverse=False)
-    wells_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    wells_objects.sort(key=lambda x: x.lat_dec, reverse=True)
 
     lon_stas = []
     lat_stas = []
@@ -856,23 +864,35 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
     lon_wls = np.asarray(lon_wls)
     lat_wls = np.asarray(lat_wls)
 
-    f = plt.figure(figsize=[9.5,7.5])
+    f = plt.figure(figsize=[12.5,10.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     img=mpimg.imread(path_base_image)
     ax.imshow(img, extent = ext)
 
-    plt.plot(lon_stas, lat_stas, 'r*', label = 'MT sta.', ms = 12)
+    plt.plot(lon_stas, lat_stas, 'r*', label = 'MT station', ms = 9, zorder=2, markeredgecolor= 'k')
     for i, sta in enumerate(station_objects):
-        plt.text(sta.lon_dec, sta.lat_dec, str(i), color = 'k', fontsize=7, ha = 'center', va = 'center')
-    plt.plot(lon_wls, lat_wls, 'c*', label = 'MeB well.', ms = 12)
+        #plt.text(sta.lon_dec, sta.lat_dec, str(i), color = 'w', fontsize=textsize, ha = 'center', va = 'center',zorder=3)
+        ax.annotate(sta.name[:-4], xy=(sta.lon_dec, sta.lat_dec),  xycoords='data',
+            xytext=(1.1, 1.0 - i/12), textcoords='axes fraction',
+            size=textsize,arrowprops=dict(arrowstyle = '-', facecolor='red', edgecolor = 'red'),
+            horizontalalignment='left', verticalalignment='top',
+            bbox=dict(boxstyle="Round", fc="w"), zorder=1)
+    
+    plt.plot(lon_wls, lat_wls, 'c*', label = 'MeB well', ms = 9, zorder=1, markeredgecolor= 'k')
+    # wells
     import string
     alpha = list(string.ascii_lowercase)
     for i, wl in enumerate(wells_objects):
-        plt.text(wl.lon_dec, wl.lat_dec, alpha[i], color = 'k', fontsize=7, ha = 'center', va = 'center')
-
-    ax.legend(loc=1, prop={'size': 12})	
-    ax.set_xlabel('latitud [°]', size = textsize)
-    ax.set_ylabel('longitud [°]', size = textsize)
+        #plt.text(wl.lon_dec, wl.lat_dec, alpha[i], color = 'k', fontsize=textsize, ha = 'center', va = 'center')
+        ax.annotate(wl.name, xy=(wl.lon_dec, wl.lat_dec),  xycoords='data', #alpha[i]
+            xytext=(0.25, 0.6 - i/10), textcoords='axes fraction',
+            size=textsize,arrowprops=dict(arrowstyle = '-', facecolor='cyan', edgecolor = 'cyan'),
+            horizontalalignment='right', verticalalignment='bottom',
+            bbox=dict(boxstyle="Round", fc="w"), zorder=1)
+    ax.legend(loc=1, prop={'size': textsize})	
+    ax.set_xlabel('latitude [°]', size = textsize)
+    ax.set_ylabel('longitude [°]', size = textsize)
+    ax.tick_params(labelsize=textsize)
     #ax.set_title('MT', size = textsize)
     if xlim is None: 
         ax.set_xlim(ext[:2])

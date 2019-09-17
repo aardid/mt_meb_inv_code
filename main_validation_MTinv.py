@@ -245,6 +245,7 @@ if __name__ == "__main__":
         pp = PdfPages('.'+os.sep+'modEM_inv'+os.sep+'comp_modEM_mcmc_meb.pdf')
         plot_meb = True
         #stas_name = ['WT111a']
+        ###########################################
         for i in range(len(stas_name)): 
             # check is folder exist to save results for each station 
             if not os.path.exists('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]):
@@ -277,17 +278,18 @@ if __name__ == "__main__":
             ax = plt.axes()
             # note: z_vec is + downward 
             #ax.plot(np.log10(res_z), z_vec -  elev[i] ,'m-', label='profile from 3D inv.')
-            ax.plot(np.log10(res_z), z_vec -  z0_grid ,'m-', label='1D prof. from 3D deterministic')
-            plt.ylim([0.,1200])
-            plt.xlim([-1,4])
-            plt.gca().invert_yaxis()
+            ax.plot(np.log10(res_z), z_vec -  z0_grid ,'m-', label='1D profile from 3D deterministic inversion', linewidth=2.0)
+
+            #plt.xlim([0,10])
             ## plot mcmc inv
             ms=12 
             # top boundary
-            ax.errorbar(np.log10(r2_mcmc[0]),z1_mcmc[0],z1_mcmc[1],np.log10(r2_mcmc[1]),'r*', label = 'top bound LRA, 1D stochastic',  ms=ms)
+            ax.errorbar(np.log10(r2_mcmc[0]),z1_mcmc[0],z1_mcmc[1],np.log10(r2_mcmc[1]),'r*', label = 'MT stochastic: top boundary LRA',  ms=ms)
             # bottom boundary
-            ax.errorbar(np.log10(r2_mcmc[0]),(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],np.log10(r2_mcmc[1]),'b*', label = 'bottom bound LRA, 1D stochastic',  ms=ms)
-            ax.set_xlabel('LOG10[Resistivity (Ohm m)]', size = textsize)
+            ax.errorbar(np.log10(r2_mcmc[0]),(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],np.log10(r2_mcmc[1]),'b*', label = 'MT stochastic: bottom boundary LRA',  ms=ms)
+            ax.set_xscale('log')
+
+            ax.set_xlabel(r'$\rho$ [$\Omega$ m]', size = textsize)
             ax.set_ylabel('Depth [m]', size = textsize)
             ax.set_title('MT station: '+stas_name[i], size = textsize)#+': 3D det. inv. vs. 1D sto. inv.', size = textsize)
             ax.grid(alpha = 0.3)
@@ -301,9 +303,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC',  ms=ms)
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC', ms=ms)
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap', ms=ms)
                 if stas_name[i] == 'WT107a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -311,9 +313,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC',  ms=ms)
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC',  ms=ms)
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap',  ms=ms)
                 if stas_name[i] == 'WT033c':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -321,9 +323,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC',  ms=ms)
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC',  ms=ms)
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap',  ms=ms)
                 if stas_name[i] == 'WT501a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -331,11 +333,14 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top bound. CC',  ms=ms)
+                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom bound. CC',  ms=ms)
-
+                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap',  ms=ms)
+            plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 500)])
+            plt.xlim([0.1,10])
+            plt.gca().invert_yaxis()
             ax.legend(loc = 3, prop={'size': textsize})
+            ax.tick_params(labelsize=textsize)
             plt.tight_layout()
             #plt.show()
             f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_1.png')   # save the figure to file
