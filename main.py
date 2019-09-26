@@ -66,7 +66,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = True
+	prof_2D_MT = False
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -194,8 +194,10 @@ if __name__ == "__main__":
 			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
 			#wl2work = ['WK401','TH19', 'WK404'] 
 			wl2work = ['WK260','WK261','TH19','WK401','WK267A','WK270']#WK263' ,'WK267A'
+			#wl2work = ['WK401']
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
+			wl2work = ['WK261']
 
 		# Tauhara profiles
 		if prof_THNW03: 
@@ -365,7 +367,7 @@ if __name__ == "__main__":
 
 		## Figure of station and well positons on top of satelite image of the field (save in current folder)
 		# plot over topography
-		if True:
+		if False:
 			file_name = 'map_stations_wells'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
 			x_lim = [176.0,176.1]
@@ -395,7 +397,7 @@ if __name__ == "__main__":
 			if wl.meb: 
 				#if wl.name == 'WK401':
 				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
-				mcmc_wl = mcmc_meb(wl, norm = 1.)
+				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'log', mes_err = 1.15)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
 				#
@@ -403,7 +405,6 @@ if __name__ == "__main__":
 					temp_full_list_z1 = temp_full_list_z1, temp_full_list_z2 = temp_full_list_z2) # Figure with fit to be add in pdf pp
 				#f = mcmc_wl.sample_post_temp(exp_fig = True) # Figure with fit to be add in pdf 
 				pp.savefig(f)
-				plt.close(f)
 				## calculate estimate parameters (percentiels)
 				mcmc_wl.model_pars_est()
 				count += 1
@@ -453,14 +454,16 @@ if __name__ == "__main__":
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
 		prior_meb = True
+		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
+			print(sta_obj.name)
 			if sta_obj.ref < 0:
 		#	if False:
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.05*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e0,1.*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.05*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
@@ -477,13 +480,15 @@ if __name__ == "__main__":
 				mcmc_sta.plot_results_mcmc(corner_plt = True, walker_plt = True)
 				## sample posterior
 				#mcmc_sta.sample_post()
-				f = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
+				f, g = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
 				#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
+				pp.savefig(g)
 				pp.savefig(f)
-				plt.close(f)
-				plt.clf()
+				plt.close('all')
+				#plt.clf()
 				## calculate estimate parameters
 				mcmc_sta.model_pars_est()
+
 
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time

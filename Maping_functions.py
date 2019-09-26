@@ -869,7 +869,7 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
     img=mpimg.imread(path_base_image)
     ax.imshow(img, extent = ext)
 
-    plt.plot(lon_stas, lat_stas, 'r*', label = 'MT station', ms = 9, zorder=2, markeredgecolor= 'k')
+    plt.plot(lon_stas, lat_stas, 'r*', label = 'MT station', ms = 9, zorder=2, markeredgecolor= 'w')
     for i, sta in enumerate(station_objects):
         #plt.text(sta.lon_dec, sta.lat_dec, str(i), color = 'w', fontsize=textsize, ha = 'center', va = 'center',zorder=3)
         ax.annotate(sta.name[:-4], xy=(sta.lon_dec, sta.lat_dec),  xycoords='data',
@@ -878,7 +878,7 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
             horizontalalignment='left', verticalalignment='top',
             bbox=dict(boxstyle="Round", fc="w"), zorder=1)
     
-    plt.plot(lon_wls, lat_wls, 'c*', label = 'MeB well', ms = 9, zorder=1, markeredgecolor= 'k')
+    plt.plot(lon_wls, lat_wls, 'c*', label = 'MeB well', ms = 9, zorder=1, markeredgecolor= 'w')
     # wells
     import string
     alpha = list(string.ascii_lowercase)

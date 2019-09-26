@@ -49,7 +49,9 @@ class mcmc_meb(object):
     type_func               type of function to model meb data          'square'
     num_cc                  number of clay caps to model                1
     norm                    norm to measure the fit in the inversion    1.
-	time				    time consumed in inversion
+	scale                   linear ('lin') or logaritmic ('log') fit    log 
+    mes_err                 measurement error (std from % of clay)      2.
+    time				    time consumed in inversion
     max_depth               maximum depth for profile model             2000.
     delta_rs_depth          sample depth to resample the meb prof.      50.  
     meb_prof_rs             resample methylene-blue (MeB) prof. %
@@ -89,7 +91,7 @@ class mcmc_meb(object):
     plot_results
     sample_post
     """
-    def __init__(self, wl_obj, name= None, work_dir = None, type_func = None , norm = None, \
+    def __init__(self, wl_obj, name= None, work_dir = None, type_func = None , norm = None, scale = None, mes_err = None,\
         num_cc = None, max_depth = None, delta_rs_depth = None, walk_jump = None, ini_mod = None):
 	# ==================== 
     # Attributes            
@@ -107,6 +109,14 @@ class mcmc_meb(object):
             self.norm = 2. 
         else: 
             self.norm = norm 
+        if scale is None:
+            self.scale = 'log'
+        else:
+            self.scale = scale
+        if  mes_err is None:
+            self.mes_err = 1.0
+        else:
+            self.mes_err = mes_err
         if walk_jump is None: 
             self.walk_jump = 3000
         else: 
@@ -185,12 +195,14 @@ class mcmc_meb(object):
 
     def prob_likelihood(self, est, obs):
         # log likelihood for the model, given the data
-        v = 0.15
+        v = self.mes_err
         # fitting estimates (square function) with observation (meb profile)
         #fit = abs(est - obs)
-        #prob = (-np.sum(fit)**self.norm)/v 
-        log_fit = abs(np.log10(est) - np.log10(obs))
-        prob = (-np.sum(log_fit)**self.norm)/v
+        if self.scale == 'lin':
+            fit = abs(est - obs)
+        if self.scale == 'log':
+            fit = abs(np.log10(est) - np.log10(obs))
+        prob = (-np.sum(fit)**self.norm)/ 2*v**2
         return prob
 
     def lnprob(self, pars, obs):
@@ -357,15 +369,15 @@ class mcmc_meb(object):
         if plot_fit: 
             f,(ax1) = plt.subplots(1,1)
             f.set_size_inches(6,8)
-            f.suptitle(self.name, fontsize=20)
+            f.suptitle(self.name, fontsize=textsize)
             ax1.set_xscale("linear")
             ax1.set_yscale("linear") 
             ax1.set_xlim([0, 20])
             #ax1.set_ylim([250,270])
             #ax1.set_ylim([self.meb_depth[1],self.meb_depth[-2]])
             ax1.set_ylim([0,self.meb_depth[-2]+200.])
-            ax1.set_xlabel('MeB [%]', fontsize=18)
-            ax1.set_ylabel('Depth [m]', fontsize=18)
+            ax1.set_xlabel('MeB [%]', fontsize=textsize)
+            ax1.set_ylabel('Depth [m]', fontsize=textsize)
             ax1.grid(True, which='both', linewidth=0.4)
             ax1.invert_yaxis()
 
@@ -395,21 +407,21 @@ class mcmc_meb(object):
                 #ax1.set_ylim([self.meb_depth[1],self.meb_depth[-2]])
                 #ax1.set_xlim([0,self.meb_depth[-2]+200.])
                 ax1.set_xlim([0,1000.])
-                ax1.set_ylabel('MeB [%]', fontsize=12)
-                ax1.set_xlabel('Depth [m]', fontsize=12)
+                ax1.set_ylabel('MeB [%]', fontsize=textsize)
+                ax1.set_xlabel('Depth [m]', fontsize=textsize)
                 ax1.grid(True, which='both', linewidth=0.4)
-                ax1.set_title('{}'.format(self.name), fontsize=18)
+                ax1.set_title('{}'.format(self.name), fontsize=textsize)
                 ax1.invert_yaxis()
 
                 for par in pars:
                     if all(x > 0. for x in par):
                         sq_prof_est =  self.square_fn(par[1:], x_axis=self.meb_depth_rs, y_base = 2.)
-                        ax1.plot(self.meb_depth_rs, sq_prof_est,'g-', lw = 1.0, alpha=0.5, zorder=0)
+                        ax1.plot(self.meb_depth_rs, sq_prof_est,'g-', lw = 1.0, alpha=0.25, zorder=0)
                 ax1.plot(self.meb_depth_rs, sq_prof_est,'g-', lw = 1.0, alpha=0.5, zorder=0, label = 'samples')
                 #plot observed
                 ax1.plot(self.meb_depth,self.meb_prof,'b*', lw = 2.5, alpha=1.0, zorder=0, label = 'observed')
                 ax1.plot(self.meb_depth_rs,self.meb_prof_rs,'b--', lw = 1.0, alpha=0.8, zorder=2)#, label = 'obs. resample')
-                ax1.legend(loc='lower right', shadow=False, fontsize='small')
+                ax1.legend(loc='lower right', shadow=False, fontsize=textsize)
 
             # import samples of z1 and z2 to be used in next plots
             n,id,z1,z2,mb,llk = np.genfromtxt(self.path_results+os.sep+'chain_sample_order.dat').T
@@ -423,29 +435,40 @@ class mcmc_meb(object):
                 h,e = np.histogram(z1, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
                 ax2.bar(e[:-1], h, e[1]-e[0])#, label = 'histogram')
-                ax2.set_xlabel('$z_1$ [m]', fontsize=10)
-                ax2.set_ylabel('freq.', fontsize=10)
+                ax2.set_xlabel('$z_1$ [m]', fontsize=textsize)
+                ax2.set_ylabel('freq.', fontsize=textsize)
                 ax2.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
                 y = mlab.normpdf(bins, mu, sigma)
                 ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-                ax2.legend()
+                ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+                ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+          
                 # z2
                 bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(n)))) 
                 h,e = np.histogram(z2, bins,density = True) 
                 m = 0.5*(e[:-1]+e[1:])
                 ax3.bar(e[:-1], h, e[1]-e[0])
-                ax3.set_xlabel('$z_2$ [m]', fontsize=10)
-                ax3.set_ylabel('freq.', fontsize=10)
+                ax3.set_xlabel('$z_2$ [m]', fontsize=textsize)
+                ax3.set_ylabel('freq.', fontsize=textsize)
                 ax3.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z2)
                 y = mlab.normpdf(bins, mu, sigma)
                 ax3.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-                ax3.legend()
-        
+                ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+                ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+    
+                plt.tight_layout()
+                ax1.tick_params(labelsize=textsize)
+                ax2.tick_params(labelsize=textsize)
+                ax2.set_yticklabels([])
+                #ax2.set_xticklabels(np.arange(0,1000,50))
 
+                ax3.tick_params(labelsize=textsize)
+                ax3.set_yticklabels([])
+                #ax3.set_xticklabels(np.arange(0,1000,50))
                 # save in well folder 
                 plt.savefig(self.path_results+os.sep+'plot_hist_bounds.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)

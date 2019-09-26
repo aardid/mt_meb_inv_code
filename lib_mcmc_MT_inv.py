@@ -643,7 +643,7 @@ class mcmc_inv(object):
             z_model = np.arange(0.,1500.,2.)
             #f,(ax) = plt.subplots(1,1)
             #f.set_size_inches(8,3) 
-            f = plt.figure(figsize=(9, 9))
+            f = plt.figure(figsize=(10, 11))
             #f.suptitle('Model: '+self.name, size = textsize)
             gs = gridspec.GridSpec(nrows=3, ncols=3, height_ratios=[2, 1, 1])
             # model 
@@ -651,12 +651,13 @@ class mcmc_inv(object):
             for par in pars_order:
                 #if all(x > 0. for x in par):
                 sq_prof_est = square_fn([par[2],par[2]+par[3],par[4],par[5],par[6]], x_axis=z_model)
-                ax.semilogy(z_model,sq_prof_est,'c-', lw = 0.5, alpha=0.1, zorder=0)
-            ax.plot(z_model,sq_prof_est,'c-', lw = 1.5, alpha=0.5, zorder=0, label = 'samples')
+                ax.semilogy(z_model,sq_prof_est,'c-', lw = 0.7, alpha=0.2, zorder=1)
+            ax.plot(z_model,sq_prof_est,'c-', lw = 1.5, alpha=0.5, zorder=0, label = 'model samples')
 
             # labels
-            ax.set_xlim([np.min(z_model), np.max(z_model)])
-            ax.set_xlim([0,np.mean(pars_order[2]) + np.mean(pars_order[3]) + 100.])
+            #ax.set_xlim([np.min(z_model), np.max(z_model)])
+            #ax.set_xlim([0,np.mean(pars_order[2]) + np.mean(pars_order[3]) + 100.])
+            ax.set_xlim([0, 1.e3])
             ax.set_ylim([1E-1,1e3])
             #ax.set_ylim([1E-1,1.5e3])
             ax.set_xlabel('depth [m]', size = textsize)
@@ -686,74 +687,93 @@ class mcmc_inv(object):
                 bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(z1))))
                 h,e = np.histogram(z1, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
-                ax1.bar(e[:-1], h, e[1]-e[0])
+                ax1.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax1.set_xlabel('$z_1$ [m]', size = texts)
                 ax1.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
                 y = mlab.normpdf(bins, mu, sigma)
-                ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
+                ax1.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
                 # plot lines for mean of z1 and z2 (top plot)
-                ax.plot([mu,mu],[1e-1,1e3],'r--', label = 'mean $z_1$', linewidth=1.5)
-                ax1.plot([mu,mu],[0,max(y)],'r--', label = 'mean $z_1$', linewidth=1.5)
+                ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
 
                 # z2
                 z2 = pars_order[:,3]
                 bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(z2))))
                 h,e = np.histogram(z2, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
-                ax2.bar(e[:-1], h, e[1]-e[0])
+                ax2.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax2.set_xlabel('$z_2$ [m]', size = texts)
                 ax2.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu2, sigma) = norm.fit(z2)
                 y = mlab.normpdf(bins, mu2, sigma)
+                ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu2,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
                 # plot lines for mean of z1 and z2 (top plot)
-                ax.plot([mu+mu2,mu+mu2],[1e-1,1e3],'b--', label = 'mean $z_2$', linewidth=1.5)
-                ax2.plot([mu2,mu2],[0,max(y)],'b--', label = 'mean $z_2$', linewidth=1.5)
-                
+                ax.plot([mu+mu2,mu+mu2],[1e-1,1e3],'b--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax2.plot([mu2,mu2],[0,max(y)],'b--', label = '$\mu$ of  $z_2$', linewidth=1.0)
+                # axis for main plot 
+                ax.set_xlim([0, mu+mu2+200])
+
                 # r1
                 r1 = pars_order[:,4]
                 bins = np.linspace(np.min(r1), np.max(r1), int(np.sqrt(len(r1))))
                 h,e = np.histogram(r1, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
-                ax3.bar(e[:-1], h, e[1]-e[0])
+                ax3.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax3.set_xlabel(r'$\rho_1$ [$\Omega$ m]', size = texts)
                 ax3.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r1)
                 y = mlab.normpdf(bins, mu, sigma)
+                ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax3.plot(bins, y, 'r-', linewidth=1)
+                # plot lines for mean 
+                ax.plot([0,1e3],[mu,mu],'g--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax3.plot([mu,mu],[0,max(y)],'g--', label = r'$\mu$ of  $\rho_1$', linewidth=1.0)
+
                 # r2
                 r2 = pars_order[:,5]
                 bins = np.linspace(np.min(r2), np.max(r2), int(np.sqrt(len(r2))))
                 h,e = np.histogram(r2, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
-                ax4.bar(e[:-1], h, e[1]-e[0])
+                ax4.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax4.set_xlabel(r'$\rho_2$ [$\Omega$ m]', size = texts)
                 ax4.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r2)
                 y = mlab.normpdf(bins, mu, sigma)
+                ax4.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax4.plot(bins, y, 'r-', linewidth=1)
+                # plot lines for mean 
+                ax.plot([0,1e3],[mu,mu],'m--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax4.plot([mu,mu],[0,max(y)],'m--', label = r'$\mu$ of  $\rho_2$', linewidth=1.0)
+
                 # r3
                 r3 = pars_order[:,6]
                 bins = np.linspace(np.min(r3), np.max(r3), int(np.sqrt(len(r3))))
                 h,e = np.histogram(r3, bins, density = True)
                 m = 0.5*(e[:-1]+e[1:])
-                ax5.bar(e[:-1], h, e[1]-e[0])
+                ax5.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax5.set_xlabel(r'$\rho_3$ [$\Omega$ m]', size = texts)
                 ax5.set_ylabel('freq.', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r3)
                 y = mlab.normpdf(bins, mu, sigma)
+                ax5.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax5.plot(bins, y, 'r-', linewidth=1)
+                # plot lines for mean 
+                ax.plot([0,1e3],[mu,mu],'y--', linewidth=1.5,alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax5.plot([mu,mu],[0,max(y)],'y--', label = r'$\mu$ of  $\rho_3$', linewidth=1.5)
+
                 ### layout figure
                 ax.tick_params(labelsize=textsize)
                 ax1.tick_params(labelsize=textsize)
@@ -762,29 +782,41 @@ class mcmc_inv(object):
                 ax4.tick_params(labelsize=textsize)
                 ax5.tick_params(labelsize=textsize)
 
-                ax.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+                ax.legend(loc = 'upper right', fontsize=textsize, fancybox=True, framealpha=0.5)
                 #ax1.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
                 #ax2.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
                 #ax3.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
                 #ax4.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
                 #ax5.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
                 plt.tight_layout()
-                
+
+                # legend subplot 
+                ax6 = f.add_subplot(gs[1, 2])
+                #ax6.plot([],[],'c-', label = 'model samples')
+                ax6.plot([],[],'r--', label = '$\mu$ of  $z_1$')
+                ax6.plot([],[],'b--', label =  '$\mu$ of  $z_2$')
+                ax6.plot([],[],'g--', label =  r'$\mu$ of  $\rho_1$')
+                ax6.plot([],[],'m--', label =  r'$\mu$ of  $\rho_2$')
+                ax6.plot([],[],'y--', label =  r'$\mu$ of  $\rho_3$')
+                ax6.plot([],[],'r-', label = 'normal fit    ')
+                ax6.axis('off')
+                ax6.legend(loc = 'upper right', fontsize=textsize, fancybox=True, framealpha=1.)
+
                 #plt.show()
                 plt.savefig(self.path_results+os.sep+'model_samples.png', dpi=300, facecolor='w', edgecolor='w',
                         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
-                plt.clf()
+                #plt.clf()
 
         if plot_fit: 
-            f,(ax, ax1) = plt.subplots(2,1)
-            f.set_size_inches(8,8) 
-            f.suptitle(self.name, size = textsize)#, y=1.08)
+            g,(ax, ax1) = plt.subplots(2,1)
+            g.set_size_inches(8,8) 
+            g.suptitle(self.name, size = textsize)#, y=1.08)
 
             ### ax: apparent resistivity
             ax.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
             ax.set_xlim([1E-3,1e3])
             ax.set_ylim([1e0,1e3])
-            ax.set_xlabel('period [s]', size = textsize)
+            #ax.set_xlabel('period [s]', size = textsize)
             ax.set_ylabel(r'$\rho_{app}$ [$\Omega$ m]', size = textsize)
             #ax.set_title('Apparent Resistivity (TM and TE)', size = textsize)
             # plot samples
@@ -839,10 +871,10 @@ class mcmc_inv(object):
             
 
         if exp_fig == None:
-            plt.close(f)
-            plt.clf()
+            plt.close('all')
+            #plt.clf()
         if exp_fig:  # True: return figure
-            return f
+            return f, g
 
     def model_pars_est(self, path = None):
 
