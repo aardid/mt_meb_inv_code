@@ -65,8 +65,8 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	prof_2D_MT = False
+	mcmc_MT_inv = True
+	prof_2D_MT = True
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -356,6 +356,7 @@ if __name__ == "__main__":
 		# for wl in wells_meb: # loop over the meb wells (objects)
 		# 	f.write(wl+'\n')
 		# f.close()
+
 		## plot MeB curves 
 		# pp = PdfPages('wells_MeB.pdf') # pdf to plot the meb profiles
 		# for wl in wells_objects:
@@ -374,7 +375,7 @@ if __name__ == "__main__":
 			y_lim = [-38.68,-38.58]
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 			map_stations_wells(station_objects, wells_objects, file_name = file_name, format = 'png', \
-				path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file)
+				path_base_image = path_base_image, alpha_img = 0.8 ,xlim = x_lim, ylim = y_lim, ext_img = ext_file)
 			
 			# plot over resistivity boundary 
 			file_name = 'map_res_bound_stations_wells'
@@ -383,7 +384,7 @@ if __name__ == "__main__":
 			y_lim = [-38.68,-38.58]
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth.jpg'
 			map_stations_wells(station_objects, wells_objects, file_name = file_name, format = 'png', \
-				path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file)
+				path_base_image = path_base_image, alpha_img = 0.8 ,xlim = x_lim, ylim = y_lim, ext_img = ext_file, dash_arrow = False)
 
 	# (1) Run MCMC for MeB priors  
 	if mcmc_meb_inv:
@@ -457,7 +458,7 @@ if __name__ == "__main__":
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
 			print(sta_obj.name)
-			if sta_obj.ref < 0:
+			if sta_obj.ref < 6:
 		#	if False:
 				pass
 			else: 
@@ -477,11 +478,17 @@ if __name__ == "__main__":
 				## run inversion 
 				mcmc_sta.inv()
 				## plot results (save in .png)
-				mcmc_sta.plot_results_mcmc(corner_plt = True, walker_plt = True)
+				mcmc_sta.plot_results_mcmc(chain_file = 'chain.dat', corner_plt = True, walker_plt = True)
+				shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_full.png')
+				shutil.move(mcmc_sta.path_results+os.sep+'walkers.png', mcmc_sta.path_results+os.sep+'walkers_full.png')
 				## sample posterior
 				#mcmc_sta.sample_post()
 				f, g = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
 				#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
+				## plot results without burn-in section
+				mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
+				shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
+				
 				pp.savefig(g)
 				pp.savefig(f)
 				plt.close('all')

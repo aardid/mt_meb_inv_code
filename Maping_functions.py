@@ -265,12 +265,12 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         x_axis = x_axis/1e3
     
     ## plot envelopes 5% and 95% for cc boundaries
-    f = plt.figure(figsize=[8.5,5.5])
+    f = plt.figure(figsize=[9.5,6.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-', label='Topography')
-    ax.plot(x_axis, z1_med,'r.-', label='$z_1$ estimated')
-    ax.plot(x_axis, z2_med,'b.-', label='$z_2$ estimated')
+    ax.plot(x_axis, z1_med,'r.-', label='$z_1$ estimated MT', zorder = 0)
+    ax.plot(x_axis, z2_med,'b.-', label='$z_2$ estimated MT', zorder = 0)
     if no_plot_clay_infered:
         pass
     else: # plot orange section between means of z1 and z2 (indicating clay cap)
@@ -398,22 +398,24 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     dist_wl_prof = dist
 
             # plot well names and distance to the profile (near station) 
-            ax.text(x_axis_wl[i], topo_wl[i]-0.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=6, bbox=dict(facecolor='blue', alpha=0.1)) 
+            ax.text(x_axis_wl[i], topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=7, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
             top = wl.elev # elevation os the well
             x = x_axis_wl[i]
             # plot top bound. C
-            y = top - wl.meb_z1_pars[0] # [z1_mean_prior, z1_std_prior]
-            e = wl.meb_z1_pars[1] # [z1_mean_prior, z1_std_prior]
-            ax.errorbar(x, y, e, color='lime',linestyle='--',zorder=3, marker='_')
+            y1 = top - wl.meb_z1_pars[0] # [z1_mean_prior, z1_std_prior]
+            e1 = wl.meb_z1_pars[1] # [z1_mean_prior, z1_std_prior]
+            ax.errorbar(x, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_')
             # plot bottom bound. CC
-            y = top - wl.meb_z2_pars[0] # [z1_mean_prior, z1_std_prior]
-            e = 2.*wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior] # 2 time std (66%)
-            ax.errorbar(x, y, e, color='cyan', linestyle='--',zorder=3, marker='_')
+            y2 = top - wl.meb_z2_pars[0] # [z1_mean_prior, z1_std_prior]
+            e2 = 2.*wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior] # 2 time std (66%)
+            ax.errorbar(x, y2, e2, color='m', linestyle='-',zorder=2, marker='_')
             i+=1
-    
+        ax.errorbar(x, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_', label = '$z_1$ estimated MeB')
+        ax.errorbar(x, y2, e2, color='m', linestyle='-',zorder=3, marker='_', label = '$z_2$ estimated MeB')
+
     if xlim:
         ax.set_xlim([xlim[0], xlim[1]])
     else:
@@ -422,7 +424,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
         else:
-            ax.set_ylim([-1.0e3, max(topo)+600.])
+            ax.set_ylim([-1.5e3, max(topo)+600.])
     else:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
@@ -830,7 +832,7 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     plt.clf()
 
 def map_stations_wells(station_objects, wells_objects, file_name = None, format = None, \
-    path_base_image = None, ext_img = None, xlim = None, ylim = None):
+    path_base_image = None, alpha_img = None, ext_img = None, xlim = None, ylim = None, dash_arrow = None):
     
     if file_name is None:
         f_name = 'map_stations_wells'
@@ -842,6 +844,10 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
         raise 'ext_img not given'
     else:
         ext = ext_img
+    if alpha_img is None:
+        alpha_img = 1.0
+    else:
+        alpha_img = alpha_img
 
     # sort stations and wells by longitud (for plotting)
     station_objects.sort(key=lambda x: x.lon_dec, reverse=False)
@@ -867,28 +873,37 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
     f = plt.figure(figsize=[12.5,10.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     img=mpimg.imread(path_base_image)
-    ax.imshow(img, extent = ext)
+    ax.imshow(img, extent = ext, alpha = alpha_img)
 
-    plt.plot(lon_stas, lat_stas, 'r*', label = 'MT station', ms = 9, zorder=2, markeredgecolor= 'w')
+    # stations
+    plt.plot(lon_stas, lat_stas, 'b*', label = 'MT station', ms = 9, zorder=2, markeredgecolor= 'w')
     for i, sta in enumerate(station_objects):
         #plt.text(sta.lon_dec, sta.lat_dec, str(i), color = 'w', fontsize=textsize, ha = 'center', va = 'center',zorder=3)
         ax.annotate(sta.name[:-4], xy=(sta.lon_dec, sta.lat_dec),  xycoords='data',
             xytext=(1.1, 1.0 - i/12), textcoords='axes fraction',
-            size=textsize,arrowprops=dict(arrowstyle = '-', facecolor='red', edgecolor = 'red'),
+            size=textsize,arrowprops=dict(arrowstyle = '-', facecolor='b', edgecolor = 'b'),
             horizontalalignment='left', verticalalignment='top',
             bbox=dict(boxstyle="Round", fc="w"), zorder=1)
     
-    plt.plot(lon_wls, lat_wls, 'c*', label = 'MeB well', ms = 9, zorder=1, markeredgecolor= 'w')
     # wells
+    plt.plot(lon_wls, lat_wls, 'r*', label = 'MeB well', ms = 9, zorder=1, markeredgecolor= 'w')
     import string
     alpha = list(string.ascii_lowercase)
     for i, wl in enumerate(wells_objects):
         #plt.text(wl.lon_dec, wl.lat_dec, alpha[i], color = 'k', fontsize=textsize, ha = 'center', va = 'center')
         ax.annotate(wl.name, xy=(wl.lon_dec, wl.lat_dec),  xycoords='data', #alpha[i]
             xytext=(0.25, 0.6 - i/10), textcoords='axes fraction',
-            size=textsize,arrowprops=dict(arrowstyle = '-', facecolor='cyan', edgecolor = 'cyan'),
+            size=textsize,arrowprops=dict(arrowstyle = '-', facecolor='r', edgecolor = 'r'),
             horizontalalignment='right', verticalalignment='bottom',
             bbox=dict(boxstyle="Round", fc="w"), zorder=1)
+        if dash_arrow:
+            ax.annotate(wl.name, xy=(wl.lon_dec, wl.lat_dec),  xycoords='data', #alpha[i]
+                xytext=(0.25, 0.6 - i/10), textcoords='axes fraction',
+                size=textsize,arrowprops=dict(arrowstyle = '-', ls= 'dashed'),
+                horizontalalignment='right', verticalalignment='bottom',
+                bbox=dict(boxstyle="Round", fc="w"), zorder=1)
+    
+    
     ax.legend(loc=1, prop={'size': textsize})	
     ax.set_xlabel('latitude [°]', size = textsize)
     ax.set_ylabel('longitude [°]', size = textsize)

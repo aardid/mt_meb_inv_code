@@ -511,30 +511,35 @@ class mcmc_inv(object):
 					
         return  # lp_thick_layer1 + lp_rho_layer1 + lp_rho_layer2 + lp_thick_layer2 + lp_rho_hs
 
-    def plot_results_mcmc(self, corner_plt = False, walker_plt = True): 
-        chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
+    def plot_results_mcmc(self, chain_file = None, corner_plt = False, walker_plt = True): 
+        chain = np.genfromtxt(self.path_results+os.sep+chain_file)
         if corner_plt: 
         # show corner plot
             weights = chain[:,-1]
             weights -= np.max(weights)
             weights = np.exp(weights)
-            labels = ['thick. 1','thick. 2','rest. 1','rest. 2','rest. hs']
-            fig = corner.corner(chain[:,2:-1], labels=labels, weights=weights, smooth=1, bins=30)
+            labels = ['$z_1$','$z_2$',r'$\rho_1$',r'$\rho_2$',r'$\rho_3$']
+            fig = corner.corner(chain[:,2:-1], labels=labels, weights=weights, smooth=1, bins=30, label_kwargs=dict(fontsize= textsize))
+            #ax.tick_params(axis='both', labelsize=textsize)
             plt.savefig(self.path_results+os.sep+'corner_plot.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             #plt.close(fig)
         if walker_plt:
-            labels = ['thick. 1','thick. 2','rest. 1','rest. 2','rest. hs']
+            labels = ['$z_1$','$z_2$',r'$\rho_1$',r'$\rho_2$',r'$\rho_3$']
             npar = int(chain.shape[1] - 3)
             f,axs = plt.subplots(npar,1)
             f.set_size_inches([8,8])
             for i,ax,label in zip(range(npar),axs,labels):
-            	for j in np.unique(chain[:,0]):
-            		ind = np.where(chain[:,0] == j)
-            		it = chain[ind,1]
-            		par = chain[ind,2+i]
-            		ax.plot(it[0],par[0],'k-')
-            	ax.set_ylabel(label)
+                for j in np.unique(chain[:,0]):
+                    ind = np.where(chain[:,0] == j)
+                    it = chain[ind,1]
+                    par = chain[ind,2+i]
+                    ax.plot(it[0],par[0],'k-')
+                ax.set_ylabel(label, size = textsize)
+                ax.tick_params(axis='both', labelsize=textsize)
+                ax.set_xticklabels([])
+            ax.set_xticklabels(np.arange(-250,2250,250))
+            plt.tight_layout()
             plt.savefig(self.path_results+os.sep+'walkers.png', dpi=300)
         chain = None
         plt.close('all')
