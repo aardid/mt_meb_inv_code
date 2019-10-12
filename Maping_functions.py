@@ -926,10 +926,206 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
 
     plt.clf()
 
+def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, type_plot = None, file_name = None, \
+    format = 'png', path_base_image = None, alpha_img = None, ext_img = None, xlim = None, ylim = None): 
 
+    if type_plot is None:
+        type_plot = 'scatter'
+    else:
+        type_plot = type_plot
+    if file_name is None:
+        f_name = 'map_stations_wells'
+    if format is None:
+        format = 'png'
+    if path_base_image is None:
+        path_base_image = '.'
+    if ext_img is None: 
+        pass
+    else:
+        ext = ext_img
+        if alpha_img is None:
+            alpha_img = 1.0
+        else:
+            alpha_img = alpha_img
 
+    # sort stations and wells by longitud (for plotting)
+    station_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    wells_objects.sort(key=lambda x: x.lat_dec, reverse=True)
+
+    ## import result for stations of z1 and z2 and create lists to plot
+    # values = []
+    lon_stas = []
+    lat_stas = []
+    z1_list_mean = []
+    z2_list_mean = []
+    z1_list_std = []
+    z2_list_std = []
+    for sta in station_objects:
+        # load well pars from meb inversion 
+        mcmc_inv_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+"est_par.dat")
+        sta.z1_pars = mcmc_inv_results[0,1:]
+        sta.z2_pars = mcmc_inv_results[1,1:]
+        lon_stas.append(sta.lon_dec)
+        lat_stas.append(sta.lat_dec)
+        z1_list_mean.append(sta.z1_pars[0])
+        z2_list_mean.append(sta.z2_pars[0]+sta.z1_pars[0])
+        z1_list_std.append(sta.z1_pars[1])
+        z2_list_std.append(sta.z2_pars[1])
+    
+    #################
+    # griddata to plot as surface
+    if False:
+        points = [[i,j] for i,j in zip(lon_stas,lat_stas)]
+        points = np.asarray(points)
+        values = np.asarray(data)
+
+        grid_x = np.linspace(min(lon_stas), max(lon_stas), 100)
+        grid_y = np.linspace(min(lat_stas), max(lat_stas), 100)
+        grid_xs, grid_ys = np.meshgrid(grid_x, grid_y)
+        xi = [[i,j] for i,j in zip(grid_x,grid_y)]
+        xi = np.asarray(xi)
+        grid_z0 = griddata(points, values, xi, method='linear')
+
+        xs, ys = np.meshgrid(grid_x, grid_y)
+        data = grid_z0
+        #mesh data to plot as lines
+        dataMesh = np.empty_like(xs)
+        for i, j, d in zip(grid_x, grid_y, data):
+            dataMesh[np.where(grid_x==i), np.where(grid_y==j)] = d
+        #fig, ax = plt.subplots()
+        #CS = ax.contourf(xs, ys, dataMesh)# 5, alpha = .5, cmap='plasma')
+
+        ax = plt.axes(projection='3d')
+        ax.plot_surface(xs, ys, dataMesh, rstride=1, cstride=1,
+        cmap='viridis', edgecolor='none')
+        plt.show()
+
+    #################
+    # plot contours
+    if False: 
+        # mesh list of coord. and data
+        xs, ys = np.meshgrid(lon_stas, lat_stas)
+        data = z2_list_mean
+        data_std = z2_list_std
+        # mesh data to plot as lines
+        dataMesh = np.empty_like(xs)
+        for i, j, d in zip(lon_stas, lat_stas, data):
+            dataMesh[lon_stas.index(i), lat_stas.index(j)] = d
+        
+        fig, ax = plt.subplots()
+        levels = np.arange(min(data), max(data), 5)
+        #levels = [50,200]#,200,400]
+        #CS = ax.contour(xs, ys, dataMesh, alpha = .5)
+        CS = ax.contour(xs, ys, dataMesh, 5, alpha = .5, cmap='plasma')
+        #plt.clabel(CS, inline=True, fontsize=8)
+        ax.plot(lon_stas,lat_stas,'*')
+        #ax.clabel(CS, inline=1, fontsize=10)
+
+    #######################
+    # scatter plot with size of depending on depth
+    if type_plot == 'scatter': 
+        # data to plot 
+        if bound2plot == 'top':
+            data = z1_list_mean
+            data_std = z1_list_std
+        if bound2plot == 'bottom':
+            data = z2_list_mean
+            data_std = z2_list_std
+        # figure
+        fig, ax = plt.subplots(figsize=(15,12))
+        # plot base image (if given)
+        if ext_img:
+            img=mpimg.imread(path_base_image)
+            ax.imshow(img, extent = ext, alpha = alpha_img)    
+        alphas = np.zeros(len(lon_stas))
+        #mx_data_std, mn_data_std = max(data_std), min(data_std) 
+        for i in range(len(alphas)):
+            alphas[i] = 1. - data_std[i] / max(data_std)
+
+        rgba_colors = np.zeros((len(lon_stas),4))
+        # for red the first column needs to be one
+        rgba_colors[:,0] = .5
+        # the fourth column needs to be your alphas
+        rgba_colors[:, 3] = alphas
+        # size 
+        size = abs(max(data) - data)/1
+        scatter = ax.scatter(lon_stas,lat_stas, s = size, color = rgba_colors)#alpha = 0.5)
+        # absence of CC
+        for sta in station_objects:
+            if sta.z2_pars[0] < 50.:
+                plt.plot(sta.lon_dec, sta.lat_dec,'w.', markersize=28) 
+                plt.plot(sta.lon_dec, sta.lat_dec,'bx', markersize=12) 
+        # Legend 
+        if bound2plot == 'top':
+            rgba_color = [.5,0,0,1.]
+            l1 = plt.scatter([],[], s=400,  color = rgba_color, edgecolors='none')
+            l2 = plt.scatter([],[], s=200, color = rgba_color, edgecolors='none')
+            l3 = plt.scatter([],[], s=100, color = rgba_color, edgecolors='none')
+            l4 = plt.scatter([],[], s=50, color = rgba_color, edgecolors='none')
+
+            labels = [str(int(abs(max(data)- 400)))+' meters', str(int(abs(max(data)- 200)))+' meters',\
+                str(int(abs(max(data)- 100)))+' meters', str(int(abs(max(data)- 50)))+' meters']
+        
+        if bound2plot == 'bottom':
+            l1 = plt.scatter([],[], s=800,  color = rgba_colors[0], edgecolors='none')
+            l2 = plt.scatter([],[], s=400, color = rgba_colors[0], edgecolors='none')
+            l3 = plt.scatter([],[], s=200, color = rgba_colors[0], edgecolors='none')
+            l4 = plt.scatter([],[], s=100, color = rgba_colors[0], edgecolors='none')
+
+            labels = [str(int(abs(max(data)-800)))+' meters', str(int(abs(max(data)- 400)))+' meters',\
+                str(int(abs(max(data)- 200)))+' meters', str(int(abs(max(data)- 100)))+' meters']
+
+        #leg = plt.legend([l1, l2, l3, l4], labels, ncol=4, frameon=True, fontsize=textsize,
+        #    handlelength=2, loc = 8, borderpad = 1.8, handletextpad=1, \
+        #        scatterpoints = 1)#title='Depth to '+bound2plot+' boundary'
+        leg = plt.legend([l1, l2, l3, l4], labels, frameon=True, fontsize=textsize,
+            handlelength=2, loc = 3, borderpad = 1.8, handletextpad=1, \
+                scatterpoints = 1)#title='Depth to '+bound2plot+' boundary'
+        #plt.setp(legend.get_title(),fontsize=textsize)     
+       
+        # limits
+        if xlim is None:
+            ax.set_xlim(ext[:2])
+        else: 
+            ax.set_xlim(xlim)
+        if ylim is None:
+            ax.set_ylim(ext[-2:])
+        else: 
+            ax.set_ylim(ylim)
+        # labels
+        #ax.legend(loc=1, prop={'size': 6})	
+        ax.set_xlabel('latitud [°]', size = textsize)
+        ax.set_ylabel('longitud [°]', size = textsize)
+        ax.set_title('Depth to inferred clay cap '+bound2plot+' boundary', size = textsize)
+        
+        matplotlib.rcParams.update({'font.size': textsize})
+        ## legend sizes (depth)
+        #handles, labels = scatter.legend_elements(prop="sizes", alpha=0.6)
+        #legend2 = ax.legend(handles, labels, loc="upper right", title="Sizes")
+        ## legend uncertainty (color)
+        #legend1 = ax.legend(*scatter.legend_elements(),
+        #    loc="lower left", title="Uncertainty")
+        #ax.add_artist(legend1)
+
+        plt.tight_layout()
+        #plt.show()
+        #asdf
+        # save figure
+        if file_name is None:
+            file_name = 'interface_LRA_'+bound2plot
+        if format is None: 
+            format = 'png'
+
+        # save figure
+        plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+        shutil.move(file_name+'.png', '.'+os.sep+'base_map_img'+os.sep+file_name+'.png')
+        plt.clf()
 
         
+
+
+
 
         
 

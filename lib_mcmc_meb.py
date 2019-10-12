@@ -202,7 +202,8 @@ class mcmc_meb(object):
             fit = abs(est - obs)
         if self.scale == 'log':
             fit = abs(np.log10(est) - np.log10(obs))
-        prob = (-np.sum(fit)**self.norm)/ 2*v**2
+        prob = -1*(np.sum(fit)**self.norm)/(2* v**2)
+
         return prob
 
     def lnprob(self, pars, obs):
@@ -219,6 +220,7 @@ class mcmc_meb(object):
             return -np.Inf
         ## estimate square function of clay content given pars [z1,z2,%] 
         sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs[self.inds], y_base = 2.)
+        
         ## calculate prob and return  
         prob = self.prob_likelihood(sq_prof_est,self.meb_prof_rs[self.inds])
         ## check if prob is nan

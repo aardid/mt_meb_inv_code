@@ -51,9 +51,9 @@ if __name__ == "__main__":
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = False
+	full_dataset = True
 	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW5 = False
 
 	prof_NEMT2 = False
 	
@@ -65,8 +65,9 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
+	mcmc_MT_inv = False
+	prof_2D_MT = False
+	plot_surface_cc = True
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -117,6 +118,8 @@ if __name__ == "__main__":
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
 			#sta2work = ['WT039a','WT024a','WT030a']
 			#sta2work = ['WT111a']
+			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
+				'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 		
@@ -194,7 +197,7 @@ if __name__ == "__main__":
 			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
 			#wl2work = ['WK401','TH19', 'WK404'] 
 			wl2work = ['WK260','WK261','TH19','WK401','WK267A','WK270']#WK263' ,'WK267A'
-			#wl2work = ['WK401']
+			#wl2work = ['WK261']
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 			wl2work = ['WK261']
@@ -398,7 +401,7 @@ if __name__ == "__main__":
 			if wl.meb: 
 				#if wl.name == 'WK401':
 				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
-				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'log', mes_err = 1.15)
+				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'lin', mes_err = 6.)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
 				#
@@ -409,7 +412,7 @@ if __name__ == "__main__":
 				## calculate estimate parameters (percentiels)
 				mcmc_wl.model_pars_est()
 				count += 1
-
+	
 		# save lists: temp_full_list_z1, temp_full_list_z2
 		with open('corr_z1_z1_temp_glob.txt', 'w') as f:
 			for f1, f2 in zip(temp_full_list_z1, temp_full_list_z2):
@@ -458,7 +461,7 @@ if __name__ == "__main__":
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
 			print(sta_obj.name)
-			if sta_obj.ref < 6:
+			if sta_obj.ref < 202:
 		#	if False:
 				pass
 			else: 
@@ -542,7 +545,21 @@ if __name__ == "__main__":
 			plot_bound_uncert(station_objects, file_name = file_name) #
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
-
+	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
+	if plot_surface_cc:
+		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
+		bound2plot = 'top' # 'top' or 'bottom'
+		file_name = 'interface_LRA_'+bound2plot
+		# base image
+		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
+		#path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
+		ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
+		x_lim = [175.948466, 176.260520]
+		y_lim = [-38.743590,-38.574484]
+		type_plot = 'scatter'
+		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
+		
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
 		print('(5) Calculating beta in wells and fitting temperature profile')

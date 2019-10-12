@@ -964,7 +964,7 @@ class mcmc_inv(object):
             ax.plot(x_axis, norm.pdf(x_axis,self.z1_pars[0],self.z1_pars[1] ), label = '~ Posterior')
             ax.plot(x_axis, norm.pdf(x_axis,self.prior_meb_pars[0][0],self.prior_meb_pars[0][1] ), label = '~ Prior')
 
-            ax.set_xlabel('z1 (top cc) [m]', size = textsize)
+            ax.set_xlabel('$z_1$ [m]', size = textsize)
             ax.set_ylabel('pdf', size = textsize)
             ax.set_title('Posterior vs Prior: '+ self.name, size = textsize)
             ax.legend(loc=1, prop={'size': 10})	
@@ -983,7 +983,7 @@ class mcmc_inv(object):
             ax1.plot(x_axis, norm.pdf(x_axis,self.prior_meb_pars[1][0],self.prior_meb_pars[1][1] ), label = '~ Prior')
 
             #ax1.set_title('Posterior vs Prior: z2 bottom .bound'+ self.name, size = textsize)            
-            ax1.set_xlabel('z2 (bottom cc) [m]', size = textsize)
+            ax1.set_xlabel('$z_2$ [m]', size = textsize)
             ax1.set_ylabel('pdf', size = textsize)
             #ax.set_title('Posterior vs Prior: '+ self.name, size = textsize)
             ax1.legend(loc=1, prop={'size': 10})
