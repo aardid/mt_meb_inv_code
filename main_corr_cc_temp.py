@@ -45,7 +45,7 @@ if __name__ == "__main__":
     #pc = 'personalWin'
 
     ## Set of data to work with 
-    full_dataset = False
+    full_dataset = True
     WK_Tmihi = False
     WK_NE_in = False
     WK_NE_out = False
@@ -54,14 +54,14 @@ if __name__ == "__main__":
     WK_NW_out = False
     TH_in = False
     TH_out = False
-    TH = True
+    TH = False
 
     ## run with quality filter per well
     q_filt = True
 
     ## name output png file
-    #name_file = 'gen_corr_cc_temp.png'
-    name_file = 'TH_corr_cc_temp_q.png'
+    name_file = 'gen_corr_cc_temp.png'
+    #name_file = 'W_S_corr_cc_temp_q.png'
 
     ## Sections of the code tu run
     set_up = True
@@ -256,6 +256,7 @@ if __name__ == "__main__":
         temp_full_list_z1 = []
         temp_full_list_z2 = []
         i = 0
+        n_wells = 0
         # loop over wells: fill list temp_full_list_z1 and _z2
         for wl in wells_objects:
             if wl.meb: 
@@ -295,6 +296,7 @@ if __name__ == "__main__":
                         # for j in range(n):
                         #     temp_full_list_z1.append(t1)
                         #     temp_full_list_z2.append(t2)
+                    n_wells += 1
                 else:
                     # open corr_z1_z2_temp.txt
                     path = '.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'corr_z1_z2_temp.txt'
@@ -302,7 +304,10 @@ if __name__ == "__main__":
                     for t1,t2 in zip(temp_z1_vec,temp_z2_vec):
                         temp_full_list_z1.append(t1)
                         temp_full_list_z2.append(t2)
+                    n_wells += 1
 
+        print('\n')
+        print('Number of wells considered: {:}'.format(n_wells))
         # build histograms and plot
         # create a figure  of temp of z1 and z2 for the full net
         g,(ax1,ax2) = plt.subplots(1,2)

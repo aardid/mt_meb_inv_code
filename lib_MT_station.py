@@ -247,6 +247,13 @@ class Station(object):
         self.Z_yy[2] = [complex(Z_dr[7][i], Z_dr[8][i]) for i in range(len(Z_dr[0]))]
         self.Z_yy[3] = Z_dr[12]
 
+        #Z = [file,periods,zxxr,zxxi,zxx,zxx_var,zxyr,zxyi,zxy,zxy_var,zyxr,zyxi,zyx,zyx_var,zyyr,zyyi,zyy,zyy_var]
+        # load Z
+        self.Z[2:6] = [self.Z_xx[0],self.Z_xx[1],self.Z_xx[2],self.Z_xx[3]]
+        self.Z[6:10] = [self.Z_xy[0],self.Z_xy[1],self.Z_xy[2],self.Z_xy[3]]
+        self.Z[10:14] = [self.Z_yx[0],self.Z_yx[1],self.Z_yx[2],self.Z_yx[3]]
+        self.Z[14:18] = [self.Z_yy[0],self.Z_yy[1],self.Z_yy[2],self.Z_yy[3]]
+
     def rotate_Z(self):
 		## 2. Rotate Z to North (0°)
         #alpha = -1* self.Z_strike # Z_rot[0]  # rotate to cero (north)
@@ -1087,12 +1094,12 @@ def calc_app_res_phase(Z):
         app_res_error_xx =  None
         phase_error_xx = None
     else:
-        app_res_xx = p/5 * np.square(abs(zxx))
+        app_res_xx = p/5 * np.square(np.abs(zxx))
         phase_ra_xx = np.arctan(zxxi/zxxr)
         phase_de_xx = (360/(2*np.pi)) * phase_ra_xx
         ## std. Error based on Egbert, 98
         app_res_error_xx =  np.sqrt(2.*p*app_res_xx*(zxx_var**2.)/5.)
-        phase_error_xx = (360/(2*np.pi*abs(zxx))) * np.sqrt(zxx_var**2. /2.)
+        phase_error_xx = (360/(2*np.pi*np.abs(zxx))) * np.sqrt(zxx_var**2. /2.)
 
     ## Zxy
     if zxyr is None:
@@ -1103,12 +1110,12 @@ def calc_app_res_phase(Z):
         app_res_error_xy = None
         phase_error_xy = None
     else:
-        app_res_xy = p/5 * np.square(abs(zxy))
+        app_res_xy = p/5 * np.square(np.abs(zxy))
         phase_ra_xy = np.arctan(zxyi/zxyr)      	# radians
         phase_de_xy = (360/(2*np.pi)) * phase_ra_xy # degrees
             ## std. Error based on Egbert, 98
         app_res_error_xy =  np.sqrt(2.*p*app_res_xy*(zxy_var**2.)/5.)
-        phase_error_xy = (360/(2*np.pi*abs(zxy))) * np.sqrt(zxy_var**2. /2.)
+        phase_error_xy = (360/(2*np.pi*np.abs(zxy))) * np.sqrt(zxy_var**2. /2.)
     
     ## Zyx
     if zyxr is None:
@@ -1120,12 +1127,12 @@ def calc_app_res_phase(Z):
         phase_error_yx = None
    
     else: 
-        app_res_yx = p/5 * np.square(abs(zyx))
+        app_res_yx = p/5 * np.square(np.abs(zyx))
         phase_ra_yx = np.arctan(zyxi/zyxr)
         phase_de_yx = (360/(2*np.pi)) * phase_ra_yx
             ## std. Error based on Egbert, 98
         app_res_error_yx =  np.sqrt(2.*p*app_res_yx*(zyx_var**2.)/5.)
-        phase_error_yx = (360/(2*np.pi*abs(zyx))) * np.sqrt(zyx_var**2. /2.)
+        phase_error_yx = (360/(2*np.pi*np.abs(zyx))) * np.sqrt(zyx_var**2. /2.)
    
     ## Zyy
     if zyyr is None:
@@ -1136,12 +1143,12 @@ def calc_app_res_phase(Z):
         app_res_error_yy =  None
         phase_error_yy = None
     else:
-        app_res_yy = p/5 * np.square(abs(zyy))
+        app_res_yy = p/5 * np.square(np.abs(zyy))
         phase_ra_yy = np.arctan(zyyi/zyyr)
         phase_de_yy = (360/(2*np.pi)) * phase_ra_yy	
             ## std. Error based on Egbert, 98
         app_res_error_yy =  np.sqrt(2.*p*app_res_yy*(zyy_var**2.)/5.)
-        phase_error_yy = (360/(2*np.pi*abs(zyy))) * np.sqrt(zyy_var**2. /2.)
+        phase_error_yy = (360/(2*np.pi*np.abs(zyy))) * np.sqrt(zyy_var**2. /2.)
 
     rho_app = [app_res_xx, app_res_xy, app_res_yx, app_res_yy]
     phase_deg = [phase_de_xx, phase_de_xy, phase_de_yx, phase_de_yy]

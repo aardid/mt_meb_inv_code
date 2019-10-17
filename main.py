@@ -51,12 +51,11 @@ if __name__ == "__main__":
 	#pc = 'personalWin'
 
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = False
 	prof_WRKNW6 = False
-	prof_WRKNW5 = False
-
+	prof_WRKNW5 = True
+	#
 	prof_NEMT2 = False
-	
 	prof_THNW03 = False
 	prof_THNW04 = False
 	prof_THNW05 = False
@@ -65,9 +64,9 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
+	mcmc_MT_inv = True
 	prof_2D_MT = False
-	plot_surface_cc = True
+	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -117,9 +116,9 @@ if __name__ == "__main__":
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
 			#sta2work = ['WT039a','WT024a','WT030a']
-			#sta2work = ['WT111a']
-			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
-				'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
+			sta2work = ['WT501a']
+			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
+			#	'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
 		
@@ -144,13 +143,18 @@ if __name__ == "__main__":
 				sta_obj.elev = float(sta_obj.elev) - 42.
 				##
 				sta_obj.rotate_Z()
+				sta_obj.app_res_phase()
+				#plt.loglog(sta_obj.T,sta_obj.rho_app[1])
 				# import PT derotated data 
+				#print(sta_obj.Z_xy[0])
+				#plt.loglog(sta_obj.T,sta_obj.Z_xy[0])
 				sta_obj.read_PT_Z(pc = pc) 
+				#print(sta_obj.Z_xy[0])
+				#plt.loglog(sta_obj.T,sta_obj.Z_xy[0])
 				sta_obj.app_res_phase() # [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er]
 				## Create station objects and fill them
 				station_objects.append(sta_obj)
 				count  += 1
-
 		#save to .txt names of stations and coord. 
 		f = open("MT_sta_latlon.txt", "w") # text file to save names of meb wells 
 		f.write('# sta lat lon lat_dec lon_dec elev\n')
@@ -197,7 +201,8 @@ if __name__ == "__main__":
 			wl2work = ['WK261','WK262','WK263','WK243','WK267A','WK270','TH19','WK408','WK401', 'WK404'] # 'WK260' 
 			#wl2work = ['WK401','TH19', 'WK404'] 
 			wl2work = ['WK260','WK261','TH19','WK401','WK267A','WK270']#WK263' ,'WK267A'
-			#wl2work = ['WK261']
+			#wl2work = ['WK260']
+			wl2work = ['WK401','TH19','WK261']
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 			wl2work = ['WK261']
@@ -401,7 +406,7 @@ if __name__ == "__main__":
 			if wl.meb: 
 				#if wl.name == 'WK401':
 				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
-				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'lin', mes_err = 6.)
+				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'lin', mes_err = 4.)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
 				#
@@ -457,22 +462,23 @@ if __name__ == "__main__":
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = True
+		prior_meb = False
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
 			print(sta_obj.name)
-			if sta_obj.ref < 202:
+			if sta_obj.ref < 0.:
 		#	if False:
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.05*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.01*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
-				# inv_dat: weighted data to invert [1,1,1,1,0,0,0]
-				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb,range_p = [0,100.], autocor_accpfrac = True, data_error = True)
+				# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
+				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0], prior_input=par_range, \
+					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 10.,\
+						range_p = [0,100.], autocor_accpfrac = True, data_error = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -498,7 +504,6 @@ if __name__ == "__main__":
 				#plt.clf()
 				## calculate estimate parameters
 				mcmc_sta.model_pars_est()
-
 
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
@@ -549,16 +554,19 @@ if __name__ == "__main__":
 	if plot_surface_cc:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
 		bound2plot = 'top' # 'top' or 'bottom'
-		file_name = 'interface_LRA_'+bound2plot
-		# base image
-		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
+		## base image and base image
+		#file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
 		#path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
+		file_name = 'interface_LRA_'+bound2plot+'_topo'
+		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
+		##
 		ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
 		x_lim = [175.948466, 176.260520]
 		y_lim = [-38.743590,-38.574484]
 		type_plot = 'scatter'
+		path_plots = '.'+os.sep+'plain_view_plots'# path to place the outputs 
 		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
+			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
 		
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 

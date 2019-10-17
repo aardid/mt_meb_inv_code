@@ -123,7 +123,7 @@ class mcmc_meb(object):
             self.walk_jump = walk_jump   
         if ini_mod is None: 
             if self.num_cc == 1:
-                self.ini_mod = [200,150,10]
+                self.ini_mod = [self.meb_depth[0]+50.,self.meb_depth[0]+150,8]
         if max_depth is None: 
             self.max_depth = 3000.
         if delta_rs_depth is None: 
@@ -210,11 +210,15 @@ class mcmc_meb(object):
 		## Parameter constraints
         if (any(x<0 for x in pars)): # positive parameters
             return -np.Inf
+        if pars[0] <= self.meb_depth[0]:# max(self.meb_prof)+5.: # percentage range 
+            return -np.Inf
         if (pars[0] >= self.meb_depth_rs[self.inds[-2]]): # z2 smaller than maximum depth of meb prof
             return -np.Inf
         if (pars[1] >= self.meb_depth_rs[self.inds[-2]]): # z2 smaller than maximum depth of meb prof
             return -np.Inf
-        if pars[0] >= pars[1]: # z1 smaller than z1 
+        if pars[0] >= pars[1]: # z1 smaller than z2
+            return -np.Inf
+        if abs(pars[1] - pars[0]) <= 30.: # tickenss second layer bigger than 30 m
             return -np.Inf
         if pars[2] >= 35.:# max(self.meb_prof)+5.: # percentage range 
             return -np.Inf
@@ -256,7 +260,7 @@ class mcmc_meb(object):
         sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, threads=cores-1, args=[data])
         # set the initial location of the walkers
         pars = self.ini_mod  # initial guess
-        p0 = np.array([pars + 10.*np.random.randn(ndim) for i in range(nwalkers)])  # add some noise
+        p0 = np.array(np.abs([pars + 10.*np.random.randn(ndim) for i in range(nwalkers)]))  # add some noise
         p0 = np.abs(p0)
 	 	# set the emcee sampler to start at the initial guess and run 5000 burn-in jumps
         sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs, y_base = 2.)

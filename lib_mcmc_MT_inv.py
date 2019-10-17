@@ -327,7 +327,7 @@ class mcmc_inv(object):
                 if self.inv_dat[2] == 0: # no TM
                     w_phase = .01
                 if self.inv_dat[2] == 1: # no TM
-                    w_phase = .001
+                    w_phase = .0005
 
              #v_vec[21:] = np.inf 
             # filter range of periods to work with
@@ -340,7 +340,7 @@ class mcmc_inv(object):
                 # fill v_vec 
                 v_vec[:short_p_idx] = np.inf
                 v_vec[long_p_idx:] = np.inf
-
+            ############################################################
             ### TE(xy): fitting sounding curves 
             v = .1
             TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
@@ -350,7 +350,7 @@ class mcmc_inv(object):
                 #TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
                 #            -np.log10(rho_ap_est))/v_vec)**self.norm) /v
                 TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(self.rho_app_obs_er[1])**2) #/v
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / (2*np.log10(self.rho_app_obs_er[1])**2)) #/v
                 # apply weigth 
                 TE_apres = TE_apres*w_app_res
        
@@ -362,7 +362,7 @@ class mcmc_inv(object):
                 TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
                             -phi_est)/v_vec)**self.norm )/v 
                 #TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                #        -phi_est)/v_vec)**self.norm / 2*self.phase_obs_er[1]**2) #/v 
+                #        -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v 
                 # apply weigth 
                 TE_phase = TE_phase*w_phase
             
@@ -374,7 +374,7 @@ class mcmc_inv(object):
             if variance:
 
                 TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm / 2*np.log10(self.rho_app_obs_er[2])**2) #/v
+                        -np.log10(rho_ap_est))/v_vec)**self.norm / (2*np.log10(self.rho_app_obs_er[2])**2)) #/v
                 # apply weigth 
                 TM_apres = TM_apres*w_app_res
 
@@ -386,11 +386,11 @@ class mcmc_inv(object):
                 TE_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
                             -phi_est)/v_vec)**self.norm )/v 
                 #TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                #        -phi_est)/v_vec)**self.norm / 2*self.phase_obs_er[1]**2) #/v 
+                #        -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v 
                 # apply weigth 
                 TE_phase = TE_phase*w_phase
             
-            
+            ############################################################
             # fitting maximum value of Z
             if self.dim_inv == 2:
                 max_Z = 0.
@@ -559,7 +559,7 @@ class mcmc_inv(object):
         
 
 		# define parameter sets for forward runs
-        Nruns = 500
+        Nruns = 700
         pars = []
         pars_order = []
         Nsamples = 0

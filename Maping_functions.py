@@ -27,7 +27,12 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import griddata
 from matplotlib import cm
 import matplotlib.image as mpimg
+from scipy.stats import norm
+import matplotlib.mlab as mlab
 textsize = 15.
+
+import matplotlib
+matplotlib.rcParams.update({'font.size': textsize})
 
 # ==============================================================================
 # Coordinates
@@ -927,7 +932,8 @@ def map_stations_wells(station_objects, wells_objects, file_name = None, format 
     plt.clf()
 
 def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, type_plot = None, file_name = None, \
-    format = 'png', path_base_image = None, alpha_img = None, ext_img = None, xlim = None, ylim = None): 
+    format = 'png', path_base_image = None, alpha_img = None, ext_img = None, xlim = None, ylim = None, \
+        hist_pars = None, path_plots = None): 
 
     if type_plot is None:
         type_plot = 'scatter'
@@ -947,31 +953,52 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
             alpha_img = 1.0
         else:
             alpha_img = alpha_img
-
+    if hist_pars is None:
+        hist_pars = False
+    else: 
+        hist_pars = hist_pars
+    if path_plots is None: 
+        path_plots = '.'+os.sep+'plain_view_plots'
+    else:
+        path_plots = path_plots
     # sort stations and wells by longitud (for plotting)
     station_objects.sort(key=lambda x: x.lon_dec, reverse=False)
     wells_objects.sort(key=lambda x: x.lat_dec, reverse=True)
-
     ## import result for stations of z1 and z2 and create lists to plot
     # values = []
     lon_stas = []
     lat_stas = []
     z1_list_mean = []
     z2_list_mean = []
+    r1_list_mean = []
+    r2_list_mean = []
+    r3_list_mean = []
     z1_list_std = []
     z2_list_std = []
+    r1_list_std = []
+    r2_list_std = []
+    r3_list_std = []
     for sta in station_objects:
         # load well pars from meb inversion 
         mcmc_inv_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+"est_par.dat")
         sta.z1_pars = mcmc_inv_results[0,1:]
         sta.z2_pars = mcmc_inv_results[1,1:]
+        sta.r1_pars = mcmc_inv_results[2,1:]
+        sta.r2_pars = mcmc_inv_results[3,1:]
+        sta.r3_pars = mcmc_inv_results[4,1:]
+        # fill lists
         lon_stas.append(sta.lon_dec)
         lat_stas.append(sta.lat_dec)
         z1_list_mean.append(sta.z1_pars[0])
         z2_list_mean.append(sta.z2_pars[0]+sta.z1_pars[0])
+        r1_list_mean.append(sta.r1_pars[0])
+        r2_list_mean.append(sta.r2_pars[0])
+        r3_list_mean.append(sta.r3_pars[0])
         z1_list_std.append(sta.z1_pars[1])
         z2_list_std.append(sta.z2_pars[1])
-    
+        r1_list_std.append(sta.r1_pars[1])
+        r2_list_std.append(sta.r2_pars[1])
+        r2_list_std.append(sta.r3_pars[1])    
     #################
     # griddata to plot as surface
     if False:
@@ -999,7 +1026,6 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
         ax.plot_surface(xs, ys, dataMesh, rstride=1, cstride=1,
         cmap='viridis', edgecolor='none')
         plt.show()
-
     #################
     # plot contours
     if False: 
@@ -1020,7 +1046,6 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
         #plt.clabel(CS, inline=True, fontsize=8)
         ax.plot(lon_stas,lat_stas,'*')
         #ax.clabel(CS, inline=1, fontsize=10)
-
     #######################
     # scatter plot with size of depending on depth
     if type_plot == 'scatter': 
@@ -1049,7 +1074,10 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
         rgba_colors[:, 3] = alphas
         # size 
         size = abs(max(data) - data)/1
-        scatter = ax.scatter(lon_stas,lat_stas, s = size, color = rgba_colors)#alpha = 0.5)
+        if bound2plot == 'top': 
+            scatter = ax.scatter(lon_stas,lat_stas, s = size, color = rgba_colors)#alpha = 0.5)
+        if bound2plot == 'bottom': 
+            scatter = ax.scatter(lon_stas,lat_stas, s = size/3, color = rgba_colors)#alpha = 0.5)
         # absence of CC
         for sta in station_objects:
             if sta.z2_pars[0] < 50.:
@@ -1080,9 +1108,9 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
         #        scatterpoints = 1)#title='Depth to '+bound2plot+' boundary'
         leg = plt.legend([l1, l2, l3, l4], labels, frameon=True, fontsize=textsize,
             handlelength=2, loc = 3, borderpad = 1.8, handletextpad=1, \
-                scatterpoints = 1)#title='Depth to '+bound2plot+' boundary'
+                scatterpoints = 1, title='Depth to '+bound2plot+' boundary', \
+                    title_fontsize = textsize)
         #plt.setp(legend.get_title(),fontsize=textsize)     
-       
         # limits
         if xlim is None:
             ax.set_xlim(ext[:2])
@@ -1094,11 +1122,10 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
             ax.set_ylim(ylim)
         # labels
         #ax.legend(loc=1, prop={'size': 6})	
-        ax.set_xlabel('latitud [°]', size = textsize)
-        ax.set_ylabel('longitud [°]', size = textsize)
+        ax.set_xlabel('Latitude [°]', size = textsize)
+        ax.set_ylabel('Longitude [°]', size = textsize)
         ax.set_title('Depth to inferred clay cap '+bound2plot+' boundary', size = textsize)
         
-        matplotlib.rcParams.update({'font.size': textsize})
         ## legend sizes (depth)
         #handles, labels = scatter.legend_elements(prop="sizes", alpha=0.6)
         #legend2 = ax.legend(handles, labels, loc="upper right", title="Sizes")
@@ -1119,23 +1146,143 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
         # save figure
         plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
             orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
-        shutil.move(file_name+'.png', '.'+os.sep+'base_map_img'+os.sep+file_name+'.png')
+        shutil.move(file_name+'.png', '.'+os.sep+path_plots+os.sep+file_name+'.png')
         plt.clf()
+    #################
+    # histograms of parameteres for all the stations considered
+    if hist_pars:
 
+        ## plot histograms of ocurrence of each paramater 
+        f = plt.figure(figsize=(10, 11))
+        #f.suptitle('Model: '+self.name, size = textsize)
+        gs = gridspec.GridSpec(nrows=3, ncols=2, height_ratios=[1, 1, 1])
+
+        # plot histograms for pars
+        ax1 = f.add_subplot(gs[0, 0]) # z1
+        ax2 = f.add_subplot(gs[1, 0]) # z2
+        ax3 = f.add_subplot(gs[0, 1]) # r1
+        ax4 = f.add_subplot(gs[1, 1]) # r2
+        ax5 = f.add_subplot(gs[2, 1]) # r3
+        #f,(ax1,ax2,ax3,ax4,ax5) = plt.subplots(1,5)
+        #f.set_size_inches(12,2)
+        #f.set_size_inches(10,2)  
+        texts = textsize
+        #f.suptitle(self.name, size = textsize)
         
+        # z1
+        z1 = z1_list_mean
+        bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(z1))))
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
+        ax1.set_xlabel('$z_1$ [m]', size = texts)
+        ax1.set_ylabel('freq.', size = texts)
+        #ax1.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax1.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
 
+        # z2
+        z2 = z2_list_mean
+        bins = np.linspace(np.min(z2), np.max(z2), int(np.sqrt(len(z2))))
+        h,e = np.histogram(z2, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
+        ax2.set_xlabel('$z_2$ [m]', size = texts)
+        ax2.set_ylabel('freq.', size = texts)
+        #ax1.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu2, sigma) = norm.fit(z2)
+        y = mlab.normpdf(bins, mu2, sigma)
+        ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu2,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
+        ax2.plot([mu2,mu2],[0,max(y)],'b--', label = '$\mu$ of  $z_2$', linewidth=1.0)
+        # axis for main plot 
 
+        # r1
+        r1 = r1_list_mean
+        bins = np.linspace(np.min(r1), np.max(r1), int(np.sqrt(len(r1))))
+        h,e = np.histogram(r1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
+        ax3.set_xlabel(r'$\rho_1$ [$\Omega$ m]', size = texts)
+        ax3.set_ylabel('freq.', size = texts)
+        #ax1.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(r1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax3.plot(bins, y, 'r-', linewidth=1)
+        ax3.plot([mu,mu],[0,max(y)],'g--', label = r'$\mu$ of  $\rho_1$', linewidth=1.0)
 
+        # r2
+        r2 = r2_list_mean
+        bins = np.linspace(np.min(r2), np.max(r2), int(np.sqrt(len(r2))))
+        h,e = np.histogram(r2, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax4.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
+        ax4.set_xlabel(r'$\rho_2$ [$\Omega$ m]', size = texts)
+        ax4.set_ylabel('freq.', size = texts)
+        #ax1.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(r2)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax4.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax4.plot(bins, y, 'r-', linewidth=1)
+        ax4.plot([mu,mu],[0,max(y)],'m--', label = r'$\mu$ of  $\rho_2$', linewidth=1.0)
 
-        
+        # r3
+        r3 = r3_list_mean
+        bins = np.linspace(np.min(r3), np.max(r3), int(np.sqrt(len(r3))))
+        h,e = np.histogram(r3, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax5.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
+        ax5.set_xlabel(r'$\rho_3$ [$\Omega$ m]', size = texts)
+        ax5.set_ylabel('freq.', size = texts)
+        #ax1.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(r3)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax5.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax5.plot(bins, y, 'r-', linewidth=1)
+        ax5.plot([mu,mu],[0,max(y)],'y--', label = r'$\mu$ of  $\rho_3$', linewidth=1.5)
 
+        ### layout figure
+        ax.tick_params(labelsize=textsize)
+        ax1.tick_params(labelsize=textsize)
+        ax2.tick_params(labelsize=textsize)
+        ax3.tick_params(labelsize=textsize)
+        ax4.tick_params(labelsize=textsize)
+        ax5.tick_params(labelsize=textsize)
 
+        #ax1.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+        #ax2.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+        #ax3.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+        #ax4.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+        #ax5.legend(fontsize=textsize, fancybox=True, framealpha=0.5)
+        plt.tight_layout()
 
+        # legend subplot 
+        ax6 = f.add_subplot(gs[2, 0])
+        #ax6.plot([],[],'c-', label = 'model samples')
+        ax6.plot([],[],'r--', label = '$\mu$ of  $z_1$')
+        ax6.plot([],[],'b--', label =  '$\mu$ of  $z_2$')
+        ax6.plot([],[],'g--', label =  r'$\mu$ of  $\rho_1$')
+        ax6.plot([],[],'m--', label =  r'$\mu$ of  $\rho_2$')
+        ax6.plot([],[],'y--', label =  r'$\mu$ of  $\rho_3$')
+        ax6.plot([],[],'r-', label = 'normal fit    ')
+        ax6.axis('off')
+        ax6.legend(loc = 'upper right', fontsize=textsize, fancybox=True, framealpha=1.)
 
+        if format is None: 
+            format = 'png'
 
-
-
-       
-
-
-    
+        # save figure
+        file_name = 'hist_parameters'
+        plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+        shutil.move(file_name+'.png', '.'+os.sep+path_plots+os.sep+file_name+'.png')
+        plt.clf()
