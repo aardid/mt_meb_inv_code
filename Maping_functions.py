@@ -429,7 +429,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
         else:
-            ax.set_ylim([-1.5e3, max(topo)+600.])
+            ax.set_ylim([-1.0e3, max(topo)+600.])
     else:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])

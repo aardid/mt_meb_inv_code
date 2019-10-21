@@ -116,7 +116,7 @@ if __name__ == "__main__":
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
 			#sta2work = ['WT039a','WT024a','WT030a']
-			sta2work = ['WT501a']
+			#sta2work = ['WT223a']
 			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
 			#	'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 		if prof_NEMT2:
@@ -202,7 +202,7 @@ if __name__ == "__main__":
 			#wl2work = ['WK401','TH19', 'WK404'] 
 			wl2work = ['WK260','WK261','TH19','WK401','WK267A','WK270']#WK263' ,'WK267A'
 			#wl2work = ['WK260']
-			wl2work = ['WK401','TH19','WK261']
+			#wl2work = ['WK401','TH19','WK261']
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 			wl2work = ['WK261']
@@ -462,11 +462,12 @@ if __name__ == "__main__":
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = False
+		prior_meb = True
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
 			print(sta_obj.name)
-			if sta_obj.ref < 0.:
+			#if sta_obj.ref < 0:
+			if sta_obj.name[:-4] != 'WT024a':
 		#	if False:
 				pass
 			else: 
@@ -476,9 +477,29 @@ if __name__ == "__main__":
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
-				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,1,0,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 10.,\
-						range_p = [0,100.], autocor_accpfrac = True, data_error = True)
+				add_error = 0. # % of mean appres and phase
+				range_p = [0,10.] # range of periods
+				# Pars per station
+				if False:
+					if sta_obj.name[:-4] == 'WT502a': # station with static shift
+						add_error = .0 # % of mean appres and phase
+						range_p = [0,1000.] # range of periods
+						#plt.loglog(sta_obj.T,sta_obj.rho_app_er[1])
+						#plt.show()
+						#add_error = 0. # % of mean appres and phase
+					if sta_obj.name[:-4] == 'WT223a': # station with static shift
+						add_error = 1.5 # % of mean appres and phase
+						#range_p = [0,100.] # range of periods
+					if sta_obj.name[:-4] == 'WT068a': # station with static shift
+						add_error = 2.5 # % of mean appres and phase
+					if sta_obj.name[:-4] == 'WT111a': # station with static shift
+						range_p = [0,100.] # range of periods
+					if sta_obj.name[:-4] == 'WT070b': # station with static shift
+						range_p = [0,100.] # range of periods
+
+				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
+					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 1.0,\
+						range_p = range_p, autocor_accpfrac = True, data_error = True, add_error = add_error, fit_max_mode = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -524,7 +545,7 @@ if __name__ == "__main__":
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 125.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 50.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
