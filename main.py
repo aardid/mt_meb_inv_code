@@ -116,7 +116,7 @@ if __name__ == "__main__":
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
 			#sta2work = ['WT039a','WT024a','WT030a']
-			#sta2work = ['WT223a']
+			#sta2work = ['WT501a']
 			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
 			#	'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 		if prof_NEMT2:
@@ -462,23 +462,30 @@ if __name__ == "__main__":
 		## create pdf file to save the fit results for the whole inversion 
 		pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = True
+		prior_meb = False
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
+		# plot noise
+		if False:
+			for sta_obj in station_objects:
+				plt.loglog(sta_obj.T, sta_obj.rho_app_er[1],'b*', alpha = 0.05)
+				plt.loglog(sta_obj.T, sta_obj.rho_app_er[2],'b*', alpha = 0.05)
+			plt.show()
+			asdf
 		for sta_obj in station_objects:
 			print(sta_obj.name)
-			#if sta_obj.ref < 0:
-			if sta_obj.name[:-4] != 'WT024a':
-		#	if False:
+			if sta_obj.ref < 0: # start at 0
+			#if sta_obj.name[:-4] != 'WT070b':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.01*1e2,.5*1e3],[1.*1e1,1*1e3],[.1*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.01*1e2,.5*1e3],[1.*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
-				# inv_dat: weighted data to invert [1,0,1,0,0,0,0]
+				# inv_dat: weighted data to invert [1,0,1,0,0,0,0] 
 				add_error = 0. # % of mean appres and phase
-				range_p = [0,10.] # range of periods
+				#range_p = [0.1,1.] # range of periods
+				range_p = [0.,10.] # range of periods
 				# Pars per station
 				if False:
 					if sta_obj.name[:-4] == 'WT502a': # station with static shift
@@ -496,10 +503,12 @@ if __name__ == "__main__":
 						range_p = [0,100.] # range of periods
 					if sta_obj.name[:-4] == 'WT070b': # station with static shift
 						range_p = [0,100.] # range of periods
-
+				print('mean noise in app res XY: {:2.2f}'.format(np.mean(np.log10(sta_obj.rho_app_er[1]))))
+				print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
 					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 1.0,\
-						range_p = range_p, autocor_accpfrac = True, data_error = True, add_error = add_error, fit_max_mode = True)
+						range_p = range_p, autocor_accpfrac = True, data_error = True, \
+							fit_max_mode = True)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
