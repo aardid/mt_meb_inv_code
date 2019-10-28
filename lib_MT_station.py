@@ -1781,3 +1781,275 @@ def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return array[idx], idx
+
+########################################################################
+# Noise functions 
+def plot_dist_noise(station_objects,bands): 
+    '''
+    Plot distribution of noise per band. Histograms of noise per band of periods. 
+    Noise is considered from Zxy and Zyx
+    Input:
+        station_objects: list of MT station objects
+        bands: bands of periods
+            [[a,b],[a,b],[a,b]] seconds
+    '''
+    num_bands = len(bands)
+
+    if True: # apparent resistivity 
+        ## lists per band 
+        b1 = []
+        b2 = []
+        b3 = []
+        # fill lists 
+        for sta_obj in station_objects:
+            for i in range(len(sta_obj.T)): 
+                if sta_obj.T[i] > bands[0][0] and sta_obj.T[i] < bands[0][1]:
+                    b1.append([sta_obj.T[i],sta_obj.rho_app_er[1][i]]) 
+                    b1.append([sta_obj.T[i],sta_obj.rho_app_er[2][i]]) 
+                if sta_obj.T[i] > bands[1][0] and sta_obj.T[i] < bands[1][1]:
+                    b2.append([sta_obj.T[i],sta_obj.rho_app_er[1][i]]) 
+                    b2.append([sta_obj.T[i],sta_obj.rho_app_er[2][i]]) 
+                if sta_obj.T[i] > bands[2][0] and sta_obj.T[i] < bands[2][1]:
+                    b3.append([sta_obj.T[i],sta_obj.rho_app_er[1][i]]) 
+                    b3.append([sta_obj.T[i],sta_obj.rho_app_er[2][i]]) 
+        ## Figure 
+        f = plt.figure(figsize=(15, 10))
+        ## f.suptitle('Model: '+self.name, size = textsize)
+        gs = gridspec.GridSpec(nrows=2, ncols=3, height_ratios=[2, 1])
+        ax = f.add_subplot(gs[0, :])
+        # plot band per color 
+        p=[item[0]for item in b1]
+        e=[item[1]for item in b1]
+        ax.loglog(p,e,'b*', alpha = 0.1)
+        p=[item[0]for item in b2]
+        e=[item[1]for item in b2]
+        ax.loglog(p,e,'g*', alpha = 0.1)
+        p=[item[0]for item in b3]
+        e=[item[1]for item in b3]
+        ax.loglog(p,e,'r*', alpha = 0.1)
+        ax.set_xlabel('period [s]', size = textsize)
+        ax.set_ylabel('error [$\Omega$ m]', size = textsize)
+        ax.set_title('error in apparent resistivity: Zxy and Zyx', size = textsize)
+        # plot hitograms per band
+        ax1 = f.add_subplot(gs[1, 0])
+        ax2 = f.add_subplot(gs[1, 1])
+        ax3 = f.add_subplot(gs[1, 2])
+        #
+        log_spc = False
+        # 
+        # Band 1
+        if log_spc:
+            z1 = [np.log10(item[1]) for item in b1]
+            bins = np.linspace(np.min(z1), np.max(z1), int(4*np.sqrt(len(z1))))
+            ax1.set_xlabel('error log10 [$\Omega$ m]', size = textsize)
+        else:
+            z1 = [item[1] for item in b1]
+            ax1.set_xlim([0.,10.])
+            bins = np.linspace(np.min(z1), 100, 1000)
+            ax1.set_xlabel('error [$\Omega$ m]', size = textsize)
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha = 0.5, color = 'b')
+        ax1.set_ylabel('freq.', size = textsize)
+        #ax1.grid(True, which='both', linewidth=0.1)
+        #ax1.set_xlim(min(z1),max(z1))
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax1.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        # plot lines for mean of z1 and z2 (top plot)
+        #ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+        #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+        
+        # Band 2
+        if log_spc:
+            z1 = [np.log10(item[1]) for item in b2]
+            bins = np.linspace(np.min(z1), np.max(z1), int(4*np.sqrt(len(z1))))
+            ax2.set_xlabel('error log10 [$\Omega$ m]', size = textsize)
+        else:
+            z1 = [item[1] for item in b2]
+            ax2.set_xlim([0.,10.])
+            bins = np.linspace(np.min(z1), 100, 1000)
+            ax2.set_xlabel('error [$\Omega$ m]', size = textsize)
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha = 0.5, color = 'g')
+        ax2.set_ylabel('freq.', size = textsize)
+        #ax2.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        # plot lines for mean of z1 and z2 (top plot)
+        #ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+        #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+        
+        # Band 3
+        if log_spc:
+            z1 = [np.log10(item[1]) for item in b3]
+            bins = np.linspace(np.min(z1), np.max(z1), int(4*np.sqrt(len(z1))))
+            ax3.set_xlabel('error log10 [$\Omega$ m]', size = textsize)
+        else:
+            z1 = [item[1] for item in b3]
+            ax3.set_xlim([0.,10.])
+            bins = np.linspace(np.min(z1), 100, 1000)
+            ax3.set_xlabel('error [$\Omega$ m]', size = textsize)
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha = 0.5, color = 'r')
+        ax3.set_ylabel('freq.', size = textsize)
+        #ax3.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        # plot lines for mean of z1 and z2 (top plot)
+        #ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+        #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+        
+        plt.tight_layout()
+        sta_obj.path_results = '.'+os.sep+str('noise_distributions')
+        plt.savefig(sta_obj.path_results+os.sep+'noise_appres_nondiag.pdf', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
+        plt.close()
+
+    if True: # phase 
+        ## lists per band 
+        b1 = []
+        b2 = []
+        b3 = []
+        # fill lists 
+        for sta_obj in station_objects:
+            for i in range(len(sta_obj.T)): 
+                if sta_obj.T[i] > bands[0][0] and sta_obj.T[i] < bands[0][1]:
+                    b1.append([sta_obj.T[i],sta_obj.phase_deg_er[1][i]]) 
+                    b1.append([sta_obj.T[i],sta_obj.phase_deg_er[2][i]]) 
+                if sta_obj.T[i] > bands[1][0] and sta_obj.T[i] < bands[1][1]:
+                    b2.append([sta_obj.T[i],sta_obj.phase_deg_er[1][i]]) 
+                    b2.append([sta_obj.T[i],sta_obj.phase_deg_er[2][i]]) 
+                if sta_obj.T[i] > bands[2][0] and sta_obj.T[i] < bands[2][1]:
+                    b3.append([sta_obj.T[i],sta_obj.phase_deg_er[1][i]]) 
+                    b3.append([sta_obj.T[i],sta_obj.phase_deg_er[2][i]]) 
+        ## Figure 
+        g = plt.figure(figsize=(15, 10))
+        ## f.suptitle('Model: '+self.name, size = textsize)
+        gs = gridspec.GridSpec(nrows=2, ncols=3, height_ratios=[2, 1])
+        ax = g.add_subplot(gs[0, :])
+        # plot band per color 
+        p=[item[0]for item in b1]
+        e=[item[1]for item in b1]
+        ax.semilogx(p,e,'b*', alpha = 0.1)
+        p=[item[0]for item in b2]
+        e=[item[1]for item in b2]
+        ax.semilogx(p,e,'g*', alpha = 0.1)
+        p=[item[0]for item in b3]
+        e=[item[1]for item in b3]
+        ax.semilogx(p,e,'r*', alpha = 0.1)
+        ax.set_xlabel('period [s]', size = textsize)
+        ax.set_ylabel('error [°]', size = textsize)
+        ax.set_title('error in phase: Zxy and Zyx', size = textsize)
+        ax.set_ylim([0,45])
+        # plot hitograms per band
+        ax1 = g.add_subplot(gs[1, 0])
+        ax2 = g.add_subplot(gs[1, 1])
+        ax3 = g.add_subplot(gs[1, 2])
+        
+        log_spc = False
+        # 
+        # Band 1
+        if log_spc:
+            z1 = [np.log10(item[1]) for item in b1]
+            bins = np.linspace(np.min(z1), np.max(z1), int(4*np.sqrt(len(z1))))
+            ax3.set_xlabel('error log10 [$\Omega$ m]', size = textsize)
+        else:
+            z1 = [item[1] for item in b1]
+            #bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(z1))))
+            bins = np.linspace(0, 5*np.median(z1), 100)
+            ax1.set_xlabel('error [°]', size = textsize)
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha = 0.5, color = 'b')
+        ax1.set_ylabel('freq.', size = textsize)
+        #ax3.set_xlim([0,45])
+        #ax1.grid(True, which='both', linewidth=0.1)
+        #ax1.set_xlim(min(z1),max(z1))
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax1.set_title('median: {:3.1f}'.format(np.median(z1)), fontsize = textsize, color='gray')#, y=0.8)
+        #ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        # plot lines for mean of z1 and z2 (top plot)
+        #ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+        #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+        
+        ## Band 2
+        if log_spc:
+            z1 = [np.log10(item[1]) for item in b2]
+            bins = np.linspace(np.min(z1), np.max(z1), int(4*np.sqrt(len(z1))))
+            ax3.set_xlabel('error log10 [$\Omega$ m]', size = textsize)
+        else:
+            z1 = [item[1] for item in b1]
+            #bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(z1))))
+            bins = np.linspace(0, 5*np.median(z1), 100)
+            ax1.set_xlabel('error [°]', size = textsize)
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha = 0.5, color = 'g')
+        ax2.set_ylabel('freq.', size = textsize)
+        #ax3.set_xlim([0,45])
+        #ax2.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax2.set_title('median: {:3.1f}'.format(np.median(z1)), fontsize = textsize, color='gray')#, y=0.8)
+        #ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        # plot lines for mean of z1 and z2 (top plot)
+        #ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+        #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+        
+        ## Band 3
+        if log_spc:
+            z1 = [np.log10(item[1]) for item in b3]
+            bins = np.linspace(np.min(z1), np.max(z1), int(4*np.sqrt(len(z1))))
+            ax3.set_xlabel('error log10 [$\Omega$ m]', size = textsize)
+        else:
+            z1 = [item[1] for item in b1]
+            #bins = np.linspace(np.min(z1), np.max(z1), int(np.sqrt(len(z1))))
+            bins = np.linspace(0, 5*np.median(z1), 100)
+            ax1.set_xlabel('error [°]', size = textsize)
+        h,e = np.histogram(z1, bins, density = True)
+        m = 0.5*(e[:-1]+e[1:])
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha = 0.5, color = 'r')
+        ax3.set_ylabel('freq.', size = textsize)
+        #ax3.set_xlim([0,45])
+        #ax3.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(z1)
+        y = mlab.normpdf(bins, mu, sigma)
+        ax3.set_title('median: {:3.1f}'.format(np.median(z1)), fontsize = textsize, color='gray')#, y=0.8)
+        #ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
+        # plot lines for mean of z1 and z2 (top plot)
+        #ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+        #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+        
+        plt.tight_layout()
+        sta_obj.path_results = '.'+os.sep+str('noise_distributions')
+        plt.savefig(sta_obj.path_results+os.sep+'noise_phase_nondiag.pdf', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=0.1)
+        plt.close()
+
+
+
+
+
+
+
+        
+    
+

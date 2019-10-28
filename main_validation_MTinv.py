@@ -273,7 +273,7 @@ if __name__ == "__main__":
                     z0_grid = z_grid[count]
                 count+=1    
             # create figure
-            f = plt.figure(figsize=[6.5,6.5])
+            f = plt.figure(figsize=[7.5,6.5])
             ## plot profile 3d inv
             ax = plt.axes()
             # note: z_vec is + downward 
@@ -284,9 +284,9 @@ if __name__ == "__main__":
             ## plot mcmc inv
             ms=12 
             # top boundary
-            ax.errorbar(np.log10(r2_mcmc[0]),z1_mcmc[0],z1_mcmc[1],np.log10(r2_mcmc[1]),'r*', label = 'MT stochastic: top boundary LRA',  ms=ms)
+            ax.errorbar(r2_mcmc[0],z1_mcmc[0],z1_mcmc[1],r2_mcmc[1],'r*', label = 'MT stochastic: top boundary LRA',  ms=ms)
             # bottom boundary
-            ax.errorbar(np.log10(r2_mcmc[0]),(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],np.log10(r2_mcmc[1]),'b*', label = 'MT stochastic: bottom boundary LRA',  ms=ms)
+            ax.errorbar(r2_mcmc[0],(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],r2_mcmc[1],'b*', label = 'MT stochastic: bottom boundary LRA',  ms=ms)
             ax.set_xscale('log')
 
             ax.set_xlabel(r'$\rho$ [$\Omega$ m]', size = textsize)
@@ -303,9 +303,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well TH19: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap', ms=ms)
+                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well TH19: bottom boundary clay cap', ms=ms)
                 if stas_name[i] == 'WT107a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -313,9 +313,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well WK401: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well WK401: bottom boundary clay cap',  ms=ms)
                 if stas_name[i] == 'WT033c':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -323,9 +323,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well WK267A: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well WK267A: bottom boundary clay cap',  ms=ms)
                 if stas_name[i] == 'WT501a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -333,9 +333,9 @@ if __name__ == "__main__":
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
                     # top boundary
-                    ax.errorbar(np.log10(5.),z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB: top boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well WK270: top boundary clay cap',  ms=ms)
                     # bottom boundary
-                    ax.errorbar(np.log10(5.),z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB: bottom boundary clay cap',  ms=ms)
+                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well WK270: bottom boundary clay cap',  ms=ms)
             plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 500)])
             plt.xlim([0.1,10])
             plt.gca().invert_yaxis()

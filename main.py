@@ -38,9 +38,7 @@ from Maping_functions import *
 from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
 
-
 textsize = 15.
-
 # ==============================================================================
 # ==============================================================================
 
@@ -65,7 +63,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = True
-	prof_2D_MT = False
+	prof_2D_MT = True
 	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
@@ -394,6 +392,11 @@ if __name__ == "__main__":
 			map_stations_wells(station_objects, wells_objects, file_name = file_name, format = 'png', \
 				path_base_image = path_base_image, alpha_img = 0.8 ,xlim = x_lim, ylim = y_lim, ext_img = ext_file, dash_arrow = False)
 
+		# plot noise distribution
+		if False:
+			bands  = [[0,.1],[.1,10.],[10,1000.]]
+			plot_dist_noise(station_objects,bands)
+
 	# (1) Run MCMC for MeB priors  
 	if mcmc_meb_inv:
 		pp = PdfPages('fit.pdf')
@@ -464,51 +467,50 @@ if __name__ == "__main__":
 		start_time = time.time()
 		prior_meb = False
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
-		# plot noise
-		if False:
-			for sta_obj in station_objects:
-				plt.loglog(sta_obj.T, sta_obj.rho_app_er[1],'b*', alpha = 0.05)
-				plt.loglog(sta_obj.T, sta_obj.rho_app_er[2],'b*', alpha = 0.05)
-			plt.show()
-			asdf
 		for sta_obj in station_objects:
 			print(sta_obj.name)
-			if sta_obj.ref < 0: # start at 0
-			#if sta_obj.name[:-4] != 'WT070b':
+			#if sta_obj.ref < 0: # start at 0
+			if sta_obj.name[:-4] != 'WT107a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.01*1e2,.5*1e3],[1.*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,0,1,0,0,0,0] 
-				add_error = 0. # % of mean appres and phase
-				#range_p = [0.1,1.] # range of periods
-				range_p = [0.,10.] # range of periods
-				# Pars per station
+				add_error_per = 0. # % of increase of noise at each period (appres and phase in zxy and zyx)
+				range_p = [0.,100.] # range of periods
+				# fitting mode xy or yx: 
+				fit_max_mode = False
+				# inv. pars. per station
 				if False:
-					if sta_obj.name[:-4] == 'WT502a': # station with static shift
-						add_error = .0 # % of mean appres and phase
-						range_p = [0,1000.] # range of periods
-						#plt.loglog(sta_obj.T,sta_obj.rho_app_er[1])
-						#plt.show()
-						#add_error = 0. # % of mean appres and phase
-					if sta_obj.name[:-4] == 'WT223a': # station with static shift
-						add_error = 1.5 # % of mean appres and phase
-						#range_p = [0,100.] # range of periods
-					if sta_obj.name[:-4] == 'WT068a': # station with static shift
-						add_error = 2.5 # % of mean appres and phase
+					if sta_obj.name[:-4] == 'WT030a': # station with static shift
+						range_p = [0,10.] # range of periods
+					if sta_obj.name[:-4] == 'WT107a': # station with static shift
+						range_p = [0,1.] # range of periods
+						fit_max_mode = True
+						par_range = [[.01*1e2,.5*1e3],[.5*1e2,.3*1e3],[1.*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 					if sta_obj.name[:-4] == 'WT111a': # station with static shift
+						range_p = [0,10.] # range of periods
+						fit_max_mode = False
+					if sta_obj.name[:-4] == 'WT223a': # station with static shift
+						range_p = [0,1000.] # range of periods
+					if sta_obj.name[:-4] == 'WT501a': # station with static shift
 						range_p = [0,100.] # range of periods
-					if sta_obj.name[:-4] == 'WT070b': # station with static shift
-						range_p = [0,100.] # range of periods
-				print('mean noise in app res XY: {:2.2f}'.format(np.mean(np.log10(sta_obj.rho_app_er[1]))))
+						fit_max_mode = False
+				## print relevant information
+				print('mean noise in app res XY: {:2.2f}'.format(np.mean(sta_obj.rho_app_er[1])))
 				print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
-				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input=par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 1.0,\
+				print('range of periods: [{:2.2f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+				## 
+				plt.loglog(sta_obj.T,sta_obj.rho_app_er[1])
+				plt.show()
+				###
+				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,0,0,0,0,0,0], prior_input = par_range, \
+					walk_jump = 3000, prior_meb = prior_meb, prior_meb_weigth = 40.,\
 						range_p = range_p, autocor_accpfrac = True, data_error = True, \
-							fit_max_mode = True)
+							fit_max_mode = fit_max_mode, add_error = False, add_error_per = add_error_per)
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -527,14 +529,13 @@ if __name__ == "__main__":
 				## plot results without burn-in section
 				mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
 				shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
-				
+				# save figures
 				pp.savefig(g)
 				pp.savefig(f)
 				plt.close('all')
 				#plt.clf()
 				## calculate estimate parameters
 				mcmc_sta.model_pars_est()
-
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
