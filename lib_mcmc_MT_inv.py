@@ -129,7 +129,7 @@ class mcmc_inv(object):
     def __init__(self, sta_obj, dim_inv = None, name= None, work_dir = None, num_lay = None , norm = None, \
         prior = None, prior_input = None, prior_meb = None, prior_meb_weigth = None, nwalkers = None, \
             walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None, \
-                data_error = None, add_error = None, fit_max_mode = None, add_error_per = None):
+                data_error = None, add_error = None, fit_max_mode = None, add_error_per = None, add_mod_err =None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -147,6 +147,15 @@ class mcmc_inv(object):
         self.rho_app_obs_er = sta_obj.rho_app_er
         self.phase_obs = sta_obj.phase_deg
         self.phase_obs_er = sta_obj.phase_deg_er
+        # add model error
+        #if add_mod_err is None:
+        #    add_mod_err = False
+        #if add_mod_err is True:
+        #    for j in range(3):
+        #        for i in range(len(self.rho_app_obs_er[j][:])): 
+        #            self.rho_app_obs_er[j][i] += 1.e-1
+        #            self.phase_deg_er[j][i] += 1.e-1
+        
         self.max_Z_obs = sta_obj.max_Z
         self.det_Z_obs = sta_obj.det_Z
         self.ssq_Z_obs = sta_obj.ssq_Z
@@ -170,7 +179,6 @@ class mcmc_inv(object):
                 self.inv_dat = [1,1,0,0,0,0,0]
             else: 
                 self.inv_dat = [0,0,1,1,0,0,0]
-
         if norm is None: 
             self.norm = 2.     
         if prior is None: 
@@ -273,6 +281,8 @@ class mcmc_inv(object):
                     self.rho_app_obs[2],self.phase_obs[2],\
                     self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs]).T
         cores = multiprocessing.cpu_count()
+        if self.name == 'WT024a' or self.name == 'WT068a':
+            cores = cores - 2
         sampler = emcee.EnsembleSampler(self.nwalkers, ndim, self.lnprob, threads=cores-1, args=[data,])
 		# set the initial location of the walkers
         pars = self.ini_mod  # initial guess
@@ -347,7 +357,7 @@ class mcmc_inv(object):
             # set weigths for app rest. and phase in the obj. fn. 
             if variance: 
                 w_app_res = 1. 
-                w_phase =   .1
+                w_phase =   1.#.1
             # filter range of periods to work with
             if self.range_p: 
                 ## range_p = [0.01, 1.0] s
@@ -361,148 +371,168 @@ class mcmc_inv(object):
             ############################################################
             variance_mean = False
             
+            ############################################################
+            #############################################################
             ### TE(xy): fitting sounding curves 
             # invert with impose error (same for every station)
-            v = 0.15
-            TE_apres = self.inv_dat[0]*-np.sum((np.log10(obs[:,1]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm /v
- 
-            if variance:
-                if variance_mean: 
-                    v = np.log10(np.mean(self.rho_app_obs_er[1]))
-                    TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
-                                -np.log10(rho_ap_est))/v_vec)**self.norm )/v
+            #v = 0.05
+            #TE_apres = self.inv_dat[0]*-np.sum((np.log10(obs[:,1]) \
+            #            -np.log10(rho_ap_est))/v_vec)**self.norm / v
+            if self.inv_dat[0] == 1:
+                if variance:
+                    if variance_mean: 
+                        v = np.log10(np.mean(self.rho_app_obs_er[1]))
+                        TE_apres = self.inv_dat[0]*-np.sum(((np.log10(obs[:,1]) \
+                                    -np.log10(rho_ap_est))/v_vec)**self.norm )/v
+                    else:
+                        if self.add_error:
+                            TE_apres = self.inv_dat[0]*-np.sum(((obs[:,1] \
+                                - rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[1])) #/v
+                        else:
+                            # log space
+                            #TE_apres = self.inv_dat[0]*-.5*np.sum(((np.log10(obs[:,1]) \
+                            #    - np.log10(rho_ap_est))/v_vec)**self.norm / (np.log10(self.rho_app_obs_er[1])**self.norm)) 
+                            
+                            mf = []
+                            mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
+                                / (np.log10(.1 + self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
+                                for i in range(len(obs[:,0]))]
+                            TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
                 else:
-                    #TE_apres = self.inv_dat[0]*-np.sum(((obs[:,1] \
-                    #    - rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er[1]**2)) #/v
-                    # log space
-                    mf = []
-                    #print(np.median(abs(np.log10(self.rho_app_obs_er[1][:]))))
-                    #err = np.min(abs(np.log10(self.rho_app_obs_er[1][:])))
-                    #err = .05
-                    #mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) / (err* v_vec[i]))**self.norm \
-                    #    for i in range(len(obs[:,0]))]
-                    for i in range(len(self.rho_app_obs_er[1][:])): 
-                        if self.rho_app_obs_er[1][i] < 0.05:
-                            self.rho_app_obs_er[1][i] == 0.05
-                    
+                    # invert with impose error (same for every station)
+                    #v = 0.05
+                    #TE_apres = self.inv_dat[0]*-np.sum((np.log10(obs[:,1]) \
+                    #            -np.log10(rho_ap_est))/v_vec)**self.norm / v
+                    pass
+            else:
+                TE_apres = 0.
+            # apply weigth 
+            #TE_apres = TE_apres*w_app_res
+            #####################################
+            if self.inv_dat[1] == 1:
+                if variance:
+                    if variance_mean: 
+                        v = np.mean(self.phase_obs_er[2]) 
+                        TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
+                                    -phi_est)/v_vec)**self.norm)/ v 
+                    else:
+                        if self.add_error:
+                            TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
+                                    -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er_add[1])) #/v
+                        else:
+                            
+                            #TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
+                            #        - phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v
+                            mf = []
+                            mf = [((np.log10(abs(obs[i][2])) - np.log10(abs(phi_est[i]))) \
+                                / (np.log10(abs(.1 + self.phase_obs_er[1][i])) * v_vec[i]))**self.norm \
+                                for i in range(len(obs[:,0]))]
+                            TE_phase = self.inv_dat[1]*-.5 * np.sum(mf)
+                else: 
+                    #v = 100          
+                    #TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
+                    #            -phi_est)/v_vec)**self.norm)/ v 
+                    pass
+            else:
+                TE_phase = 0.
+            # apply weigth 
+            #TE_phase = TE_phase*w_phase
 
-                    mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) / (self.rho_app_obs_er[1][i] * v_vec[i]))**self.norm \
-                        for i in range(len(obs[:,0]))]
-                    TE_apres = -.5 * np.sum(mf)
-                    TE_apres = self.inv_dat[0]*TE_apres
-                    mf = []
-                    #TE_apres = self.inv_dat[0]*-.5*np.sum(((np.log10(obs[:,1]) \
-                    #    - np.log10(rho_ap_est))/v_vec)**self.norm / (np.log10(self.rho_app_obs_er[1])**self.norm)) 
-                    
-    
-                    if self.add_error:
-                        TE_apres = self.inv_dat[0]*-np.sum(((obs[:,1] \
-                            - rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[1])) #/v
-                # apply weigth 
-                TE_apres = TE_apres*w_app_res
-            
-            v = 100          
-            TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                        -phi_est)/v_vec)**self.norm)/ v 
-            if variance:
-                if variance_mean: 
-                    v = np.mean(self.phase_obs_er[2]) 
-                    TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                                -phi_est)/v_vec)**self.norm)/ v 
-                else:
-                    TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                            -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1])) #/v
-
-                    TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                            - phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v
-                if self.add_error:
-                    TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
-                            -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er_add[1])) #/v
-
-                # apply weigth 
-                TE_phase = TE_phase*w_phase
-            
+            #############################################################
             #############################################################
             ### TM(yx): fitting sounding curves 
-            #v = self.rho_app_obs_er[2]**2
-            v = .15
-            TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                        -np.log10(rho_ap_est))/v_vec)**self.norm )/v
-            if variance:
-                if variance_mean: 
-                    v = np.log10(np.mean(self.rho_app_obs_er[2]))
-                    TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                                -np.log10(rho_ap_est))/v_vec)**self.norm )/v
+
+            if self.inv_dat[2] == 1:
+                if variance:
+                    if variance_mean: 
+                        v = np.log10(np.mean(self.rho_app_obs_er[2]))
+                        TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
+                                    -np.log10(rho_ap_est))/v_vec)**self.norm )/v
+                    else:
+                        if self.add_error:
+                            TM_apres = self.inv_dat[2]*-np.sum(((obs[:,3] \
+                                -rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[2])) #/v
+                        else:
+                            # log space
+                            #TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
+                            #    - np.log10(rho_ap_est))/v_vec)**self.norm / (2*np.log10(self.rho_app_obs_er[2])**2)) #/v
+                            # log space
+                            mf = []
+                            mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) \
+                                / (np.log10(.1 + self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
+                                for i in range(len(obs[:,0]))]
+                            TM_apres = self.inv_dat[2]*-.5 * np.sum(mf)
                 else:
-                    #TM_apres = self.inv_dat[2]*-np.sum(((obs[:,3] \
-                    #    -rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er[2])) #/v
-                    # log space
+                    #v = self.rho_app_obs_er[2]**2
+                    #v = .15
                     #TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                    #    - np.log10(rho_ap_est))/v_vec)**self.norm / (2*np.log10(self.rho_app_obs_er[2])**2)) #/v
-                    mf = []
-                    mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) / abs(np.log10(self.rho_app_obs_er[2][i])))**2. \
-                        for i in range(len(obs[:,0]))]
-                    TM_apres = -.5 * np.sum(mf)
-                    TM_apres = self.inv_dat[2]*TM_apres
-                    
-                    if self.add_error:
-                        TM_apres = self.inv_dat[2]*-np.sum(((obs[:,3] \
-                            -rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[2])) #/v
+                    #            -np.log10(rho_ap_est))/v_vec)**self.norm )/v
+                    pass
+            else:
+                TM_apres = 0.
+            # apply weigth 
+            #TM_apres = TM_apres*w_app_res
+            #####################################
 
-                # apply weigth 
-                TM_apres = TM_apres*w_app_res
-
-            v = 100
-            TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
-                        -phi_est)/v_vec)**self.norm )/v 
-            if variance:
-                if variance_mean: 
-                    v = np.mean(self.phase_obs_er[2]) 
-                    TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
-                                -phi_est)/v_vec)**self.norm)/ v 
+            if self.inv_dat[3] == 1:
+                if variance:
+                    if variance_mean: 
+                        v = np.mean(self.phase_obs_er[2]) 
+                        TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
+                                    -phi_est)/v_vec)**self.norm)/ v 
+                    else:
+                        if self.add_error:
+                            TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
+                                    -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er_add[2])) #/v
+                        else:
+                            #TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
+                            #        -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[2]**2)) #/v
+                            mf = []
+                            mf = [((np.log10(abs(obs[i][4])) - np.log10(abs(phi_est[i]))) \
+                                / (np.log10(abs(.1 + self.phase_obs_er[2][i])) * v_vec[i]))**self.norm \
+                                for i in range(len(obs[:,0]))]
+                            TM_phase = self.inv_dat[3]*-.5 * np.sum(mf)
                 else:
-                    TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
-                            -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[2]**2)) #/v
-
-                if self.add_error:
-                    TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
-                            -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er_add[2])) #/v
-                            
-                # apply weigth 
-                TM_phase = TM_phase*w_phase
+                    #v = 100
+                    #TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
+                    #            -phi_est)/v_vec)**self.norm )/v 
+                    pass
+            else:
+                TM_phase = 0.
+            # apply weigth 
+            #TM_phase = TM_phase*w_phase
             
             ############################################################
             ############################################################
-            # fitting maximum value of Z
-            if self.dim_inv == 2:
-                max_Z = 0.
-            else:
-                max_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
-                            -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+            # # fitting maximum value of Z
+            # if self.dim_inv == 2:
+            #     max_Z = 0.
+            # else:
+            #     max_Z = self.inv_dat[4]*-np.sum(((np.log10(obs[:,5]) \
+            #                 -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
                 
-            # fitting determinant of Z
-            if self.dim_inv == 2:
-                det_Z = 0.
-            else:
-                # divide det() in magnitud and phase 
-                det_Z_amp = self.inv_dat[5]*-np.sum(((np.log10(np.absolute(obs[:,6])) \
-                            -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+            # # fitting determinant of Z
+            # if self.dim_inv == 2:
+            #     det_Z = 0.
+            # else:
+            #     # divide det() in magnitud and phase 
+            #     det_Z_amp = self.inv_dat[5]*-np.sum(((np.log10(np.absolute(obs[:,6])) \
+            #                 -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
 
-                det_Z_pha = self.inv_dat[5]*-np.sum(((np.angle(obs[:,6],deg=True) \
-                            -np.angle(Z_est, deg=True))/v_vec)**self.norm)/v
+            #     det_Z_pha = self.inv_dat[5]*-np.sum(((np.angle(obs[:,6],deg=True) \
+            #                 -np.angle(Z_est, deg=True))/v_vec)**self.norm)/v
     
-                det_Z = det_Z_amp
+            #     det_Z = det_Z_amp
 
-            # fitting ssq of Z
-            # fitting determinant of Z
-            if self.dim_inv == 2:
-                ssq_Z = 0.
-            else:
-                ssq_Z = self.inv_dat[6]*-np.sum(((np.log10(obs[:,7]) \
-                            -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
-
-            return TE_apres + TE_phase +  TM_apres + TM_phase + max_Z + ssq_Z + det_Z 
+            # # fitting ssq of Z
+            # # fitting determinant of Z
+            # if self.dim_inv == 2:
+            #     ssq_Z = 0.
+            # else:
+            #     ssq_Z = self.inv_dat[6]*-np.sum(((np.log10(obs[:,7]) \
+            #                 -np.log10(np.absolute(Z_est)))/v_vec)**self.norm)/v
+            
+            return TE_apres + TE_phase +  TM_apres + TM_phase # + max_Z + ssq_Z + det_Z 
         
         # pars = np.exp(pars)  # pars was define in log space, here we take it back to linear space
 		## Parameter constrain
@@ -956,7 +986,6 @@ class mcmc_inv(object):
             plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
             
-
         if exp_fig == None:
             plt.close('all')
             #plt.clf()
@@ -1125,7 +1154,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
     : MeB methylene blue
     """
     if slp is None:
-        slp = .25
+        slp = .1
 
     for sta_obj in station_objects:
         dist_pre_q1 = []

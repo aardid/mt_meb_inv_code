@@ -522,6 +522,48 @@ class Station(object):
             iso_perc.write('\n')
         iso_perc.close()   
 
+    def plot_noise(self, path_img = None):
+        '''
+        Plot noise (std) for appres and phase for Zxy and Zyx modes. 
+        '''
+        g,(ax, ax1) = plt.subplots(2,1)
+        g.set_size_inches(8,8) 
+        g.suptitle(self.name, size = textsize)#, y=1.08)
+
+        ### ax: apparent resistivity
+        ax.set_xlim([np.min(self.T), np.max(self.T)])
+        #ax.set_xlim([1E-3,1e3])
+        #ax.set_ylim([1e0,1e3])
+        #ax.set_xlabel('period [s]', size = textsize)
+        ax.set_ylabel(r'[$\Omega$ m]', size = textsize)
+        ax.set_title(r'Noise $\rho_{app}$ and $\phi$', size = textsize)
+        # plot samples
+        ax.loglog(self.T, self.rho_app_er[1],'b*-', lw = 0.5, alpha=0.8, zorder=0, label = '$Z_{xy}$')
+        ax.loglog(self.T, self.rho_app_er[2],'g*-', lw = 0.5, alpha=0.8, zorder=0, label = '$Z_{yx}$')
+        ax.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
+        ### ax: phase
+        ax1.set_xlim([np.min(self.T), np.max(self.T)])
+        #ax1.set_xlim([1E-3,1e3])
+        #ax1.set_ylim([0.e0,1.1e2])
+        ax1.set_xlabel('period [s]', size = textsize)
+        ax1.set_ylabel('$\phi$ [°]', size = textsize)
+        ax1.set_title(r'Noise $\phi$', size = textsize)
+        ax1.loglog(self.T, self.phase_deg_er[1],'b*-', lw = 0.5, alpha=0.8, zorder=0, label = '$Z_{xy}$')
+        ax1.loglog(self.T, self.phase_deg_er[2],'g*-', lw = 0.5, alpha=0.8, zorder=0, label = '$Z_{yx}$')
+        ax1.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
+        ax1.set_xscale('log')
+        ### layout figure
+
+        ax.grid()
+        ax1.grid()
+        ax.tick_params(labelsize=textsize)
+        ax1.tick_params(labelsize=textsize)
+        #plt.tight_layout()
+        plt.savefig(path_img+os.sep+'noise_appres_phase.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        plt.close('all')
+
+
 # ==============================================================================
 # Read EDI
 # ==============================================================================

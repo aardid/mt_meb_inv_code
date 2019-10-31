@@ -651,6 +651,7 @@ class Modem(object):
             raise
             
         os.chdir(odir)
+    
     def plot_rho2D(self, filename, xlim = None, ylim = None, gridlines = False, clim = None, overlay = None, overlay_name = None, format = None):
         # check data available for plotting
         try: self.rho
@@ -737,6 +738,7 @@ class Modem(object):
         #	orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
         plt.close(fig)
+    
     def plot_impedance(self, filename, xlim = None, frequency = True, TE = True, clim = None):
         # plot simple contours 
         plt.clf()

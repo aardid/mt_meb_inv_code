@@ -339,12 +339,12 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     # mask sections were second layer is negligible
     if mask_no_cc: 
         for k in range(len(sta_objects)-1):
-            if stns_negli[k] and stns_negli[k+1]: 
+            if stns_negli[k]:# and stns_negli[k+1]: 
                 x_mask = [x_axis[k], x_axis[k+1]]
                 #y_mask = [topo[k]-10, -2000.]
                 y_mask_top = [z1_per[k,0]+25,z1_per[k+1,0]+25]
                 y_mask_bottom = [z2_per[k,-1]-50,z2_per[k+1,-1]-50]
-                ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.9, facecolor='w', zorder=3)
+                ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=3)
 
     # plot station names    
     i = 0
@@ -403,7 +403,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     dist_wl_prof = dist
 
             # plot well names and distance to the profile (near station) 
-            ax.text(x_axis_wl[i], topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=7, bbox=dict(facecolor='blue', alpha=0.1)) 
+            ax.text(x_axis_wl[i], topo_wl[i]-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=7, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
