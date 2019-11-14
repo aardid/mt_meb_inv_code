@@ -205,6 +205,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     mask_no_cc: mask section between two stations where no consuctive layer is found. The value of mask_no_cc indicates the criteria:
         if the thickness of the second layer in meters is less than 'mask_no_cc', consider it as no conductive layer. 
     """
+    textsize = 10
     if type_coord is None: 
         type_coord = 'decimal' # 'linear'
     else:
@@ -220,6 +221,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         width_plot = False
     else: 
         width_plot = True
+        width_plot = False
     if [width_ref != '30%' or width_ref != '60%' or width_ref != '90%']:
         assert 'invalid width_ref: 30%, 60%, 90%'
     if prior_meb is None:
@@ -270,7 +272,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         x_axis = x_axis/1e3
     
     ## plot envelopes 5% and 95% for cc boundaries
-    f = plt.figure(figsize=[9.5,6.5])
+    f = plt.figure(figsize=[9.5,7.5])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-', label='Topography')
@@ -300,57 +302,70 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         ## plot 5% and 95% percetils as dotted lines 
         if width_ref == '90%': 
             # top boundary
-            #ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5, alpha=.5)
-            ax.text(x_axis[0]-.4,z1_per[0,0]+25,'5%',size = 8., color = 'r')
+            ax.plot(x_axis, z1_per[:,0],'r--',linewidth=.5, alpha=.5)
+           # ax.text(x_axis[0]-.4,z1_per[0,0]+25,'5%',size = textsize, color = 'r')
             #ax.plot(x_axis, z1_per[:,-1],'r--',linewidth=.5, alpha=.5)
-            ax.text(x_axis[0]-.4,z1_per[0,-1]-25,'95%',size = 8.,color = 'r')
+            ax.text(x_axis[0]-.4,z1_per[0,-1]-25,'95%',size = textsize,color = 'r')
             # bottom boundary
             #ax.plot(x_axis, z2_per[:,0],'b--',linewidth=.5, alpha=.5)
-            ax.text(x_axis[-1]+.1,z2_per[-1,0]+0,'5%',size = 8., color = 'b')
+            ax.text(x_axis[-1]+.1,z2_per[-1,0]+0,'5%',size = textsize, color = 'b')
             #ax.plot(x_axis, z2_per[:,-1],'b--',linewidth=.5, alpha=.5)
-            ax.text(x_axis[-1]+.1,z2_per[-1,-1]-50,'95%',size = 8.,color = 'b')
+            ax.text(x_axis[-1]+.1,z2_per[-1,-1]-50,'95%',size = textsize,color = 'b')
 
         ## plot 20% and 80% percetils as dotted lines
         if width_ref == '60%': 
             # top boundary
             ax.plot(x_axis, z1_per[:,3],'r--',linewidth=.5, alpha=.2)
-            ax.text(x_axis[0]-.8,z1_per[0,3]+25,'20%',size = 8., color = 'r')
+            ax.text(x_axis[0]-.8,z1_per[0,3]+25,'20%',size = textsize, color = 'r')
             ax.plot(x_axis, z1_per[:,-4],'r--',linewidth=.5, alpha=.2)
-            ax.text(x_axis[0]-.8,z1_per[0,-4]-25,'80%',size = 8.,color = 'r')
+            ax.text(x_axis[0]-.8,z1_per[0,-4]-25,'80%',size = textsize,color = 'r')
             # bottom boundary
             ax.plot(x_axis, z2_per[:,3],'b--',linewidth=.5, alpha=.2)
-            ax.text(x_axis[-1],z2_per[-1,3],'20%',size = 8., color = 'b')
+            ax.text(x_axis[-1],z2_per[-1,3],'20%',size = textsize, color = 'b')
             ax.plot(x_axis, z2_per[:,-4],'b--',linewidth=.5, alpha=.2)
-            ax.text(x_axis[-1],z2_per[-1,-4],'80%',size = 8.,color = 'b')
+            ax.text(x_axis[-1],z2_per[-1,-4],'80%',size = textsize,color = 'b')
 
         ## plot 45% and 65% percetils as dotted lines
         if width_ref == '30%': 
             # top boundary
             ax.plot(x_axis, z1_per[:,8],'r--',linewidth=.5)
-            ax.text(x_axis[0],z1_per[0,8]+10,'45%',size = 8., color = 'r')
+            ax.text(x_axis[0],z1_per[0,8]+10,'45%',size = textsize, color = 'r')
             ax.plot(x_axis, z1_per[:,12],'r--',linewidth=.5)
-            ax.text(x_axis[0],z1_per[0,12]+10,'65%',size = 8.,color = 'r')
+            ax.text(x_axis[0],z1_per[0,12]+10,'65%',size = textsize,color = 'r')
             # bottom boundary
             ax.plot(x_axis, z2_per[:,8],'b--',linewidth=.5)
-            ax.text(x_axis[-1],z2_per[-1,8],'20%',size = 8., color = 'b')
+            ax.text(x_axis[-1],z2_per[-1,8],'20%',size =textsize, color = 'b')
             ax.plot(x_axis, z2_per[:,12],'b--',linewidth=.5)
-            ax.text(x_axis[-1],z2_per[-1,12],'80%',size = 8.,color = 'b')
+            ax.text(x_axis[-1],z2_per[-1,12],'80%',size = textsize,color = 'b')
 
     # mask sections were second layer is negligible
     if mask_no_cc: 
-        for k in range(len(sta_objects)-1):
+        i = 0
+        for k in range(len(sta_objects)):
             if stns_negli[k]:# and stns_negli[k+1]: 
-                x_mask = [x_axis[k], x_axis[k+1]]
-                #y_mask = [topo[k]-10, -2000.]
-                y_mask_top = [z1_per[k,0]+25,z1_per[k+1,0]+25]
-                y_mask_bottom = [z2_per[k,-1]-50,z2_per[k+1,-1]-50]
-                ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=3)
-
+				## from the station to the previous
+                if k>0:
+                    x_mask = [x_axis[k-1], x_axis[k]]
+                    #y_mask = [topo[k]-10, -2000.]
+                    y_mask_top = [z1_per[k-1,0]+50,z1_per[k,0]+50]
+                    y_mask_bottom = [z2_per[k-1,-1]-100,z2_per[k,-1]-100]
+                    ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=1)
+                ## from the station to the next one
+                if k<len(sta_objects)-1:
+                    x_mask = [x_axis[k], x_axis[k+1]]
+                    #y_mask = [topo[k]-10, -2000.]
+                    y_mask_top = [z1_per[k,0]+50,z1_per[k+1,0]+50]
+                    y_mask_bottom = [z2_per[k,-1]-100,z2_per[k+1,-1]-100]
+                    ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=1)
+                ax.text(x_axis[i], topo[i]-200., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='white', edgecolor='white', alpha=1.0), zorder=3 , label = 'No conductor') 
+                ax.text(x_axis[i], topo[i]-200., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='grey', edgecolor='grey', alpha=0.1), zorder=4 , label = 'No conductor') 
+                i+=1
+        #ax.text(x_axis[i-1], topo[i-1]-200., '  ', rotation=90, size=textsize-2, bbox=dict(facecolor='black', alpha=0.01), label = 'No conductor',  zorder=0 ) 
     # plot station names    
     i = 0
     for sta in sta_objects:
-            ax.text(x_axis[i], topo[i]+400., sta.name[:-4], rotation=90, size=8, bbox=dict(facecolor='red', alpha=0.1), ) 
-            i+=1
+            ax.text(x_axis[i], topo[i]+500., sta.name[:-4], rotation=90, size=textsize, bbox=dict(facecolor='red', alpha=0.1), ) 
+            i+=1  
 
     if prior_meb:
         if plot_some_wells is None: 
@@ -403,7 +418,10 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     dist_wl_prof = dist
 
             # plot well names and distance to the profile (near station) 
-            ax.text(x_axis_wl[i], topo_wl[i]-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=7, bbox=dict(facecolor='blue', alpha=0.1)) 
+            if wl.name == 'WK267A': 
+                ax.text(x_axis_wl[i]-.2, topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            else:
+                ax.text(x_axis_wl[i], topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
@@ -429,7 +447,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
         else:
-            ax.set_ylim([-1.0e3, max(topo)+600.])
+            ax.set_ylim([-1.5e3, max(topo)+700.])
     else:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
@@ -439,19 +457,19 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     #plt.xticks(np.linspace(0,10,10))
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('z [m]', size = textsize)
-    ax.set_title('LRA uncertain boundaries', size = textsize)
+    ax.set_title('LRA UNCERTAIN BOUNDARIES', size = textsize)
 
     #ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
     ax.grid(color='c', linestyle='-', linewidth=.1, zorder=4)
-    #ax.tick_params(labelsize=textsize)
+    ax.tick_params(labelsize=textsize)
 
     #plt.grid(True)
     
     if export_fig:
         return f, ax
 
-    ax.legend(loc=3, prop={'size': 10})	
+    ax.legend(loc=3, prop={'size': textsize})	
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
     plt.savefig(file_name+'.'+format_fig, dpi=300, facecolor='w', edgecolor='w',

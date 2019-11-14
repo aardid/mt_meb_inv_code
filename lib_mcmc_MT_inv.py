@@ -214,7 +214,7 @@ class mcmc_inv(object):
                 self.rho_app_obs_er_add[i] = 1 + self.rho_app_obs_er[i] + self.rho_app_obs_er[i] * add_error_per/100.
                 self.phase_obs_er_add[i] = self.phase_obs_er[i] + self.phase_obs_er[i] * add_error_per/100.
 
-        if prior_meb is None:
+        if not prior_meb:
             self.prior_meb = False
         else:  
             self.prior_meb = True
@@ -397,6 +397,7 @@ class mcmc_inv(object):
                             mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
                                 / (np.log10(.1 + self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
                                 for i in range(len(obs[:,0]))]
+                                
                             TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
                 else:
                     # invert with impose error (same for every station)
@@ -1140,7 +1141,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
     Second, using the MeB mcmcm results, the prior is calculated as a weigthed average of the nearest wells. 
     Third, the results are assigned as attributes to the MT objects. 
     KL_div: calculate Kullback-Leibler divergence. Save in txt. 
-    slp: slope of std increase as fn. of distance from well (default .25)
+    slp: std increase [m] as fn. of distance from well [km]. slp = 10 : increase in 10 m on sigma per 1 km. 
     Attributes generated:
     sta_obj.prior_meb_wl_names      : list of names of nearest wells with MeB 
                                     ['well 1',... , 'ẃell 4']
@@ -1154,7 +1155,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
     : MeB methylene blue
     """
     if slp is None:
-        slp = .1
+        slp = 10.
 
     for sta_obj in station_objects:
         dist_pre_q1 = []
@@ -1248,8 +1249,10 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
             z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
             # calc. increment in std. in the position of the station
             # std. dev. increases as get farder from the well. It double its values per 2 km.
-            z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
-            z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
+            #z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
+            #z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
+            z1_std_prior_incre[count] = z1_std_prior[count]  + (sta_obj.prior_meb_wl_dist[count] *slp)
+            z2_std_prior_incre[count] = z1_std_prior[count]  + (sta_obj.prior_meb_wl_dist[count] *slp)
             # load pars in well 
             count+=1
 

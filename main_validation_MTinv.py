@@ -265,7 +265,9 @@ if __name__ == "__main__":
             sta_mcmc = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'est_par.dat')
             z1_mcmc = sta_mcmc[0,1:4] # mean, std, median 
             z2_mcmc = sta_mcmc[1,1:4] # mean, std, median
-            r2_mcmc = sta_mcmc[3,1:4] # mean, std, median # resistivity second layer 
+            r1_mcmc = sta_mcmc[2,1:4] # mean, std, median # resistivity second layer 
+            r2_mcmc = sta_mcmc[3,1:4] # mean, std, median # resistivity second layer
+            r3_mcmc = sta_mcmc[4,1:4] # mean, std, median # resistivity second layer
             # elevation of the station in the grid: z0_grid
             count = 0
             for sta in stas_name_grid: 
@@ -278,21 +280,64 @@ if __name__ == "__main__":
             ax = plt.axes()
             # note: z_vec is + downward 
             #ax.plot(np.log10(res_z), z_vec -  elev[i] ,'m-', label='profile from 3D inv.')
-            ax.plot(np.log10(res_z), z_vec -  z0_grid ,'m-', label='1D profile from 3D deterministic inversion', linewidth=2.0)
+            ax.plot(np.log10(res_z), z_vec -  z0_grid ,'r-', label='1D profile from 3D deterministic inversion', linewidth=2.0)
 
             #plt.xlim([0,10])
             ## plot mcmc inv
             ms=12 
-            # top boundary
-            ax.errorbar(r2_mcmc[0],z1_mcmc[0],z1_mcmc[1],r2_mcmc[1],'r*', label = 'MT stochastic: top boundary LRA',  ms=ms)
-            # bottom boundary
-            ax.errorbar(r2_mcmc[0],(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],r2_mcmc[1],'b*', label = 'MT stochastic: bottom boundary LRA',  ms=ms)
             ax.set_xscale('log')
 
             ax.set_xlabel(r'$\rho$ [$\Omega$ m]', size = textsize)
             ax.set_ylabel('Depth [m]', size = textsize)
             ax.set_title('MT station: '+stas_name[i], size = textsize)#+': 3D det. inv. vs. 1D sto. inv.', size = textsize)
             ax.grid(alpha = 0.3)
+
+            ## plot resistivity model from mcmc results 
+            # top boundary
+            #ax.errorbar(r2_mcmc[0],z1_mcmc[0],z1_mcmc[1],r2_mcmc[1],'r*', label = 'MT stochastic: top boundary LRA',  ms=ms)
+            # bottom boundary
+            #ax.errorbar(r2_mcmc[0],(z1_mcmc[0] + z2_mcmc[0]),z2_mcmc[1],r2_mcmc[1],'b*', label = 'MT stochastic: bottom boundary LRA',  ms=ms)
+            plot_model = True
+            if plot_model:
+                def square_fn(pars, x_axis):
+                    """
+                    Calcule y axis for square function over x_axis
+                    with corners given by pars, starting at y_base. 
+                    pars = [x1,x2,y0,y1,y2] 
+                    y_base = 0 (default)
+                    """
+                    # vector to fill
+                    y_axis = np.zeros(len(x_axis))
+                    # pars = [x1,x2,y1]
+                    # find indexs in x axis
+                    idx1 = np.argmin(abs(x_axis-pars[0]))
+                    idx2 = np.argmin(abs(x_axis-pars[1]))
+                    # fill y axis and return 
+                    y_axis[0:idx1] = pars[2]
+                    y_axis[idx1:idx2+1] = pars[3]
+                    y_axis[idx2+1:] = pars[4]
+                    return y_axis
+                # depths to plot
+                z_model = np.arange(0.,1500.,.5)
+                # model 
+                #for par in pars_order:
+                    #if all(x > 0. for x in par):
+                Ns = 500
+                mu_z1, sigma_z1 = z1_mcmc[0], z1_mcmc[1]/2 # mean and standard deviation
+                z1 = np.random.normal(mu_z1, sigma_z1, Ns)
+                mu, sigma = z2_mcmc[0], z2_mcmc[1] # mean and standard deviation
+                z2 = np.random.normal(mu, sigma, Ns)
+                mu, sigma = r1_mcmc[0], r1_mcmc[1] # mean and standard deviation
+                r1 = np.random.normal(mu, sigma/2, Ns)
+                mu, sigma = r2_mcmc[0], r2_mcmc[1] # mean and standard deviation
+                r2 = np.random.normal(mu, sigma, Ns)
+                mu, sigma = r3_mcmc[0], r3_mcmc[1] # mean and standard deviation
+                r3 = np.random.normal(mu, sigma/2, Ns)
+                for j in range(Ns):
+                    sq_prof_est = square_fn([z1[j],mu_z1+z2[j],r1[j],r2[j],r3[j]], x_axis=z_model)
+                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0)
+                ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0, label= '1D profile from 1D stochastic inversion')
+
             if plot_meb: 
                 # plot for selected stations 
                 ms=12
@@ -302,42 +347,62 @@ if __name__ == "__main__":
                     sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'TH19'+os.sep+'est_par.dat')
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
+                    ## top boundary
+                    #ax.errorbar(1.0,z1_meb[0],1.5*z1_meb[1], 1000.,'g-', label = 'MeB well WK401: top boundary clay cap',  ms=ms)
+                    ## bottom boundary
+                    #ax.errorbar(1.0,z2_meb[0],1.5*z2_meb[1], 1000.,'c-', label = 'MeB well WK401: bottom boundary clay cap',  ms=ms)
+                    ## thick lines 
                     # top boundary
-                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well TH19: top boundary clay cap',  ms=ms)
-                    # bottom boundary
-                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well TH19: bottom boundary clay cap', ms=ms)
+                    x_axis = np.linspace(0,1000, 100)
+                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well TH19: top boundary clay cap')
+                    ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well TH19: bottom boundary clay cap')
                 if stas_name[i] == 'WT107a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
                     sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK401'+os.sep+'est_par.dat')
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
+                    ## top boundary
+                    #ax.errorbar(1.0,z1_meb[0],1.5*z1_meb[1], 1000.,'g-', label = 'MeB well WK401: top boundary clay cap',  ms=ms)
+                    ## bottom boundary
+                    #ax.errorbar(1.0,z2_meb[0],1.5*z2_meb[1], 1000.,'c-', label = 'MeB well WK401: bottom boundary clay cap',  ms=ms)
+                    ## thick lines 
                     # top boundary
-                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well WK401: top boundary clay cap',  ms=ms)
-                    # bottom boundary
-                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well WK401: bottom boundary clay cap',  ms=ms)
+                    x_axis = np.linspace(0,1000, 100)
+                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + 1.5*z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK401: top boundary clay cap')
+                    ax.fill_between(x_axis, z2_meb[0] - 1.5*z2_meb[1], z2_meb[0] + 1.5*z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK401: bottom boundary clay cap')
                 if stas_name[i] == 'WT033c':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
                     sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK267A'+os.sep+'est_par.dat')
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
+                    ## top boundary
+                    #ax.errorbar(1.0,z1_meb[0],1.5*z1_meb[1], 1000.,'g-', label = 'MeB well WK401: top boundary clay cap',  ms=ms)
+                    ## bottom boundary
+                    #ax.errorbar(1.0,z2_meb[0],1.5*z2_meb[1], 1000.,'c-', label = 'MeB well WK401: bottom boundary clay cap',  ms=ms)
+                    ## thick lines 
                     # top boundary
-                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well WK267A: top boundary clay cap',  ms=ms)
-                    # bottom boundary
-                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well WK267A: bottom boundary clay cap',  ms=ms)
+                    x_axis = np.linspace(0,1000, 100)
+                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + 1.5*z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK267A: top boundary clay cap')
+                    ax.fill_between(x_axis, z2_meb[0] - 1.5*z2_meb[1], z2_meb[0] + 1.5*z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK267A: bottom boundary clay cap')
                 if stas_name[i] == 'WT501a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
-                    sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK270'+os.sep+'est_par.dat')
+                    sta_meb = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+'WK267A'+os.sep+'est_par.dat')
                     z1_meb = sta_meb[0,1:4] # mean, std, median 
                     z2_meb = sta_meb[1,1:4] # mean, std, median
+                    ## top boundary
+                    #ax.errorbar(1.0,z1_meb[0],1.5*z1_meb[1], 1000.,'g-', label = 'MeB well WK401: top boundary clay cap',  ms=ms)
+                    ## bottom boundary
+                    #ax.errorbar(1.0,z2_meb[0],1.5*z2_meb[1], 1000.,'c-', label = 'MeB well WK401: bottom boundary clay cap',  ms=ms)
+                    ## thick lines 
                     # top boundary
-                    ax.errorbar(2.5,z1_meb[0],z1_meb[1], 0.,'g*', label = 'MeB well WK270: top boundary clay cap',  ms=ms)
-                    # bottom boundary
-                    ax.errorbar(2.5,z2_meb[0],z2_meb[1], 0.,'c*', label = 'MeB well WK270: bottom boundary clay cap',  ms=ms)
-            plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 500)])
-            plt.xlim([0.1,10])
+                    x_axis = np.linspace(0,1000, 100)
+                    ax.fill_between(x_axis, z1_meb[0] - z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK267A: top boundary clay cap')
+                    ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK267A: bottom boundary clay cap')
+            plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 700)])
+            plt.xlim([.1,1000])
             plt.gca().invert_yaxis()
             ax.legend(loc = 3, prop={'size': textsize})
             ax.tick_params(labelsize=textsize)

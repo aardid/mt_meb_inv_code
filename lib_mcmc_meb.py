@@ -118,7 +118,7 @@ class mcmc_meb(object):
         else:
             self.mes_err = mes_err
         if walk_jump is None: 
-            self.walk_jump = 3000
+            self.walk_jump = 2000
         else: 
             self.walk_jump = walk_jump   
         if ini_mod is None: 
@@ -199,10 +199,10 @@ class mcmc_meb(object):
         # fitting estimates (square function) with observation (meb profile)
         #fit = abs(est - obs)
         if self.scale == 'lin':
-            fit = abs(est - obs)
+            prob = -.5*(np.sum((est - obs)**self.norm))/(v**self.norm)
         if self.scale == 'log':
-            fit = abs(np.log10(est) - np.log10(obs))
-        prob = -1*(np.sum(fit)**self.norm)/(2* v**2)
+            fit = abs(np.log10(est) - np.log10(obs)**self.norm)
+            prob = -.5*(np.sum(fit)/(np.log10(v)**self.norm))
 
         return prob
 
@@ -210,7 +210,7 @@ class mcmc_meb(object):
 		## Parameter constraints
         if (any(x<0 for x in pars)): # positive parameters
             return -np.Inf
-        if pars[0] <= self.meb_depth[0]:# max(self.meb_prof)+5.: # percentage range 
+        if pars[0] <= self.meb_depth[1]:# max(self.meb_prof)+5.: # percentage range 
             return -np.Inf
         if (pars[0] >= self.meb_depth_rs[self.inds[-2]]): # z2 smaller than maximum depth of meb prof
             return -np.Inf
@@ -222,6 +222,17 @@ class mcmc_meb(object):
             return -np.Inf
         if pars[2] >= 35.:# max(self.meb_prof)+5.: # percentage range 
             return -np.Inf
+        if pars[2] <= 2.:# max(self.meb_prof)+5.: # percentage range 
+            return -np.Inf
+        #if self.name == 'TH19':
+        #    if pars[2] >= 5.:# max(self.meb_prof)+5.: # percentage range 
+        #        return -np.Inf
+        if self.name == 'WK401':
+            if pars[2] >= 6.:# max(self.meb_prof)+5.: # percentage range 
+                return -np.Inf
+        if self.name == 'WK260':
+            if pars[1] <= 500.:# max(self.meb_prof)+5.: # percentage range 
+                return -np.Inf
         ## estimate square function of clay content given pars [z1,z2,%] 
         sq_prof_est =  self.square_fn(pars, x_axis=self.meb_depth_rs[self.inds], y_base = 2.)
         
@@ -243,7 +254,6 @@ class mcmc_meb(object):
         for i in range(len(self.meb_prof)):
             if self.meb_prof[i] < 2.:
                 self.meb_prof[i] = 2.
-
         ##Resample the MeB profile
         self.resample_meb_prof_3()
         ##extract index of observes in the resample vector 

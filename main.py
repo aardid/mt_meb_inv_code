@@ -407,9 +407,13 @@ if __name__ == "__main__":
 		print("(1) Run MCMC for MeB priors")
 		for wl in wells_objects:
 			if wl.meb: 
-				#if wl.name == 'WK401':
+				mes_err = 2.
+				## filter meb logs: when values are higher than 5 % => set it to 5 % (in order to avoid control of this points)
+				fiter_meb = True
+				if fiter_meb:		
+						wl.meb_prof = [5. if ele > 5. else ele for ele in wl.meb_prof]
 				print(wl.name +  ': {:}/{:}'.format(count, count_meb_wl))
-				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'lin', mes_err = 4.)
+				mcmc_wl = mcmc_meb(wl, norm = 2., scale = 'lin', mes_err = mes_err, walk_jump=3000)
 				mcmc_wl.run_mcmc()
 				mcmc_wl.plot_results_mcmc()
 				#
@@ -448,7 +452,7 @@ if __name__ == "__main__":
 		# Calculate prior values for boundaries of the cc in station
 		# (prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells)
 		# Function assign results as attributes for MT stations in station_objects (list)
-		calc_prior_meb_quadrant(station_objects, wells_objects, slp = .1)
+		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.)
 		# plot surface of prior
 		if False:
 			file_name = 'Trig_meb_wells_WRKNW5'
@@ -467,16 +471,18 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = True
+		prior_meb = True  # if false -> None
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
-			if sta_obj.ref < 0: # start at 0
-			#if sta_obj.name[:-4] != 'WT068a':
+			if sta_obj.ref < 7: # start at 0
+			#if sta_obj.name[:-4] != 'WT223a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[.1*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[.1*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[.1*1e0,1.*1e1],[1.*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert [1,0,1,0,0,0,0] 
@@ -494,7 +500,7 @@ if __name__ == "__main__":
 					if sta_obj.name[:-4] == 'WT060a': # station with static shift
 						range_p = [0,5.] # range of periods
 					if sta_obj.name[:-4] == 'WT068a': # station with static shift
-						range_p = [0,5.] # range of periods
+						range_p = [0,10.] # range of periods
 					if sta_obj.name[:-4] == 'WT070a': # station with static shift
 						range_p = [0,10.] # range of periods
 					if sta_obj.name[:-4] == 'WT071a': # station with static shift
@@ -518,7 +524,7 @@ if __name__ == "__main__":
 				#print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
 				###
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = [1,1,1,1,0,0,0], prior_input = par_range, \
-					walk_jump = 2500, prior_meb = prior_meb, prior_meb_weigth = 1.,\
+					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 1.,\
 						range_p = range_p, autocor_accpfrac = True, data_error = True, \
 							fit_max_mode = fit_max_mode)
 				if prior_meb:
@@ -570,7 +576,7 @@ if __name__ == "__main__":
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 50.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 55.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
