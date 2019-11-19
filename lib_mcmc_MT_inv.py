@@ -60,6 +60,8 @@ class mcmc_inv(object):
     data_error              cosider data error for inversion 
                             (std. dev. of app. res and phase)
     add_error               add error to data                           False
+    error_floor             consider error floor (%) [rho, phi]         [10.,5.]
+                            apparent resistivity and phase              
     prior                   consider priors (boolean). For uniform      False
                             priors to set a range on parameters use 
                             'uniform'. For normal priors built from 
@@ -129,7 +131,8 @@ class mcmc_inv(object):
     def __init__(self, sta_obj, dim_inv = None, name= None, work_dir = None, num_lay = None , norm = None, \
         prior = None, prior_input = None, prior_meb = None, prior_meb_weigth = None, nwalkers = None, \
             walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None, \
-                data_error = None, add_error = None, fit_max_mode = None, add_error_per = None, add_mod_err =None):
+                data_error = None, add_error = None, fit_max_mode = None, add_error_per = None, add_mod_err =None, \
+                    error_floor = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -169,7 +172,7 @@ class mcmc_inv(object):
         if num_lay is None: 
             self.num_lay = 3
         if inv_dat is None: 
-            self.inv_dat = [1,1,0,0,0,0,0]
+            self.inv_dat = [1,1,1,1,0,0,0]
         else:
             self.inv_dat = inv_dat
         
@@ -214,6 +217,23 @@ class mcmc_inv(object):
                 self.rho_app_obs_er_add[i] = 1 + self.rho_app_obs_er[i] + self.rho_app_obs_er[i] * add_error_per/100.
                 self.phase_obs_er_add[i] = self.phase_obs_er[i] + self.phase_obs_er[i] * add_error_per/100.
 
+        if error_floor is None: 
+            self.error_floor = False
+        else:
+            self.error_floor = error_floor
+            #plt.semilogx(self.T_obs, self.phase_obs_er[2][:], 'r*')
+            for i in range(len(self.rho_app_obs_er)):
+                # appres
+                self.rho_app_obs_er[i][:] = [np.max([self.rho_app_obs_er[i][j],(self.error_floor[0]/100.)*self.rho_app_obs[i][j]])\
+                    for j in range(len(self.rho_app_obs_er[i][:]))]
+                # phase
+                self.phase_obs_er[i][:] = [np.max([self.phase_obs_er[i][j],(self.error_floor[1]/100.)*self.phase_obs[i][j]])\
+                    for j in range(len(self.phase_obs_er[i][:]))]
+
+        #plt.semilogx(self.T_obs, self.phase_obs_er[2][:], 'b*')
+        #plt.grid()
+        #plt.show()
+        
         if not prior_meb:
             self.prior_meb = False
         else:  
@@ -389,13 +409,9 @@ class mcmc_inv(object):
                             TE_apres = self.inv_dat[0]*-np.sum(((obs[:,1] \
                                 - rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[1])) #/v
                         else:
-                            # log space
-                            #TE_apres = self.inv_dat[0]*-.5*np.sum(((np.log10(obs[:,1]) \
-                            #    - np.log10(rho_ap_est))/v_vec)**self.norm / (np.log10(self.rho_app_obs_er[1])**self.norm)) 
-                            
                             mf = []
                             mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
-                                / (np.log10(.1 + self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
+                                / (np.log10(self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
                                 for i in range(len(obs[:,0]))]
                                 
                             TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
@@ -426,7 +442,7 @@ class mcmc_inv(object):
                             #        - phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v
                             mf = []
                             mf = [((np.log10(abs(obs[i][2])) - np.log10(abs(phi_est[i]))) \
-                                / (np.log10(abs(.1 + self.phase_obs_er[1][i])) * v_vec[i]))**self.norm \
+                                / (np.log10(abs(self.phase_obs_er[1][i])) * v_vec[i]))**self.norm \
                                 for i in range(len(obs[:,0]))]
                             TE_phase = self.inv_dat[1]*-.5 * np.sum(mf)
                 else: 
@@ -460,7 +476,7 @@ class mcmc_inv(object):
                             # log space
                             mf = []
                             mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) \
-                                / (np.log10(.1 + self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
+                                / (np.log10(self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
                                 for i in range(len(obs[:,0]))]
                             TM_apres = self.inv_dat[2]*-.5 * np.sum(mf)
                 else:
@@ -490,7 +506,7 @@ class mcmc_inv(object):
                             #        -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[2]**2)) #/v
                             mf = []
                             mf = [((np.log10(abs(obs[i][4])) - np.log10(abs(phi_est[i]))) \
-                                / (np.log10(abs(.1 + self.phase_obs_er[2][i])) * v_vec[i]))**self.norm \
+                                / (np.log10(abs(self.phase_obs_er[2][i])) * v_vec[i]))**self.norm \
                                 for i in range(len(obs[:,0]))]
                             TM_phase = self.inv_dat[3]*-.5 * np.sum(mf)
                 else:

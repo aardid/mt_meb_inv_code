@@ -433,7 +433,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             ax.errorbar(x, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_')
             # plot bottom bound. CC
             y2 = top - wl.meb_z2_pars[0] # [z1_mean_prior, z1_std_prior]
-            e2 = 2.*wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior] # 2 time std (66%)
+            e2 = wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior] # 2 time std (66%)
             ax.errorbar(x, y2, e2, color='m', linestyle='-',zorder=2, marker='_')
             i+=1
         ax.errorbar(x, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_', label = '$z_1$ estimated MeB')

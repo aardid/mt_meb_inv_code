@@ -522,7 +522,7 @@ class Station(object):
             iso_perc.write('\n')
         iso_perc.close()   
 
-    def plot_noise(self, path_img = None):
+    def plot_noise(self, path_img = None, name_file = None):
         '''
         Plot noise (std) for appres and phase for Zxy and Zyx modes. 
         '''
@@ -559,7 +559,11 @@ class Station(object):
         ax.tick_params(labelsize=textsize)
         ax1.tick_params(labelsize=textsize)
         #plt.tight_layout()
-        plt.savefig(path_img+os.sep+'noise_appres_phase.png', dpi=300, facecolor='w', edgecolor='w',
+        if name_file: 
+            plt.savefig(path_img+os.sep+name_file+'.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        else:
+            plt.savefig(path_img+os.sep+'noise_appres_phase.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
         plt.close('all')
 
