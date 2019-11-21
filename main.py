@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = True
-	prof_2D_MT = True
+	prof_2D_MT = False
 	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
@@ -474,8 +474,8 @@ if __name__ == "__main__":
 		prior_meb = True  # if false -> None
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
-			if sta_obj.ref < 0: # start at 0
-			#if sta_obj.name[:-4] != 'WT068a':
+			#if sta_obj.ref < 8: # start at 0
+			if sta_obj.name[:-4] != 'WT060a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
@@ -491,7 +491,9 @@ if __name__ == "__main__":
 				# fitting mode xy or yx: 
 				fit_max_mode = False
 				# error floor
-				error_floor = [10.,5.]
+				#error_floor = [10.,5.]
+				error_floor = [20.,10.]
+				#error_floor = [5.,2.5]
 				# inv. pars. per station
 				if True:
 					if sta_obj.name[:-4] == 'WT024a': # station with static shift
@@ -586,7 +588,7 @@ if __name__ == "__main__":
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
-			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 80.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 112.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
