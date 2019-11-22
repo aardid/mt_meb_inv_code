@@ -27,6 +27,7 @@ from multiprocessing import Pool
 #from scipy.optimize import curve_fit
 #import corner, emcee
 import time
+import random
 from lib_MT_station import *
 from lib_Well import *
 from lib_mcmc_MT_inv import *
@@ -205,7 +206,6 @@ if __name__ == "__main__":
         g.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'comp_cc_bound.png')   # save the figure to file
         plt.close(f)    # close the figure
 
-
     if True: # test using model in validation_MT_mcmc_inv
         # (1) Extract res. profile in MT station positions from modem results (3D model)
         # read MT_sta_latlon.txt file and extract name, lat and lon (decimal)
@@ -247,6 +247,7 @@ if __name__ == "__main__":
         #stas_name = ['WT111a']
         ###########################################
         for i in range(len(stas_name)): 
+            print(stas_name[i])
             # check is folder exist to save results for each station 
             if not os.path.exists('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]):
                 os.makedirs('.'+os.sep+'modEM_inv'+os.sep+stas_name[i])     
@@ -322,21 +323,35 @@ if __name__ == "__main__":
                 # model 
                 #for par in pars_order:
                     #if all(x > 0. for x in par):
-                Ns = 500
-                mu_z1, sigma_z1 = z1_mcmc[0], z1_mcmc[1]/2 # mean and standard deviation
-                z1 = np.random.normal(mu_z1, sigma_z1, Ns)
-                mu, sigma = z2_mcmc[0], z2_mcmc[1] # mean and standard deviation
-                z2 = np.random.normal(mu, sigma, Ns)
-                mu, sigma = r1_mcmc[0], r1_mcmc[1] # mean and standard deviation
-                r1 = np.random.normal(mu, sigma/2, Ns)
-                mu, sigma = r2_mcmc[0], r2_mcmc[1] # mean and standard deviation
-                r2 = np.random.normal(mu, sigma, Ns)
-                mu, sigma = r3_mcmc[0], r3_mcmc[1] # mean and standard deviation
-                r3 = np.random.normal(mu, sigma/2, Ns)
-                for j in range(Ns):
-                    sq_prof_est = square_fn([z1[j],mu_z1+z2[j],r1[j],r2[j],r3[j]], x_axis=z_model)
-                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0)
-                ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0, label= '1D profile from 1D stochastic inversion')
+                
+                if False: # sample from normal distribution  
+                    Ns = 500
+                    mu_z1, sigma_z1 = z1_mcmc[0], z1_mcmc[1]/2 # mean and standard deviation
+                    z1 = np.random.normal(mu_z1, sigma_z1, Ns)
+                    mu, sigma = z2_mcmc[0], z2_mcmc[1] # mean and standard deviation
+                    z2 = np.random.normal(mu, sigma, Ns)
+                    mu, sigma = r1_mcmc[0], r1_mcmc[1] # mean and standard deviation
+                    r1 = np.random.normal(mu, sigma/2, Ns)
+                    mu, sigma = r2_mcmc[0], r2_mcmc[1] # mean and standard deviation
+                    r2 = np.random.normal(mu, sigma, Ns)
+                    mu, sigma = r3_mcmc[0], r3_mcmc[1] # mean and standard deviation
+                    r3 = np.random.normal(mu, sigma/2, Ns)
+                    for j in range(Ns):
+                        sq_prof_est = square_fn([z1[j],mu_z1+z2[j],r1[j],r2[j],r3[j]], x_axis=z_model)
+                        ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0)
+                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0, label= '1D profile from 1D stochastic inversion')
+
+                if True: # sample from true samples 
+                    chain = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'chain_sample_order.dat')
+                    N_ind_s = len(chain[:,0])
+                    print(N_ind_s)
+                    Ns = N_ind_s
+                    for j in range(Ns):
+                        sam = random.randint(0,N_ind_s-1)
+                        sq_prof_est = square_fn([chain[sam,2],chain[sam,2]+chain[sam,3],chain[sam,4],chain[sam,5],chain[sam,6]], x_axis=z_model)
+                        ax.semilogx(sq_prof_est,z_model,'b-', lw = .5, alpha=0.1, zorder=0)
+                    ax.semilogx(sq_prof_est,z_model,'b-', lw = .5, alpha=0.1, zorder=0, label= '1D profile from 1D stochastic inversion')
+
 
             if plot_meb: 
                 # plot for selected stations 

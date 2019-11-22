@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = True
-	prof_2D_MT = False
+	prof_2D_MT = True
 	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
@@ -471,11 +471,12 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = True  # if false -> None
+		prior_meb = False  # if false -> None
+		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
-			#if sta_obj.ref < 8: # start at 0
-			if sta_obj.name[:-4] != 'WT060a':
+			if sta_obj.ref < 0: # start at 0
+			#if sta_obj.name[:-4] != 'WT111a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
@@ -491,8 +492,8 @@ if __name__ == "__main__":
 				# fitting mode xy or yx: 
 				fit_max_mode = False
 				# error floor
-				#error_floor = [10.,5.]
-				error_floor = [20.,10.]
+				error_floor = [10.,5.]
+				#error_floor = [20.,10.]
 				#error_floor = [5.,2.5]
 				# inv. pars. per station
 				if True:
@@ -515,7 +516,8 @@ if __name__ == "__main__":
 					if sta_obj.name[:-4] == 'WT107a': # station with static shift
 						range_p = [0,5.] # range of periods
 					if sta_obj.name[:-4] == 'WT111a': # station with static shift
-						range_p = [0,1.] # range of periods
+						range_p = [0,5.] # range of periods
+						prior_meb_weigth = .1
 					if sta_obj.name[:-4] == 'WT223a': # station with static shift
 						range_p = [0,100.] # range of periods
 					if sta_obj.name[:-4] == 'WT501a': # station with static shift
@@ -531,7 +533,7 @@ if __name__ == "__main__":
 				#print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
 				###
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = 1.,\
+					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 						range_p = range_p, autocor_accpfrac = True, data_error = True, \
 							fit_max_mode = fit_max_mode, error_floor=error_floor)
 				if error_floor:
