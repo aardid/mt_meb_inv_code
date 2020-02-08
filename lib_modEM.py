@@ -1667,7 +1667,7 @@ def read_modem_model_column(file):
 
     return model, model_lat, model_lon, model_z, model_rho
 
-def intp_1D_prof_from_model(model, x_surf, y_surf, method = None, dz = None ,fig = None, name = None):
+def intp_1D_prof_from_model(model, x_surf, y_surf, method = None, dz = None ,fig = None, name = None, format_res = None):
     """
     Interpolate a 1D profile from model in the surface position 
     given by x_surf and y_surf 
@@ -1683,6 +1683,9 @@ def intp_1D_prof_from_model(model, x_surf, y_surf, method = None, dz = None ,fig
     model_lon = model[0,:]
     model_z  = model[2,:]
     model_rho = model[3,:]
+     
+    if format_res is 'LOGE':
+        model_rho = np.log(model_rho)
 
     # (i) construct 'points' and 'values' vectors
     points = np.zeros([len(model_lat), 3])

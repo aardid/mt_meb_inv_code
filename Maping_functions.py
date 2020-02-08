@@ -701,7 +701,8 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
 
     ## plot envelopes of percentils with fill_between
     # create figure
-    f = plt.figure(figsize=[9.5,7.5])
+    #f = plt.figure(figsize=[9.5,7.5])
+    f = plt.figure(figsize=[10.5,5.0])
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-')

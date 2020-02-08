@@ -50,8 +50,8 @@ if __name__ == "__main__":
 
 	## Set of data to work with 
 	full_dataset = False
-	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW6 = True
+	prof_WRKNW5 = False
 	#
 	prof_NEMT2 = False
 	prof_THNW03 = False
@@ -113,6 +113,7 @@ if __name__ == "__main__":
 			#sta2work = ['WT102a']
 		if prof_WRKNW5:
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
+			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT223a','WT107a','WT111a']
 			#sta2work = ['WT039a','WT024a','WT030a']
 			#sta2work = ['WT501a']
 			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
@@ -471,76 +472,92 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time = time.time()
-		prior_meb = False  # if false -> None
+		prior_meb = True  # if false -> None
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		for sta_obj in station_objects:
 			if sta_obj.ref < 0: # start at 0
-			#if sta_obj.name[:-4] != 'WT111a':
+			#if sta_obj.name[:-4] != 'WT060a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[.1*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[.1*1e0,1.*1e1],[1.*1e1,1.*1e3]]
+				par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e4],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
-				# inv_dat: weighted data to invert [1,0,1,0,0,0,0] 
+				# inv_dat: weighted data to invert
 				inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
-				range_p = [0.,10.] # range of periods
+				range_p = [0.001,10.] # range of periods
 				# fitting mode xy or yx: 
 				fit_max_mode = False
 				# error floor
-				error_floor = [10.,5.]
-				#error_floor = [20.,10.]
-				#error_floor = [5.,2.5]
+				#error_max_per = [10.,5.]
+				#error_max_per = [20.,10.]
+				error_max_per = [5.,2.5]
 				# inv. pars. per station
 				if True:
 					if sta_obj.name[:-4] == 'WT024a': # station with static shift
+						error_max_per = [5.,2.5]
 						range_p = [0,100.] # range of periods
 					if sta_obj.name[:-4] == 'WT030a': # station with static shift
 						range_p = [0,10.] # range of periods
 					if sta_obj.name[:-4] == 'WT039a': # station with static shift
 						range_p = [0,10.] # range of periods
+						error_max_per = [5.,2.5]
 					if sta_obj.name[:-4] == 'WT060a': # station with static shift
-						range_p = [0.001,1.] # range of periods
+						range_p = [0.,1.] # range of periods
+						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+
+						#error_max_per = [20.,10.]
 					if sta_obj.name[:-4] == 'WT068a': # station with static shift
 						range_p = [0,5.] # range of periods
-						error_floor = [20.,10.]
-						inv_dat = [1,1,0,1]
+						error_max_per = [20.,10.]
+						#inv_dat = [1,1,0,1]
 					if sta_obj.name[:-4] == 'WT070b': # station with static shift
 						range_p = [0,5.] # range of periods
 					if sta_obj.name[:-4] == 'WT071a': # station with static shift
 						range_p = [0,5.] # range of periods
+						range_p = [0,10.] # range of periods
+						error_max_per = [5.,2.5]
 					if sta_obj.name[:-4] == 'WT107a': # station with static shift
+						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 						range_p = [0,5.] # range of periods
+						error_max_per = [5.,2.5]
 					if sta_obj.name[:-4] == 'WT111a': # station with static shift
 						range_p = [0,5.] # range of periods
-						prior_meb_weigth = .1
 					if sta_obj.name[:-4] == 'WT223a': # station with static shift
-						range_p = [0,100.] # range of periods
+						range_p = [0,10.] # range of periods
+						error_max_per = [20.,5.]
 					if sta_obj.name[:-4] == 'WT501a': # station with static shift
 						range_p = [0,5.] # range of periods
-					if sta_obj.name[:-4] == 'WT501a': # station with static shift
-						range_p = [0,5.] # range of periods
+					if sta_obj.name[:-4] == 'WT502a': # station with static shift
+						#range_p = [0,5.] # range of periods
+						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+
 				## print relevant information
-				print('range of periods: [{:2.2f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+				print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
 				## plot noise
 				path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
 				sta_obj.plot_noise(path_img = path_img)
 				#print('mean noise in app res XY: {:2.2f}'.format(np.mean(sta_obj.rho_app_er[1])))
 				#print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
 				###
+				error_mean = False
+				if error_mean:
+					error_max_per = [1.,1.]
+				
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
 					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 						range_p = range_p, autocor_accpfrac = True, data_error = True, \
-							fit_max_mode = fit_max_mode, error_floor=error_floor)
-				if error_floor:
+							error_max_per=error_max_per, error_mean = error_mean)
+
+				if error_max_per:
 					## plot noise
-					name_file='noise_appres_phase_error_floor'
+					name_file='noise_appres_phase_error_max_per'
 					path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
 					sta_obj.plot_noise(path_img = path_img, name_file = name_file)
+
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -669,7 +686,7 @@ if __name__ == "__main__":
 			print(sta_obj.name[:-4])
 			# read samples of betas and others from wells. Load attributes 
 			f = sta_obj.temp_prof_est(plot_samples = True, ret_fig = True, Ns = 1000)
-			perc = np.arange(5.,100.,5.) # percentiels to calculate: [5% , 10%, ..., 95%]
+			perc = np.arange(15.,90.,5.)#np.arange(5.,100.,5.) # percentiels to calculate: [5% , 10%, ..., 95%]
 			isoth = [50,100,150,200,250]
 			sta_obj.uncert_isotherms_percentils(isotherms = isoth, percentiels = perc)
 			pp.savefig(f)
@@ -681,7 +698,8 @@ if __name__ == "__main__":
 		if prof_WRKNW6 or prof_WRKNW5:
 			print('(6.1) Printing uncertain isotherms plot')
 			# note: isotherms = [] are strings coherent with value given in uncert_isotherms_percentils()
-			isoth = ['50','100','150','200','250']
+			#isoth = ['50','100','150','200']#,'250']
+			isoth = ['50','100','200']
 			plot_2D_uncert_isotherms(station_objects, wells_objects, pref_orient = 'EW', file_name = 'isotherm_uncert',\
 				percentiels = perc, isotherms = isoth) 
 
