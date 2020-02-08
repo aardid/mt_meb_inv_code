@@ -17,6 +17,7 @@ import corner, emcee
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 from Maping_functions import *
+import scipy.stats as stats
 from scipy.stats import norm
 import multiprocessing 
 from misc_functios import find_nearest
@@ -827,12 +828,13 @@ class mcmc_inv(object):
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax1.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
                 # plot lines for mean of z1 and z2 (top plot)
                 ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
-                ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
+                #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
 
                 # z2
                 z2 = pars_order[:,3]
@@ -845,12 +847,13 @@ class mcmc_inv(object):
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu2, sigma) = norm.fit(z2)
-                y = mlab.normpdf(bins, mu2, sigma)
+                #y = mlab.normpdf(bins, mu2, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu2,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
                 # plot lines for mean of z1 and z2 (top plot)
                 ax.plot([mu+mu2,mu+mu2],[1e-1,1e3],'b--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
-                ax2.plot([mu2,mu2],[0,max(y)],'b--', label = '$\mu$ of  $z_2$', linewidth=1.0)
+                #ax2.plot([mu2,mu2],[0,max(y)],'b--', label = '$\mu$ of  $z_2$', linewidth=1.0)
                 # axis for main plot 
                 ax.set_xlim([0, mu+mu2+200])
 
@@ -865,12 +868,13 @@ class mcmc_inv(object):
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r1)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax3.plot(bins, y, 'r-', linewidth=1)
                 # plot lines for mean 
                 ax.plot([0,1e3],[mu,mu],'g--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
-                ax3.plot([mu,mu],[0,max(y)],'g--', label = r'$\mu$ of  $\rho_1$', linewidth=1.0)
+                #ax3.plot([mu,mu],[0,max(y)],'g--', label = r'$\mu$ of  $\rho_1$', linewidth=1.0)
 
                 # r2
                 r2 = pars_order[:,5]
@@ -883,12 +887,13 @@ class mcmc_inv(object):
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r2)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax4.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax4.plot(bins, y, 'r-', linewidth=1)
                 # plot lines for mean 
                 ax.plot([0,1e3],[mu,mu],'m--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
-                ax4.plot([mu,mu],[0,max(y)],'m--', label = r'$\mu$ of  $\rho_2$', linewidth=1.0)
+                #ax4.plot([mu,mu],[0,max(y)],'m--', label = r'$\mu$ of  $\rho_2$', linewidth=1.0)
 
                 # r3
                 r3 = pars_order[:,6]
@@ -901,12 +906,13 @@ class mcmc_inv(object):
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r3)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax5.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax5.plot(bins, y, 'r-', linewidth=1)
                 # plot lines for mean 
                 ax.plot([0,1e3],[mu,mu],'y--', linewidth=1.5,alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
-                ax5.plot([mu,mu],[0,max(y)],'y--', label = r'$\mu$ of  $\rho_3$', linewidth=1.5)
+                #ax5.plot([mu,mu],[0,max(y)],'y--', label = r'$\mu$ of  $\rho_3$', linewidth=1.5)
 
                 ### layout figure
                 ax.tick_params(labelsize=textsize)
@@ -1338,8 +1344,11 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
         
         plt.tight_layout()
         sta_obj.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+sta_obj.name[:-4]
-        plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',
-            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        try:
+            plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        except:
+            pass
         plt.close()
 
 def plot_bound_uncert(station_objects, file_name = None): 
@@ -1361,7 +1370,8 @@ def plot_bound_uncert(station_objects, file_name = None):
     # z1
     bins = np.linspace(-mean_std_z1*4, mean_std_z1*4, 100)
     mu, sigma = 0, mean_std_z1
-    y = mlab.normpdf(bins, mu, sigma)
+    #y = mlab.normpdf(bins, mu, sigma)
+    y = stats.norm.pdf(bins, mu, sigma)
     axs[0].plot(bins, y, 'r-', linewidth=2)
     # plot refence lines
     xticks = [0]
@@ -1376,7 +1386,8 @@ def plot_bound_uncert(station_objects, file_name = None):
     # z2
     bins = np.linspace(-mean_std_z2*4, mean_std_z2*4, 100)
     mu, sigma = 0, mean_std_z2
-    y = mlab.normpdf(bins, mu, sigma)
+    #y = mlab.normpdf(bins, mu, sigma)
+    y = stats.norm.pdf(bins, mu, sigma)
     axs[1].plot(bins, y, 'b-', linewidth=2)
     # plot refence lines
     xticks = [0]

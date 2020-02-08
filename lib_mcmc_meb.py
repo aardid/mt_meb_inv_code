@@ -456,7 +456,8 @@ class mcmc_meb(object):
                 ax2.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
                 ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
                 ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
@@ -471,7 +472,8 @@ class mcmc_meb(object):
                 ax3.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z2)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax3.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
                 ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
                 ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
@@ -536,7 +538,8 @@ class mcmc_meb(object):
                 ax2.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
                 ax2.legend()
                 # z2
@@ -549,7 +552,8 @@ class mcmc_meb(object):
                 ax3.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z2)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax3.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
                 ax3.legend()
 
@@ -610,7 +614,8 @@ class mcmc_meb(object):
                 ax4.set_ylabel('freq.', fontsize=10)
                 ax4.grid(True, which='both', linewidth=0.1)
                 (mu, sigma) = norm.fit(ls_T_z1)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax4.plot(bins, y, 'r--', linewidth=2)
                 # z2
                 bins = np.linspace(np.min(ls_T_z2), np.max(ls_T_z2), int(np.sqrt(len(ls_T_z2))))
@@ -621,7 +626,8 @@ class mcmc_meb(object):
                 ax5.set_ylabel('freq.', fontsize=10)
                 ax5.grid(True, which='both', linewidth=0.1)
                 (mu, sigma) = norm.fit(ls_T_z2)
-                y = mlab.normpdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
                 ax5.plot(bins, y, 'r--', linewidth=2)
             f.tight_layout()
             # save in well folder 
