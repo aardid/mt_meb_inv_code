@@ -746,14 +746,52 @@ if __name__ == "__main__":
 		if True:
 			# crear archivos de percentiles 
 			load_sta_est_par(station_objects)
+			# .csv for mean
 			f = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_mean.csv','w')
 			f.write('station, lon_dec, lat_dec, z1, z2\n')
+			# .csv for percentils
+			f10 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_10.csv','w')
+			f10.write('station, lon_dec, lat_dec, z1, z2\n')
+			f20 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_20.csv','w')
+			f20.write('station, lon_dec, lat_dec, z1, z2\n')
+			f40 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_40.csv','w')
+			f40.write('station, lon_dec, lat_dec, z1, z2\n')
+			f60 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_60.csv','w')
+			f60.write('station, lon_dec, lat_dec, z1, z2\n')
+			f80 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_80.csv','w')
+			f80.write('station, lon_dec, lat_dec, z1, z2\n')
+			f90 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_90.csv','w')
+			f90.write('station, lon_dec, lat_dec, z1, z2\n')
 			for sta in station_objects:
 				# mean
 				z, l, x, y = project([sta.lon_dec, sta.lat_dec])
 				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0])*elev_factor)+', '+
 					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0]))*elev_factor)+'\n')
+<<<<<<< HEAD
+=======
+				# percentils
+				# [mean, std, med, [5%, 10%, 15%, ..., 85%, 90%, 95%]]
+				f10.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][1])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][1]))*elev_factor)+'\n')
+				f20.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][3])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][3]))*elev_factor)+'\n')
+				f40.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][7])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][7]))*elev_factor)+'\n')
+				f60.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-7])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-7]))*elev_factor)+'\n')
+				f80.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-3])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-3]))*elev_factor)+'\n')
+				f90.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-1])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-1]))*elev_factor)+'\n')
+>>>>>>> 65bb91539db4b80b0792ba85c1c09a75ca2cba58
 			f.close()
+			f10.close()
+			f20.close()
+			f40.close()
+			f60.close()
+			f80.close()
+			f90.close()
+
 
 
 
