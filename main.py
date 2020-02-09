@@ -47,11 +47,13 @@ if __name__ == "__main__":
 	pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
+	#pc = 'personalMac'
 
 	## Set of data to work with 
-	full_dataset = False
-	prof_WRKNW6 = True
+	full_dataset = True
+	prof_WRKNW6 = False
 	prof_WRKNW5 = False
+	array_WRKNW5_WRKNW6 = False
 	#
 	prof_NEMT2 = False
 	prof_THNW03 = False
@@ -61,13 +63,14 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	prof_2D_MT = True
+	prior_MT_meb_read = False
+	mcmc_MT_inv = False
+	prof_2D_MT = False
 	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
+	files_paraview = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -95,11 +98,22 @@ if __name__ == "__main__":
 			path_wells_temp_date = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_date.txt"
 			####### MeB data in wells 
 			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
+	
+		## Data paths for personal's pc SUSE (uncommend the one to use)
+		if pc == 'personalMac':
+			#########  MT data
+			path_files = os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MT_survey'+os.sep+'EDI_Files'+os.sep+'*.edi'
+			# Whole array 			
+			####### Temperature in wells data
+			path_wells_loc = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_location_latlon.txt'
+			path_wells_temp = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt'
+			path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
+			####### MeB data in wells 
+			path_wells_meb = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MeB_wells'+os.sep+'MeB_data.txt'
 
 		## Create a directory of the name of the files of the stations
 		pos_ast = path_files.find('*')
 		file_dir = glob.glob(path_files)
-
 		#########################################################################################
 		#########################################################################################
 		## Create station objects 
@@ -118,9 +132,10 @@ if __name__ == "__main__":
 			#sta2work = ['WT501a']
 			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
 			#	'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
+		if array_WRKNW5_WRKNW6:
+			sta2work = ['WT091a','WT102a','WT111a','WT222a','WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
 		if prof_NEMT2:
 			sta2work= ['WT108a','WT116a','WT145a','WT153b','WT164a','WT163a','WT183a','WT175a','WT186a','WT195a','WT197a','WT134a']
-		
 		# Tauhara profiles
 		if prof_THNW03: 
 			sta2work= ['WT117b','WT127a','WT132a','WT142a','WT185a']
@@ -181,6 +196,7 @@ if __name__ == "__main__":
 		# 	read_well_temperature(path_wells_temp_date)
 		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red, wl_prof_date = \
 		 	read_well_temperature_date(path_wells_temp_date)
+
 		# # Note: dir_no_depth_red contain a list of wells with no information of reduced depth
 		# ## Recover location for wells from path_wells_loc
 		wells_location = read_well_location(path_wells_loc)
@@ -205,7 +221,8 @@ if __name__ == "__main__":
 		if prof_NEMT2:
 			wl2work = ['TH12','TH18','WK315B','WK227','WK314','WK302']
 			wl2work = ['WK261']
-
+		if array_WRKNW5_WRKNW6:
+			wl2work = ['WK260','WK261','TH19','WK401','WK267A','TH19','TH08','WK404','WK224','WK684','WK686']
 		# Tauhara profiles
 		if prof_THNW03: 
 			wl2work= ['TH13']
@@ -426,11 +443,11 @@ if __name__ == "__main__":
 				mcmc_wl.model_pars_est()
 				count += 1
 	
-		# save lists: temp_full_list_z1, temp_full_list_z2
-		with open('corr_z1_z1_temp_glob.txt', 'w') as f:
-			for f1, f2 in zip(temp_full_list_z1, temp_full_list_z2):
-				print(f1, f2, file=f)	
-		shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'corr_z1_z1_temp_glob.txt')
+		## save lists: temp_full_list_z1, temp_full_list_z2
+		#with open('corr_z1_z1_temp_glob.txt', 'w') as f:
+		#	for f1, f2 in zip(temp_full_list_z1, temp_full_list_z2):
+		#		print(f1, f2, file=f)	
+		#shutil.move('corr_z1_z1_temp_glob.txt','.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'corr_z1_z1_temp_glob.txt')
 		## enlapsed time for the inversion (every station in station_objects)
 		enlap_time = time.time() - start_time # enlapsed time
 		## print time consumed
@@ -475,15 +492,17 @@ if __name__ == "__main__":
 		prior_meb = True  # if false -> None
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
+
 		for sta_obj in station_objects:
 			if sta_obj.ref < 0: # start at 0
-			#if sta_obj.name[:-4] != 'WT060a':
+			#if sta_obj.name[:-4] != 'WT030a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
 				par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e4],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
+				
 				## create object mcmc_inv 
 				#mcmc_sta = mcmc_inv(sta_obj)
 				# inv_dat: weighted data to invert
@@ -538,8 +557,11 @@ if __name__ == "__main__":
 				## print relevant information
 				print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
 				## plot noise
-				path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
-				sta_obj.plot_noise(path_img = path_img)
+				try:
+					path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
+					sta_obj.plot_noise(path_img = path_img)
+				except:
+					pass
 				#print('mean noise in app res XY: {:2.2f}'.format(np.mean(sta_obj.rho_app_er[1])))
 				#print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
 				###
@@ -554,10 +576,12 @@ if __name__ == "__main__":
 
 				if error_max_per:
 					## plot noise
-					name_file='noise_appres_phase_error_max_per'
-					path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
-					sta_obj.plot_noise(path_img = path_img, name_file = name_file)
-
+					try:
+						name_file='noise_appres_phase_error_floor'
+						path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
+						sta_obj.plot_noise(path_img = path_img, name_file = name_file)
+					except:
+						pass
 				if prior_meb:
 					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
 					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
@@ -600,7 +624,7 @@ if __name__ == "__main__":
 	if prof_2D_MT:
 		print('(4) Plot 2D profile of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
 		# quality inversion pars. plot (acceptance ratio and autocorrelation time)
-		autocor_accpfrac = True
+		autocor_accpfrac = False
 		# load mcmc results and assign to attributes of pars to station attributes 
 		load_sta_est_par(station_objects, autocor_accpfrac = autocor_accpfrac)
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
@@ -617,7 +641,7 @@ if __name__ == "__main__":
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot profile of KL divergence 
-		if True:
+		if False:
 			file_name = 'KL_div_prof'
 			plot_profile_KL_divergence(station_objects, wells_objects, pref_orient = 'EW', file_name = file_name)
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
@@ -702,6 +726,39 @@ if __name__ == "__main__":
 			isoth = ['50','100','200']
 			plot_2D_uncert_isotherms(station_objects, wells_objects, pref_orient = 'EW', file_name = 'isotherm_uncert',\
 				percentiels = perc, isotherms = isoth) 
+
+	# (7) Files for Paraview
+
+	if files_paraview: 
+		elev_factor = 1.e0
+		# (0) Create folder
+		if not os.path.exists('.'+os.sep+str('paraview_files')):
+			os.mkdir('.'+os.sep+str('paraview_files')) 
+		# (1) print topography file 
+		if True:
+			f = open('.'+os.sep+str('paraview_files')+os.sep+'topo.csv','w')
+			f.write('station, lon_dec, lat_dec, elev\n')
+			for sta in station_objects:
+				z, l, x, y = project([sta.lon_dec, sta.lat_dec])
+				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str(sta.elev*elev_factor)+'\n')
+			f.close()
+		# (2) Archivos con superficie de percentiles 
+		if True:
+			# crear archivos de percentiles 
+			load_sta_est_par(station_objects)
+			f = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_mean.csv','w')
+			f.write('station, lon_dec, lat_dec, z1, z2\n')
+			for sta in station_objects:
+				# mean
+				z, l, x, y = project([sta.lon_dec, sta.lat_dec])
+				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0])*elev_factor)+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0]))*elev_factor)+'\n')
+			f.close()
+
+
+
+
+
 
 
 
