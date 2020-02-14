@@ -50,9 +50,9 @@ if __name__ == "__main__":
 	#pc = 'personalMac'
 
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = False
 	prof_WRKNW6 = False
-	prof_WRKNW5 = False
+	prof_WRKNW5 = True
 	array_WRKNW5_WRKNW6 = False
 	#
 	prof_NEMT2 = False
@@ -63,14 +63,14 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
+	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = False
+	prof_2D_MT = True
 	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
-	files_paraview = True
+	files_paraview = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -175,6 +175,7 @@ if __name__ == "__main__":
 		for sta in station_objects: # loop over the meb wells (objects)
 			f.write(sta.name+'\t'+str(sta.lat)+'\t'+str(sta.lon)+'\t'+str(sta.lat_dec)+'\t'+str(sta.lon_dec)+'\t'+str(sta.elev)+'\n')
 		f.close()
+
 		# plot sounding curves
 		# pp = PdfPages('MT_sound_curves.pdf')
 		# for sta_obj in station_objects: 
@@ -494,13 +495,13 @@ if __name__ == "__main__":
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 
 		for sta_obj in station_objects:
-			if sta_obj.ref < 0: # start at 0
+			if sta_obj.ref < 11: # start at 0
 			#if sta_obj.name[:-4] != 'WT030a':
 				pass
 			else: 
 				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
 				## range for the parameters
-				par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e4],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+				par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
 				
 				## create object mcmc_inv 
@@ -527,7 +528,6 @@ if __name__ == "__main__":
 					if sta_obj.name[:-4] == 'WT060a': # station with static shift
 						range_p = [0.,1.] # range of periods
 						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-
 						#error_max_per = [20.,10.]
 					if sta_obj.name[:-4] == 'WT068a': # station with static shift
 						range_p = [0,5.] # range of periods
@@ -570,7 +570,7 @@ if __name__ == "__main__":
 					error_max_per = [1.,1.]
 				
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
+					walk_jump = 3000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 						range_p = range_p, autocor_accpfrac = True, data_error = True, \
 							error_max_per=error_max_per, error_mean = error_mean)
 
@@ -645,7 +645,7 @@ if __name__ == "__main__":
 			file_name = 'KL_div_prof'
 			plot_profile_KL_divergence(station_objects, wells_objects, pref_orient = 'EW', file_name = file_name)
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
-
+			
 		## create text file for google earth, containing names of MT stations considered 
 		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
 		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion' \
@@ -657,6 +657,17 @@ if __name__ == "__main__":
 			plot_bound_uncert(station_objects, file_name = file_name) #
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
+		# file with figure of misfit (observe data vs. estatimated data)
+		if True: 
+			from PIL import Image
+			imagelist = []
+			for sta_obj in station_objects:
+				pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
+				im1 = pngfile.convert('RGB')
+				imagelist.append(im1)
+			print(imagelist)
+			im1.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf','PDF', resolution=100.0, save_all=True, append_images=imagelist)
+			
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
 	if plot_surface_cc:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
@@ -767,8 +778,6 @@ if __name__ == "__main__":
 				z, l, x, y = project([sta.lon_dec, sta.lat_dec])
 				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0])*elev_factor)+', '+
 					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0]))*elev_factor)+'\n')
-<<<<<<< HEAD
-=======
 				# percentils
 				# [mean, std, med, [5%, 10%, 15%, ..., 85%, 90%, 95%]]
 				f10.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][1])*elev_factor)+', '+
@@ -783,7 +792,6 @@ if __name__ == "__main__":
 					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-3]))*elev_factor)+'\n')
 				f90.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-1])*elev_factor)+', '+
 					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-1]))*elev_factor)+'\n')
->>>>>>> 65bb91539db4b80b0792ba85c1c09a75ca2cba58
 			f.close()
 			f10.close()
 			f20.close()

@@ -48,8 +48,8 @@ textsize = 15.
 
 if __name__ == "__main__":
     ## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-    #pc = 'office'
-    pc = 'personalSuse'
+    pc = 'office'
+    #pc = 'personalSuse'
     #pc = 'personalWin'
 
     ## Set of data to work with 
@@ -63,6 +63,9 @@ if __name__ == "__main__":
     import_MT_stations = False
     import_results_MT_modem = False
     validation_MT_mcmc_inv = False 
+    
+    fig_comp_1D_models = True
+    fig_comp_data_misfit = True
 
     if set_up: 
         if pc == 'office': 
@@ -206,14 +209,14 @@ if __name__ == "__main__":
         g.savefig('.'+os.sep+'modEM_inv'+os.sep+sta+os.sep+'comp_cc_bound.png')   # save the figure to file
         plt.close(f)    # close the figure
 
-    if True: # test using model in validation_MT_mcmc_inv
+    if fig_comp_1D_models: # Figures: 1D resistivity model comparition between 3D ModEM and 1D MCMC inversions result (See Figure 10b-d, main body)
         # (1) Extract res. profile in MT station positions from modem results (3D model)
         # read MT_sta_latlon.txt file and extract name, lat and lon (decimal)
-        sta_coord = np.genfromtxt('MT_sta_latlon.txt')
+        sta_coord = np.genfromtxt('MT_sta_latlon_prof_WRKNW5.txt')
         lat = sta_coord[:,3] 
         lon = sta_coord[:,4] 
         elev = -1*sta_coord[:,5] # -1* to change it to possitive downwards
-        t = open('MT_sta_latlon.txt','r')
+        t = open('MT_sta_latlon_prof_WRKNW5.txt','r')
         next(t)
         f1 = t.readlines()
         stas_name = []
@@ -424,7 +427,7 @@ if __name__ == "__main__":
                     x_axis = np.linspace(0,100000, 100)
                     ax.fill_between(x_axis, z1_meb[0] - z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK267A: top boundary clay cap')
                     ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK267A: bottom boundary clay cap')
-            plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 700)])
+            plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 1000)])
             plt.xlim([.1,1e5])
             plt.gca().invert_yaxis()
             ax.legend(loc = 3, prop={'size': textsize})
@@ -432,13 +435,15 @@ if __name__ == "__main__":
             plt.tight_layout()
             #plt.show()
             f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_'+stas_name[i]+'.png')   # save the figure to file
+            f.savefig('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_'+stas_name[i]+'.png')   # save the figure to file
             pp.savefig(f)
             plt.close(f)    # close the figure
         
         pp.close()
 
-
-
+    if fig_comp_data_misfit: # Figure: observed data vs estimated data from 3DModEM and 1DMCMCMT
+        
+        pass
 
 
 
