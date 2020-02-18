@@ -477,8 +477,8 @@ if __name__ == "__main__":
 			file_name = 'Trig_meb_wells_WT'
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
-			x_lim = [176.0,176.1]
-			y_lim = [-38.68,-38.58]
+			x_lim = None #[176.0,176.1]
+			y_lim = None #[-38.68,-38.58]
 			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
 				file_name = file_name, format = 'png')
 

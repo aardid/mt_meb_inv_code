@@ -24,7 +24,7 @@ import matplotlib.cm as cm
 from scipy.spatial import Delaunay
 import functools
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, LinearNDInterpolator, interp2d
 from matplotlib import cm
 import matplotlib.image as mpimg
 from scipy.stats import norm
@@ -866,20 +866,45 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
         ax.set_ylim(ext[-2:])
     else: 
         ax.set_ylim(ylim)
-    
+
+    # meshgrid
+
+    # Delaunay triangulazation 
     points = np.asarray(points)
     tri = Delaunay(points)
+    
+    if True: # interpolate values (z): LinearNDInterpolator
+        #plt.figure()
+        # meshgrid
+        X = np.linspace(min(lon_stas), max(lon_stas), num=1000)
+        Y = np.linspace(min(lat_stas), max(lat_stas), num=1000)
+        X, Y = np.meshgrid(X, Y)
+        interp = LinearNDInterpolator(tri, values)
+        Z0 = interp(X, Y)
+        plt.pcolormesh(X, Y, Z0)
+        plt.colorbar() # Color Bar
+        #plt.show()
+    else:
+        #plt.figure()
+        func = interp2d(lon_stas, lat_stas, values)
+        Z = func(X[0, :], Y[:, 0])
+        plt.pcolormesh(X, Y, Z)
+        plt.colorbar() # Color Bar
+        #plt.show()
+
     #print(tri.simplices)
     #print(points[tri.simplices])
     plt.triplot(points[:,0], points[:,1], tri.simplices.copy(), linewidth=.8, color = 'b')
     plt.plot(points[:,0], points[:,1], 'bo', label = 'MeB well', ms = 2)
-    plt.plot(lon_stas, lat_stas, '*r', label = 'MT sta.', ms = 2)
+    plt.plot(lon_stas, lat_stas, '*r', label = 'MT sta.', ms = 1)
 
     ax.legend(loc=1, prop={'size': 6})	
     ax.set_xlabel('latitud [°]', size = textsize)
     ax.set_ylabel('longitud [°]', size = textsize)
     ax.set_title('Triangulation of MeB wells', size = textsize)
 
+    # interpolation 
+    
     # save figure
     if file_name is None:
         file_name = 'Trig_meb_wells_WRKNW5'
