@@ -871,9 +871,9 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     tri = Delaunay(points)
     #print(tri.simplices)
     #print(points[tri.simplices])
-    plt.triplot(points[:,0], points[:,1], tri.simplices.copy(), linewidth=.8)
-    plt.plot(points[:,0], points[:,1], 'o', label = 'MeB well', ms = 2)
-    plt.plot(lon_stas, lat_stas, '*', label = 'MT sta.', ms = 2)
+    plt.triplot(points[:,0], points[:,1], tri.simplices.copy(), linewidth=.8, color = 'b')
+    plt.plot(points[:,0], points[:,1], 'bo', label = 'MeB well', ms = 2)
+    plt.plot(lon_stas, lat_stas, '*r', label = 'MT sta.', ms = 2)
 
     ax.legend(loc=1, prop={'size': 6})	
     ax.set_xlabel('latitud [°]', size = textsize)

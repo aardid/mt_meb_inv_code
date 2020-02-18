@@ -50,9 +50,9 @@ if __name__ == "__main__":
 	#pc = 'personalMac'
 
 	## Set of data to work with 
-	full_dataset = False
+	full_dataset = True
 	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
 	#
 	prof_NEMT2 = False
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	prof_2D_MT = True
+	prof_2D_MT = False
 	plot_surface_cc = False
 	surf_3D_MT = False
 	wells_temp_fit = False
@@ -473,8 +473,8 @@ if __name__ == "__main__":
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.)
 		# plot surface of prior
-		if False:
-			file_name = 'Trig_meb_wells_WRKNW5'
+		if True:
+			file_name = 'Trig_meb_wells_WT'
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
 			x_lim = [176.0,176.1]
@@ -657,17 +657,7 @@ if __name__ == "__main__":
 			plot_bound_uncert(station_objects, file_name = file_name) #
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
-		# file with figure of misfit (observe data vs. estatimated data)
-		if True: 
-			from PIL import Image
-			imagelist = []
-			for sta_obj in station_objects:
-				pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
-				im1 = pngfile.convert('RGB')
-				imagelist.append(im1)
-			print(imagelist)
-			im1.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf','PDF', resolution=100.0, save_all=True, append_images=imagelist)
-			
+
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
 	if plot_surface_cc:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
@@ -739,9 +729,8 @@ if __name__ == "__main__":
 				percentiels = perc, isotherms = isoth) 
 
 	# (7) Files for Paraview
-
 	if files_paraview: 
-		elev_factor = 1.e0
+		filter_no_cc = True # filter stations with z2 too thin (no inferred claycap)
 		# (0) Create folder
 		if not os.path.exists('.'+os.sep+str('paraview_files')):
 			os.mkdir('.'+os.sep+str('paraview_files')) 
@@ -751,9 +740,9 @@ if __name__ == "__main__":
 			f.write('station, lon_dec, lat_dec, elev\n')
 			for sta in station_objects:
 				z, l, x, y = project([sta.lon_dec, sta.lat_dec])
-				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str(sta.elev*elev_factor)+'\n')
+				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str(sta.elev)+'\n')
 			f.close()
-		# (2) Archivos con superficie de percentiles 
+		# (2) files with percentils surfaces
 		if True:
 			# crear archivos de percentiles 
 			load_sta_est_par(station_objects)
@@ -774,24 +763,48 @@ if __name__ == "__main__":
 			f90 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_90.csv','w')
 			f90.write('station, lon_dec, lat_dec, z1, z2\n')
 			for sta in station_objects:
-				# mean
-				z, l, x, y = project([sta.lon_dec, sta.lat_dec])
-				f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0]))*elev_factor)+'\n')
-				# percentils
-				# [mean, std, med, [5%, 10%, 15%, ..., 85%, 90%, 95%]]
-				f10.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][1])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][1]))*elev_factor)+'\n')
-				f20.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][3])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][3]))*elev_factor)+'\n')
-				f40.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][7])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][7]))*elev_factor)+'\n')
-				f60.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-7])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-7]))*elev_factor)+'\n')
-				f80.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-3])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-3]))*elev_factor)+'\n')
-				f90.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-1])*elev_factor)+', '+
-					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-1]))*elev_factor)+'\n')
+			# filter stations with z2 too thin (no inferred claycap)
+				if filter_no_cc:
+					#print(sta.name)
+					#print(sta.z2_pars[0])
+					if sta.z2_pars[0] > 50.:
+						# mean
+						z, l, x, y = project([sta.lon_dec, sta.lat_dec])
+						f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0]))+', '+
+							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0])))+'\n')
+						# percentils
+						# [mean, std, med, [5%, 10%, 15%, ..., 85%, 90%, 95%]]
+						f10.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][1]))+', '+
+							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][1])))+'\n')
+						f20.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][3]))+', '+
+							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][3])))+'\n')
+						f40.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][7]))+', '+
+							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][7])))+'\n')
+						f60.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-7]))+', '+
+							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-7])))+'\n')
+						f80.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-3]))+', '+
+							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-3])))+'\n')
+						f90.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-1]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-1])))+'\n')
+				else:
+					# mean
+					z, l, x, y = project([sta.lon_dec, sta.lat_dec])
+					f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0])))+'\n')
+					# percentils
+					# [mean, std, med, [5%, 10%, 15%, ..., 85%, 90%, 95%]]
+					f10.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][1]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][1])))+'\n')
+					f20.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][3]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][3])))+'\n')
+					f40.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][7]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][7])))+'\n')
+					f60.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-7]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-7])))+'\n')
+					f80.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-3]))+', '+
+						str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-3])))+'\n')
+					f90.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][-1]))+', '+
+					str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[3][-1])))+'\n')
 			f.close()
 			f10.close()
 			f20.close()
@@ -800,8 +813,27 @@ if __name__ == "__main__":
 			f80.close()
 			f90.close()
 
+#####################################################################################################################################################################
+## EXTRAS 
 
+	# PDF file with figure of inversion misfit (observe data vs. estatimated data)
+	if False: 
+		from PIL import Image
+		imagelist = []
+		for sta_obj in station_objects:
+			pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
+			im1 = pngfile.convert('RGB')
+			imagelist.append(im1)
+		print(imagelist)
+		im1.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf','PDF', resolution=50.0, save_all=True, append_images=imagelist)
 
+	# delete chain.dat (text file with the whole markov chains) from station folders
+	if False: 
+		for sta in station_objects:
+			os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
+		for wl in wells_objects:
+			if wl.meb: 
+				os.remove('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'chain.dat')
 
 
 
