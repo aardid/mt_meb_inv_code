@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
+	#pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	#pc = 'personalMac'
+	pc = 'personalMac'
 
 	## Set of data to work with 
 	full_dataset = True
@@ -473,14 +473,32 @@ if __name__ == "__main__":
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.)
 		# plot surface of prior
-		if True:
-			file_name = 'Trig_meb_wells_WT'
+		if True:	
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
 			x_lim = None #[176.0,176.1]
 			y_lim = None #[-38.68,-38.58]
+			path_q_wells = '.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'Q_meb_inv_results.txt'
+			# Figure: general
+			file_name = 'trig_meb_prior_wells_WT'
 			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
-				file_name = file_name, format = 'png')
+				file_name = file_name, format = 'png', filter_wells_Q = path_q_wells)
+			# Figure: z1_mean
+			file_name = 'trig_meb_prior_wells_WT_z1_mean'
+			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+				file_name = file_name, format = 'png', value = 'z1_mean', vmin=50, vmax=900, filter_wells_Q = path_q_wells)
+			# Figure: z2_mean
+			file_name = 'trig_meb_prior_wells_WT_z2_mean'
+			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+				file_name = file_name, format = 'png', value = 'z2_mean', vmin=50, vmax=900, filter_wells_Q = path_q_wells)
+			# Figure: z1_std
+			file_name = 'trig_meb_prior_wells_WT_z1_std'
+			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+				file_name = file_name, format = 'png', value = 'z1_std', filter_wells_Q = path_q_wells, vmin=50, vmax=900)
+			# Figure: z2_std
+			file_name = 'trig_meb_prior_wells_WT_z2_std'
+			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+				file_name = file_name, format = 'png', value = 'z2_std', filter_wells_Q = path_q_wells, vmin=50, vmax=900)
 
 	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
@@ -657,7 +675,6 @@ if __name__ == "__main__":
 			plot_bound_uncert(station_objects, file_name = file_name) #
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
-
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
 	if plot_surface_cc:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
@@ -824,7 +841,7 @@ if __name__ == "__main__":
 			pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
 			im1 = pngfile.convert('RGB')
 			imagelist.append(im1)
-		print(imagelist)
+		#print(imagelist)
 		im1.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf','PDF', resolution=50.0, save_all=True, append_images=imagelist)
 
 	# delete chain.dat (text file with the whole markov chains) from station folders

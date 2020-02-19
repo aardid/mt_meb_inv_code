@@ -811,13 +811,45 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     plt.clf()
 
 def triangulation_meb_results(station_objects, well_objects, path_base_image = None, ext_img = None, xlim = None, ylim = None, \
-     file_name = None, format = None ): 
+     file_name = None, format = None, value = None, vmin=None, vmax=None, filter_wells_Q = None):  
+    """
+    value: value to interpolate z1_mean, z2_mean, z1_std, z2_std.  vmin and vmax: range for the value.
+    filter_wells_Q: filter wells based on their quality (See file). input: path to quality file 
+    """
+    if value:
+        value = value
+        if vmin:
+            vmin = vmin
+        if vmax:
+            vmax = vmax
+    else:
+        value = False
+        vmin = None
+        vmax = None
+    if filter_wells_Q: 
+        filter_wells_Q = filter_wells_Q
+    else: 
+        filter_wells_Q = False
+    well_objects_copy = well_objects
+
+    # filter wells with 0 quality
+    if filter_wells_Q:
+        q_wells = [x for x in open(filter_wells_Q).readlines() if x[0]!='#']
+        q_wells = [x.split() for x in q_wells] 
+        q_wells = [x for x in q_wells if x[:][1]=='0'] 
+        q_wells = [x[0] for x in q_wells]
+        # create list of wells of quality diferent thab 0 
+        well_objects_copy = [wl for wl in well_objects if wl.name not in q_wells] 
 
     lon_stas = []
     lat_stas = []
-    for sta in station_objects:
-        lon_stas.append(sta.lon_dec)
-        lat_stas.append(sta.lat_dec)
+    #for sta in station_objects:
+    #    lon_stas.append(sta.lon_dec)
+    #    lat_stas.append(sta.lat_dec)
+    for wl in well_objects_copy:
+        if wl.meb:
+            lon_stas.append(wl.lon_dec)
+            lat_stas.append(wl.lat_dec)
     lon_stas = np.asarray(lon_stas)
     lat_stas = np.asarray(lat_stas)
     
@@ -831,7 +863,7 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     points = []
     values = []
     count=0
-    for wl in well_objects:
+    for wl in well_objects_copy:
         if wl.meb:
             # load well pars from meb inversion 
             meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
@@ -842,7 +874,16 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
             #lat_dom.append(wl.lat_dec)
             #z1_dom_mean.append(wl.meb_z1_pars[0]) # means of z1 
             points.append([wl.lon_dec,wl.lat_dec])
-            values.append(wl.meb_z1_pars[0])
+            if value is 'z1_mean':
+                values.append(wl.meb_z1_pars[0])
+            if value is 'z2_mean':
+                values.append(wl.meb_z2_pars[0])
+            if value is 'z1_std':
+                values.append(wl.meb_z1_pars[2])
+            if value is 'z2_std':
+                values.append(wl.meb_z2_pars[2])
+            else:
+                pass
             #z2_dom_mean.append(wl.meb_z2_pars[0]) # means of z1 
             #z1_dom_std.append(wl.meb_z1_pars[1]) # stds of z2 
             #z2_dom_std.append(wl.meb_z2_pars[1]) # stds of z2 
@@ -873,24 +914,26 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     points = np.asarray(points)
     tri = Delaunay(points)
     
-    if True: # interpolate values (z): LinearNDInterpolator
-        #plt.figure()
+    if value: # interpolate values (z): LinearNDInterpolator
         # meshgrid
         X = np.linspace(min(lon_stas), max(lon_stas), num=1000)
         Y = np.linspace(min(lat_stas), max(lat_stas), num=1000)
         X, Y = np.meshgrid(X, Y)
-        interp = LinearNDInterpolator(tri, values)
-        Z0 = interp(X, Y)
-        plt.pcolormesh(X, Y, Z0)
-        plt.colorbar() # Color Bar
-        #plt.show()
-    else:
-        #plt.figure()
-        func = interp2d(lon_stas, lat_stas, values)
-        Z = func(X[0, :], Y[:, 0])
-        plt.pcolormesh(X, Y, Z)
-        plt.colorbar() # Color Bar
-        #plt.show()
+        cmap = 'gist_rainbow'
+        if True:
+            #plt.figure()
+            interp = LinearNDInterpolator(tri, values)
+            Z0 = interp(X, Y)
+            plt.pcolormesh(X, Y, Z0, cmap=cmap, vmin=vmin, vmax=vmax)
+            plt.colorbar() # Color Bar
+            #plt.show()
+        else:
+            #plt.figure()
+            func = interp2d(lon_stas, lat_stas, values)
+            Z = func(X[0, :], Y[:, 0])
+            plt.pcolormesh(X, Y, Z, cmap=cmap, vmin=vmin, vmax=vmax)
+            plt.colorbar() # Color Bar
+            #plt.show()
 
     #print(tri.simplices)
     #print(points[tri.simplices])
@@ -901,7 +944,11 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     ax.legend(loc=1, prop={'size': 6})	
     ax.set_xlabel('latitud [°]', size = textsize)
     ax.set_ylabel('longitud [°]', size = textsize)
-    ax.set_title('Triangulation of MeB wells', size = textsize)
+    if value:
+        ax.set_title('Triangulation of MeB wells: '+value, size = textsize)
+    else: 
+        ax.set_title('Triangulation of MeB wells', size = textsize)
+
 
     # interpolation 
     
@@ -914,7 +961,7 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     # save figure
     plt.savefig(file_name+'.png', dpi=300, facecolor='w', edgecolor='w',
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
-    shutil.move(file_name+'.png', '.'+os.sep+'base_map_img'+os.sep+file_name+'.png')
+    shutil.move(file_name+'.png', '.'+os.sep+'plain_view_plots'+os.sep+file_name+'.png')
     plt.close(f)
     plt.clf()
 
