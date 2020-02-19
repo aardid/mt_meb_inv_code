@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
+	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	prof_2D_MT = False
 	plot_surface_cc = False
@@ -851,6 +851,23 @@ if __name__ == "__main__":
 		for wl in wells_objects:
 			if wl.meb: 
 				os.remove('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'chain.dat')
+
+	## create text file for google earth, containing names of MT stations considered 
+	if False: 
+		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
+		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
+
+	## create file with range of periods to invert for every station
+	if True: 
+		name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'range_periods_inv.txt'
+		range_p_set = open(name_file,'w')
+		range_p_set.write('#'+' '+'station_name'+'\t'+'initial_period'+'\t'+'final_period'+'\n')
+		range_p_def = [0.001,10.] # default range of periods for inversion 
+		for sta in station_objects:
+			range_p_set.write(sta.name+'\t'+str(range_p_def[0])+'\t'+str(range_p_def[1])+'\n')
+		range_p_set.close()
+
+
 
 
 
