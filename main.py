@@ -44,13 +44,15 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
+	pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	pc = 'personalMac'
+	#pc = 'personalMac'
 
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = False
+	sta_re_invert = True
+	# Profiles
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
@@ -63,8 +65,8 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
-	mcmc_MT_inv = False
+	prior_MT_meb_read = True
+	mcmc_MT_inv = True
 	prof_2D_MT = False
 	plot_surface_cc = False
 	surf_3D_MT = False
@@ -120,6 +122,19 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
+		if sta_re_invert:
+			sta2work = ['WT003a', 'WT005a', 'WT008a', 'WT011a', 'WT014a', 'WT015a', 'WT016a', 'WT017a', 'WT018a', 'WT022a',\
+				 'WT024a', 'WT028a', 'WT030a', 'WT031a', 'WT032a', 'WT033b', 'WT033c', 'WT034a', 'WT038a', 'WT043a', \
+					 'WT045a', 'WT046a', 'WT052a', 'WT056a', 'WT061a', 'WT073a', 'WT076b', 'WT077a', 'WT078a', 'WT080a', \
+						 'WT083b', 'WT084a', 'WT090a', 'WT092a', 'WT094a', 'WT097a', 'WT112a', 'WT117b', 'WT120a', \
+							 'WT122a', 'WT126a', 'WT127a', 'WT128a', 'WT129a', 'WT130a', 'WT133a', 'WT138a', 'WT141a', \
+								 'WT145a', 'WT146a', 'WT149a', 'WT150a', 'WT150b', 'WT151a', 'WT153b', 'WT160a', 'WT163a', \
+									 'WT164a', 'WT167a', 'WT168a', 'WT172a', 'WT174a', 'WT177a', 'WT179a', 'WT180a', \
+										 'WT181a', 'WT182a', 'WT190a', 'WT193a', 'WT194a', 'WT198a', 'WT199a', 'WT200a', \
+											 'WT202a', 'WT204a', 'WT205a', 'WT206b', 'WT209a', 'WT213a', 'WT214a', \
+												 'WT216a', 'WT217a', 'WT300a', 'WT301a', 'WT305a', 'WT306a', 'WT308a', \
+													 'WT309a', 'WT311a', 'WT315a', 'WT323a', 'WT325a', 'WT326a', 'WT327a', \
+														 'WT328a', 'WT332a', 'WT335a', 'WT500a', 'WT501a', 'WT506a', 'WT508a']
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
@@ -148,6 +163,12 @@ if __name__ == "__main__":
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
 		count  = 0
+		# remove bad quality stations from list 'sta2work' (based on inv_pars.txt)
+		if True: 
+			name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+			BQ_sta = [x.split()[0][:-4] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+			sta2work = [x for x in sta2work if not x in BQ_sta]
+		#
 		for file_aux in file_dir:
 			if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
 				file = file_aux[pos_ast:] # name on the file
@@ -210,6 +231,8 @@ if __name__ == "__main__":
 		if full_dataset:
 			wl2work = wl_name
 			#wl2work = ['TH01']
+		if sta_re_invert:
+			wl2work = wl_name
 		if prof_WRKNW6:
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
 			wl2work = ['TH19','TH08','WK404','WK224','WK684','WK686'] #WK402
@@ -473,7 +496,7 @@ if __name__ == "__main__":
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.)
 		# plot surface of prior
-		if True:	
+		if False:	
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
 			x_lim = None #[176.0,176.1]
@@ -511,9 +534,8 @@ if __name__ == "__main__":
 		prior_meb = True  # if false -> None
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
-
 		for sta_obj in station_objects:
-			if sta_obj.ref < 11: # start at 0
+			if sta_obj.ref < 0: # start at 0
 			#if sta_obj.name[:-4] != 'WT030a':
 				pass
 			else: 
@@ -521,19 +543,33 @@ if __name__ == "__main__":
 				## range for the parameters
 				par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
-				
-				## create object mcmc_inv 
-				#mcmc_sta = mcmc_inv(sta_obj)
-				# inv_dat: weighted data to invert
-				inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
-				range_p = [0.001,10.] # range of periods
-				# fitting mode xy or yx: 
-				fit_max_mode = False
 				# error floor
-				#error_max_per = [10.,5.]
-				#error_max_per = [20.,10.]
-				error_max_per = [5.,2.5]
-				# inv. pars. per station
+				error_max_per = [5.,2.5] # [10.,5.]	[20.,10.]			
+				## inv_dat: weighted data to invert and range of periods
+				## 		inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+				## range_p = [0.001,10.] # range of periods
+				if True: # import inversion parameters from file 
+					name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+					inv_pars = [x.split() for x in open(name_file).readlines() if x[0]!='#']
+					inv_pars_names = [x[0] for x in inv_pars] 
+					idx = inv_pars_names.index(sta_obj.name)
+					# load pars
+					range_p = [float(inv_pars[idx][1]), float(inv_pars[idx][2])] # range of periods
+					if inv_pars[idx][3] is '2':
+						inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+					elif inv_pars[idx][3] is '1':
+						inv_dat = [0,0,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+					elif inv_pars[idx][3] is '0':
+						inv_dat = [1,1,0,0] # [appres zxy, phase zxy, appres zyx, phase zyx]
+					print(range_p)
+				else:
+					# Default values (inv pars)
+					range_p = [0.001,10] # range of periods, default values
+					inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+					# fitting mode xy or yx: 
+					fit_max_mode = False
+
+				# inversion pars. per station (manual)
 				if True:
 					if sta_obj.name[:-4] == 'WT024a': # station with static shift
 						error_max_per = [5.,2.5]
@@ -571,7 +607,7 @@ if __name__ == "__main__":
 					if sta_obj.name[:-4] == 'WT502a': # station with static shift
 						#range_p = [0,5.] # range of periods
 						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-
+				
 				## print relevant information
 				print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
 				## plot noise
@@ -831,7 +867,7 @@ if __name__ == "__main__":
 			f90.close()
 
 #####################################################################################################################################################################
-## EXTRAS 
+## EXTRAS that use list of objects
 
 	# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 	if False: 
@@ -858,14 +894,32 @@ if __name__ == "__main__":
 		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
 
 	## create file with range of periods to invert for every station
-	if True: 
+	if False: 
 		name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'range_periods_inv.txt'
 		range_p_set = open(name_file,'w')
-		range_p_set.write('#'+' '+'station_name'+'\t'+'initial_period'+'\t'+'final_period'+'\n')
-		range_p_def = [0.001,10.] # default range of periods for inversion 
+		range_p_set.write('#'+' '+'station_name'+'\t'+'initial_period'+'\t'+'final_period'+'\t'+'mode to model (0:TE, 1:TM, 2:both)'+'\t'+'Quality (0:bad, 1:mid, 2:good)'+'\n')
+		range_p_def = [0.001,10.,2,2] # default range of periods for inversion 
 		for sta in station_objects:
 			range_p_set.write(sta.name+'\t'+str(range_p_def[0])+'\t'+str(range_p_def[1])+'\n')
 		range_p_set.close()
+
+	## create list of stations to invert base on changes in file range_periods_inv.txt
+	if False: 
+		name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'range_periods_inv.txt'
+		par_inv_def = [str(0.001),str(10),str(2),str(2)] # default
+
+		sta_re_inv = [x for x in open(name_file_in).readlines() if x[0]!='#']
+		sta_re_inv = [x.split() for x in sta_re_inv]
+		sta_re_inv = [x[0][:-4] for x in sta_re_inv if \
+			x[1] != par_inv_def[0] or \
+				x[:][2] != par_inv_def[1] or \
+					x[:][3] != par_inv_def[2] or \
+						x[:][4] != par_inv_def[3]]  
+		print(sta_re_inv)
+
+
+
+
 
 
 
