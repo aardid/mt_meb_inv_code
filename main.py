@@ -48,10 +48,9 @@ if __name__ == "__main__":
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
 	#pc = 'personalMac'
-
+	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = False
-	sta_re_invert = True
+	full_dataset = True
 	# Profiles
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
@@ -61,12 +60,16 @@ if __name__ == "__main__":
 	prof_THNW03 = False
 	prof_THNW04 = False
 	prof_THNW05 = False
-
+	# Filter has qualitu MT stations
+	filter_lowQ_data = True
+	# Stations not modeled
+	sta_2_re_invert = False
+	# ==============================================================================
 	## Sections of the code tu run
-	set_up = True
+	set_up = False
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
+	prior_MT_meb_read = False
+	mcmc_MT_inv = False
 	prof_2D_MT = False
 	plot_surface_cc = False
 	surf_3D_MT = False
@@ -122,19 +125,17 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-		if sta_re_invert:
-			sta2work = ['WT003a', 'WT005a', 'WT008a', 'WT011a', 'WT014a', 'WT015a', 'WT016a', 'WT017a', 'WT018a', 'WT022a',\
-				 'WT024a', 'WT028a', 'WT030a', 'WT031a', 'WT032a', 'WT033b', 'WT033c', 'WT034a', 'WT038a', 'WT043a', \
-					 'WT045a', 'WT046a', 'WT052a', 'WT056a', 'WT061a', 'WT073a', 'WT076b', 'WT077a', 'WT078a', 'WT080a', \
-						 'WT083b', 'WT084a', 'WT090a', 'WT092a', 'WT094a', 'WT097a', 'WT112a', 'WT117b', 'WT120a', \
-							 'WT122a', 'WT126a', 'WT127a', 'WT128a', 'WT129a', 'WT130a', 'WT133a', 'WT138a', 'WT141a', \
-								 'WT145a', 'WT146a', 'WT149a', 'WT150a', 'WT150b', 'WT151a', 'WT153b', 'WT160a', 'WT163a', \
-									 'WT164a', 'WT167a', 'WT168a', 'WT172a', 'WT174a', 'WT177a', 'WT179a', 'WT180a', \
-										 'WT181a', 'WT182a', 'WT190a', 'WT193a', 'WT194a', 'WT198a', 'WT199a', 'WT200a', \
-											 'WT202a', 'WT204a', 'WT205a', 'WT206b', 'WT209a', 'WT213a', 'WT214a', \
-												 'WT216a', 'WT217a', 'WT300a', 'WT301a', 'WT305a', 'WT306a', 'WT308a', \
-													 'WT309a', 'WT311a', 'WT315a', 'WT323a', 'WT325a', 'WT326a', 'WT327a', \
-														 'WT328a', 'WT332a', 'WT335a', 'WT500a', 'WT501a', 'WT506a', 'WT508a']
+		if sta_2_re_invert:
+			# not modelled correctly: 19
+			sta2work = ['WT003a', 'WT005a', 'WT008a', 'WT014a',\
+				'WT120a', 'WT145a', 'WT146a', 'WT151a', 'WT163a', \
+					'WT206b', 'WT209a', 'WT213a', 'WT300a',\
+						  'WT301a', 'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
+			# bad quality data: 18
+			sta2work = ['WT030a', 'WT031a', 'WT032a', 'WT061a',\
+				 'WT097a', 'WT141a', 'WT150a', 'WT180a', \
+					 'WT199a', 'WT200a', 'WT202a', 'WT216a', 'WT217a',\
+						'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
@@ -164,7 +165,7 @@ if __name__ == "__main__":
 		station_objects = []   # list to be fill with station objects
 		count  = 0
 		# remove bad quality stations from list 'sta2work' (based on inv_pars.txt)
-		if True: 
+		if filter_lowQ_data: 
 			name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
 			BQ_sta = [x.split()[0][:-4] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
 			sta2work = [x for x in sta2work if not x in BQ_sta]
@@ -231,7 +232,7 @@ if __name__ == "__main__":
 		if full_dataset:
 			wl2work = wl_name
 			#wl2work = ['TH01']
-		if sta_re_invert:
+		if sta_2_re_invert:
 			wl2work = wl_name
 		if prof_WRKNW6:
 			wl2work = ['TH19','TH08','WK404','WK408','WK224','WK684','WK686'] #WK402
@@ -484,7 +485,7 @@ if __name__ == "__main__":
 		#g = hist_z1_z2_temp_full()
 		#g.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'01_temp_z1_z2_full_net.png')   # save the figure to file
 		#plt.close(g)    # close the figure
-
+ 
 	# (2) Construct priors for MT stations
 	if prior_MT_meb_read:
 		# attribute in meb wells for path to mcmc results 
@@ -561,7 +562,6 @@ if __name__ == "__main__":
 						inv_dat = [0,0,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
 					elif inv_pars[idx][3] is '0':
 						inv_dat = [1,1,0,0] # [appres zxy, phase zxy, appres zyx, phase zyx]
-					print(range_p)
 				else:
 					# Default values (inv pars)
 					range_p = [0.001,10] # range of periods, default values
@@ -607,9 +607,12 @@ if __name__ == "__main__":
 					if sta_obj.name[:-4] == 'WT502a': # station with static shift
 						#range_p = [0,5.] # range of periods
 						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-				
+					if sta_obj.name[:-4] == 'WT003a': # station with static shift
+						error_max_per = [20.,10.]	
+						#inv_dat = [1,0,1,0]
 				## print relevant information
 				print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+				print('inverted data: '+str(inv_dat))
 				## plot noise
 				try:
 					path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
@@ -624,7 +627,7 @@ if __name__ == "__main__":
 					error_max_per = [1.,1.]
 				
 				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
-					walk_jump = 3000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
+					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 						range_p = range_p, autocor_accpfrac = True, data_error = True, \
 							error_max_per=error_max_per, error_mean = error_mean)
 
@@ -870,15 +873,26 @@ if __name__ == "__main__":
 ## EXTRAS that use list of objects
 
 	# PDF file with figure of inversion misfit (observe data vs. estatimated data)
-	if False: 
-		from PIL import Image
-		imagelist = []
-		for sta_obj in station_objects:
-			pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
-			im1 = pngfile.convert('RGB')
-			imagelist.append(im1)
-		#print(imagelist)
-		im1.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf','PDF', resolution=50.0, save_all=True, append_images=imagelist)
+	if True: 
+		if False: # option 1: print appres fit to pdf
+			from PIL import Image
+			imagelist = []
+			for sta_obj in station_objects:
+				pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
+				pngfile = pngfile.convert('RGB')
+				#pngfile = pngfile.resize(size = (500, 500))
+				imagelist.append(pngfile)
+			print(imagelist)
+			pngfile.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', save_all=True, append_images=[imagelist[1],imagelist[3]])
+
+		# in evaluation
+		if False: # option 2: move appres fit to a folder
+			try:
+				os.mkdir('.'+os.sep+'mcmc_inversions'+os.sep+'01_reinverting')
+			except:
+				pass
+			for sta_obj in station_objects:
+				shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'00_reinverting'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
 
 	# delete chain.dat (text file with the whole markov chains) from station folders
 	if False: 
@@ -905,7 +919,7 @@ if __name__ == "__main__":
 
 	## create list of stations to invert base on changes in file range_periods_inv.txt
 	if False: 
-		name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'range_periods_inv.txt'
+		name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
 		par_inv_def = [str(0.001),str(10),str(2),str(2)] # default
 
 		sta_re_inv = [x for x in open(name_file_in).readlines() if x[0]!='#']
@@ -917,6 +931,13 @@ if __name__ == "__main__":
 						x[:][4] != par_inv_def[3]]  
 		print(sta_re_inv)
 
+	if True: # list of stations to re invert (bad quality or wrong modelling)
+		name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+		sta_re_inv = [x.split() for x in open(name_file_in).readlines()[1:]]
+		sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
+		print(sta_re_inv)
+
+		
 
 
 
