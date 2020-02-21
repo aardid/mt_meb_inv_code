@@ -61,12 +61,12 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	# Filter has qualitu MT stations
-	filter_lowQ_data = True
+	filter_lowQ_data = False
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
-	set_up = False
+	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
@@ -871,71 +871,77 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
+	if True:
+		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
+		if False: 
+			if False: # option 1: print appres fit to pdf
+				from PIL import Image
+				imagelist = []
+				for sta_obj in station_objects:
+					pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
+					pngfile = pngfile.convert('RGB')
+					#pngfile = pngfile.resize(size = (500, 500))
+					imagelist.append(pngfile)
+				print(imagelist)
+				pngfile.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', save_all=True, append_images=[imagelist[1],imagelist[3]])
 
-	# PDF file with figure of inversion misfit (observe data vs. estatimated data)
-	if True: 
-		if False: # option 1: print appres fit to pdf
-			from PIL import Image
-			imagelist = []
-			for sta_obj in station_objects:
-				pngfile = Image.open('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png')
-				pngfile = pngfile.convert('RGB')
-				#pngfile = pngfile.resize(size = (500, 500))
-				imagelist.append(pngfile)
-			print(imagelist)
-			pngfile.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', save_all=True, append_images=[imagelist[1],imagelist[3]])
+			# in evaluation
+			if False: # option 2: move appres fit to a folder
+				try:
+					os.mkdir('.'+os.sep+'mcmc_inversions'+os.sep+'01_reinverting')
+				except:
+					pass
+				for sta_obj in station_objects:
+					shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'00_reinverting'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
 
-		# in evaluation
-		if False: # option 2: move appres fit to a folder
-			try:
-				os.mkdir('.'+os.sep+'mcmc_inversions'+os.sep+'01_reinverting')
-			except:
-				pass
-			for sta_obj in station_objects:
-				shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'00_reinverting'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
+		# delete chain.dat (text file with the whole markov chains) from station folders
+		if True: 
+			for sta in station_objects:
+				try:
+					os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
+				except:
+					pass
+			for wl in wells_objects:
+				if wl.meb: 
+					try:
+						os.remove('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'chain.dat')
+					except:
+						pass
 
-	# delete chain.dat (text file with the whole markov chains) from station folders
-	if False: 
-		for sta in station_objects:
-			os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
-		for wl in wells_objects:
-			if wl.meb: 
-				os.remove('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'chain.dat')
+		## create text file for google earth, containing names of MT stations considered 
+		if False: 
+			for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
+			shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
 
-	## create text file for google earth, containing names of MT stations considered 
-	if False: 
-		for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
-		shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
+		## create file with range of periods to invert for every station
+		if False: 
+			name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'range_periods_inv.txt'
+			range_p_set = open(name_file,'w')
+			range_p_set.write('#'+' '+'station_name'+'\t'+'initial_period'+'\t'+'final_period'+'\t'+'mode to model (0:TE, 1:TM, 2:both)'+'\t'+'Quality (0:bad, 1:mid, 2:good)'+'\n')
+			range_p_def = [0.001,10.,2,2] # default range of periods for inversion 
+			for sta in station_objects:
+				range_p_set.write(sta.name+'\t'+str(range_p_def[0])+'\t'+str(range_p_def[1])+'\n')
+			range_p_set.close()
 
-	## create file with range of periods to invert for every station
-	if False: 
-		name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'range_periods_inv.txt'
-		range_p_set = open(name_file,'w')
-		range_p_set.write('#'+' '+'station_name'+'\t'+'initial_period'+'\t'+'final_period'+'\t'+'mode to model (0:TE, 1:TM, 2:both)'+'\t'+'Quality (0:bad, 1:mid, 2:good)'+'\n')
-		range_p_def = [0.001,10.,2,2] # default range of periods for inversion 
-		for sta in station_objects:
-			range_p_set.write(sta.name+'\t'+str(range_p_def[0])+'\t'+str(range_p_def[1])+'\n')
-		range_p_set.close()
+		## create list of stations to invert base on changes in file range_periods_inv.txt
+		if False: 
+			name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+			par_inv_def = [str(0.001),str(10),str(2),str(2)] # default
 
-	## create list of stations to invert base on changes in file range_periods_inv.txt
-	if False: 
-		name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
-		par_inv_def = [str(0.001),str(10),str(2),str(2)] # default
+			sta_re_inv = [x for x in open(name_file_in).readlines() if x[0]!='#']
+			sta_re_inv = [x.split() for x in sta_re_inv]
+			sta_re_inv = [x[0][:-4] for x in sta_re_inv if \
+				x[1] != par_inv_def[0] or \
+					x[:][2] != par_inv_def[1] or \
+						x[:][3] != par_inv_def[2] or \
+							x[:][4] != par_inv_def[3]]  
+			print(sta_re_inv)
 
-		sta_re_inv = [x for x in open(name_file_in).readlines() if x[0]!='#']
-		sta_re_inv = [x.split() for x in sta_re_inv]
-		sta_re_inv = [x[0][:-4] for x in sta_re_inv if \
-			x[1] != par_inv_def[0] or \
-				x[:][2] != par_inv_def[1] or \
-					x[:][3] != par_inv_def[2] or \
-						x[:][4] != par_inv_def[3]]  
-		print(sta_re_inv)
-
-	if True: # list of stations to re invert (bad quality or wrong modelling)
-		name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
-		sta_re_inv = [x.split() for x in open(name_file_in).readlines()[1:]]
-		sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
-		print(sta_re_inv)
+		if False: # list of stations to re invert (bad quality or wrong modelling)
+			name_file_in =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+			sta_re_inv = [x.split() for x in open(name_file_in).readlines()[1:]]
+			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
+			print(sta_re_inv)
 
 		
 
