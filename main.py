@@ -44,13 +44,13 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
+	#pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	#pc = 'personalMac'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = False
 	# Profiles
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	# Filter has qualitu MT stations
 	filter_lowQ_data = False
 	# Stations not modeled
-	sta_2_re_invert = False
+	sta_2_re_invert = True
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
@@ -132,10 +132,10 @@ if __name__ == "__main__":
 					'WT206b', 'WT209a', 'WT213a', 'WT300a',\
 						  'WT301a', 'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
 			# bad quality data: 18
-			sta2work = ['WT030a', 'WT031a', 'WT032a', 'WT061a',\
-				 'WT097a', 'WT141a', 'WT150a', 'WT180a', \
-					 'WT199a', 'WT200a', 'WT202a', 'WT216a', 'WT217a',\
-						'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
+			#sta2work = ['WT030a', 'WT031a', 'WT032a', 'WT061a',\
+			#	 'WT097a', 'WT141a', 'WT150a', 'WT180a', \
+			#		 'WT199a', 'WT200a', 'WT202a', 'WT216a', 'WT217a',\
+			#			'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
@@ -871,10 +871,10 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if True:
+	if False:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
-			if False: # option 1: print appres fit to pdf
+			if True: # option 1: print appres fit to pdf
 				from PIL import Image
 				imagelist = []
 				for sta_obj in station_objects:
@@ -882,8 +882,14 @@ if __name__ == "__main__":
 					pngfile = pngfile.convert('RGB')
 					#pngfile = pngfile.resize(size = (500, 500))
 					imagelist.append(pngfile)
-				print(imagelist)
+				#print(imagelist)
 				pngfile.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', save_all=True, append_images=[imagelist[1],imagelist[3]])
+				# move
+				try:
+					shutil.move('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', '.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model'+os.sep+'fit.pdf')
+				except:
+					os.mkdir( '.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model')
+					shutil.move('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', '.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model'+os.sep+'fit.pdf')
 
 			# in evaluation
 			if False: # option 2: move appres fit to a folder
@@ -895,7 +901,7 @@ if __name__ == "__main__":
 					shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'00_reinverting'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
 
 		# delete chain.dat (text file with the whole markov chains) from station folders
-		if True: 
+		if False: 
 			for sta in station_objects:
 				try:
 					os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
@@ -911,7 +917,8 @@ if __name__ == "__main__":
 		## create text file for google earth, containing names of MT stations considered 
 		if False: 
 			for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
-			shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
+			#shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
+			shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model'+os.sep+'00_stations_4_google_earth.txt')
 
 		## create file with range of periods to invert for every station
 		if False: 
