@@ -690,10 +690,13 @@ class mcmc_inv(object):
 		# reproducability
         np.random.seed(1)
 		# load in the posterior
-        chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
-        #walk_jump = chain[:,0:2]
-        
+        try:
+            chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
+        except:
+            self.path_results = '.'+os.sep+'mcmc_inversions'+os.sep+self.name
+            chain = np.genfromtxt(self.path_results+os.sep+'chain.dat')
 
+        #walk_jump = chain[:,0:2]
 		# define parameter sets for forward runs
         Nruns = 700
         pars = []
@@ -702,17 +705,23 @@ class mcmc_inv(object):
         Nsamples_vec = []
 
         Nsamples_tot = self.nwalkers * self.walk_jump # total number of samples
-        Nburnin = int(self.walk_jump*.5) # Burnin section (% of the walker jumps)
+        Nburnin = int(self.walk_jump*.3) # Burnin section (% of the walker jumps)
 
         if idt_sam: 
             # sample only independet samples (by autocorrelation in time estimation)     
             # explain: 
-            act_mean = int(np.mean(self.autocor_tim[:-1]))
+            try:
+                act_mean = int(np.mean(self.autocor_tim[:-1]))
+            except: # when already exist, import it
+                act_mean = np.genfromtxt(self.path_results+os.sep+'autocor_accpfrac.txt')
+                act_mean = act_mean[0][0]
+
             mult_act = [i for i in np.arange(Nburnin,self.walk_jump,act_mean)] # multiples of act (mean)from burnin position 
             #print(act_mean)
             #print(mult_act)
             # loop over the chain an filter only independet samples 
             row_count = 0
+
             for w in range(self.nwalkers):
                 for i in range(self.walk_jump):
                     if i in mult_act:
@@ -724,7 +733,12 @@ class mcmc_inv(object):
                     row_count+= 1
             #print('Number of independet samples: {:} from {:}'.format(Nsamples, Nsamples_tot))
             Nsamples_vec.append(Nsamples)
+            
 
+            #try: 
+            #    f = open(self.path_results+os.sep+"samples_info.txt", "r")
+            #    f.close()
+            #except:
             f = open(self.path_results+os.sep+"samples_info.txt", "w")
             f.write('# INDEPENDENT SAMPLES INFORMATION\n# Number of independet samples:\n# Total number of samples:\n# Number of walkers \n# Number of walkers jumps\n')
             f.write('{:}\n'.format(Nsamples))
@@ -748,7 +762,7 @@ class mcmc_inv(object):
                         chain[id,5],chain[id,6],chain[id,7]])
                     Nsamples += 1
 
-		# Write in .dat paramateres sampled in order of fit (best fit a the top)
+        # Write in .dat paramateres sampled in order of fit (best fit a the top)
         pars_order= np.asarray(pars_order)
         pars_order = pars_order[pars_order[:,7].argsort()[::]]        		
         f = open(self.path_results+os.sep+"chain_sample_order.dat", "w")
@@ -852,8 +866,8 @@ class mcmc_inv(object):
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu2, sigma) = norm.fit(z2)
-                #y = mlab.normpdf(bins, mu2, sigma)
-                y = stats.norm.pdf(bins, mu, sigma)
+                #y = mlab.normpdf(bins, mu2, sigma) mu
+                y = stats.norm.pdf(bins, mu2, sigma)
                 ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu2,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
                 # plot lines for mean of z1 and z2 (top plot)

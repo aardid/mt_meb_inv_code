@@ -44,13 +44,13 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
+	pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	pc = 'personalMac'
+	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = False
+	full_dataset = True
 	# Profiles
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
@@ -63,12 +63,12 @@ if __name__ == "__main__":
 	# Filter has qualitu MT stations
 	filter_lowQ_data = False
 	# Stations not modeled
-	sta_2_re_invert = True
+	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
+	prior_MT_meb_read = True
 	mcmc_MT_inv = False
 	prof_2D_MT = False
 	plot_surface_cc = False
@@ -125,17 +125,17 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
+			sta2work = ['WT003a']
 		if sta_2_re_invert:
-			# not modelled correctly: 19
-			sta2work = ['WT003a', 'WT005a', 'WT008a', 'WT014a',\
-				'WT120a', 'WT145a', 'WT146a', 'WT151a', 'WT163a', \
-					'WT206b', 'WT209a', 'WT213a', 'WT300a',\
-						  'WT301a', 'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
-			# bad quality data: 18
+			# not modelled correctly: 13
+			sta2work = ['WT003a', 'WT005a', 'WT008a',\
+				'WT151a','WT213a', 'WT213a', 'WT300a',\
+				'WT301a', 'WT081a', 'WT206b','WT209a', 'WT213a', 'WT300a']
+			# bad quality data: 19
 			#sta2work = ['WT030a', 'WT031a', 'WT032a', 'WT061a',\
 			#	 'WT097a', 'WT141a', 'WT150a', 'WT180a', \
 			#		 'WT199a', 'WT200a', 'WT202a', 'WT216a', 'WT217a',\
-			#			'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a']
+			#		'WT308a', 'WT323a', 'WT327a', 'WT335a', 'WT508a', 'WT014a', ]
 		if prof_WRKNW6:
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 			sta2work = ['WT004a','WT015a','WT048a','WT091a','WT111a','WT222a']
@@ -495,188 +495,222 @@ if __name__ == "__main__":
 		# Calculate prior values for boundaries of the cc in station
 		# (prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells)
 		# Function assign results as attributes for MT stations in station_objects (list)
-		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.)
+		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.) # calc prior at MT stations position
 		# plot surface of prior
-		if False:	
-			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
-			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
-			x_lim = None #[176.0,176.1]
-			y_lim = None #[-38.68,-38.58]
-			path_q_wells = '.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'Q_meb_inv_results.txt'
-			# Figure: general
-			file_name = 'trig_meb_prior_wells_WT'
-			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
-				file_name = file_name, format = 'png', filter_wells_Q = path_q_wells)
-			# Figure: z1_mean
-			file_name = 'trig_meb_prior_wells_WT_z1_mean'
-			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
-				file_name = file_name, format = 'png', value = 'z1_mean', vmin=50, vmax=900, filter_wells_Q = path_q_wells)
-			# Figure: z2_mean
-			file_name = 'trig_meb_prior_wells_WT_z2_mean'
-			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
-				file_name = file_name, format = 'png', value = 'z2_mean', vmin=50, vmax=900, filter_wells_Q = path_q_wells)
-			# Figure: z1_std
-			file_name = 'trig_meb_prior_wells_WT_z1_std'
-			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
-				file_name = file_name, format = 'png', value = 'z1_std', filter_wells_Q = path_q_wells, vmin=50, vmax=900)
-			# Figure: z2_std
-			file_name = 'trig_meb_prior_wells_WT_z2_std'
-			triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
-				file_name = file_name, format = 'png', value = 'z2_std', filter_wells_Q = path_q_wells, vmin=50, vmax=900)
+		if True:	
+			if False: # by Delanuay triangulation 
+				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
+				ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+				x_lim = None #[176.0,176.1]
+				y_lim = None #[-38.68,-38.58]
+				path_q_wells = '.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'corr_cc_temp'+os.sep+'Q_meb_inv_results.txt'
+				# Figure: general
+				file_name = 'trig_meb_prior_wells_WT'
+				triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+					file_name = file_name, format = 'png', filter_wells_Q = path_q_wells)
+				# Figure: z1_mean
+				file_name = 'trig_meb_prior_wells_WT_z1_mean'
+				triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+					file_name = file_name, format = 'png', value = 'z1_mean', vmin=50, vmax=900, filter_wells_Q = path_q_wells)
+				# Figure: z2_mean
+				file_name = 'trig_meb_prior_wells_WT_z2_mean'
+				triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+					file_name = file_name, format = 'png', value = 'z2_mean', vmin=50, vmax=900, filter_wells_Q = path_q_wells)
+				# Figure: z1_std
+				file_name = 'trig_meb_prior_wells_WT_z1_std'
+				triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+					file_name = file_name, format = 'png', value = 'z1_std', filter_wells_Q = path_q_wells, vmin=50, vmax=900)
+				# Figure: z2_std
+				file_name = 'trig_meb_prior_wells_WT_z2_std'
+				triangulation_meb_results(station_objects, wells_objects, path_base_image = path_base_image, xlim = x_lim, ylim = y_lim, ext_img = ext_file,\
+					file_name = file_name, format = 'png', value = 'z2_std', filter_wells_Q = path_q_wells, vmin=50, vmax=900)
 
+			if True: # by gridding surface
+				# define region to grid
+				coords = [175.97,176.178,-38.69,-38.59] # [min lon, max lon, min lat, max lat]
+				# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
+				file_name = 'grid_meb_prior'
+				path_output = '.'+os.sep+'plain_view_plots'+os.sep+'meb_prior'
+				try:
+					os.mkdir('.'+os.sep+'plain_view_plots'+os.sep+'meb_prior')
+				except:
+					pass
+				##
+				# image background
+				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
+				ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+				x_lim = None #[176.0,176.1]
+				y_lim = None #[-38.68,-38.58]
+				# call function 
+				grid_meb_prior(wells_objects, coords = coords, n_points = 100, slp = 4*10., file_name = file_name, path_output = path_output,\
+					plot = True, path_base_image = path_base_image, ext_img = ext_file)
+				
 	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
 	if mcmc_MT_inv:
 		## create pdf file to save the fit results for the whole inversion
-		pdf_fit = True 
+		pdf_fit = False 
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
-		start_time = time.time()
+		start_time_f = time.time()
 		prior_meb = True  # if false -> None
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
-		for sta_obj in station_objects:
-			if sta_obj.ref < 0: # start at 0
-			#if sta_obj.name[:-4] != 'WT030a':
-				pass
-			else: 
-				print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
-				## range for the parameters
-				par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-				#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
-				# error floor
-				error_max_per = [5.,2.5] # [10.,5.]	[20.,10.]			
-				## inv_dat: weighted data to invert and range of periods
-				## 		inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
-				## range_p = [0.001,10.] # range of periods
-				if True: # import inversion parameters from file 
-					name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
-					inv_pars = [x.split() for x in open(name_file).readlines() if x[0]!='#']
-					inv_pars_names = [x[0] for x in inv_pars] 
-					idx = inv_pars_names.index(sta_obj.name)
-					# load pars
-					range_p = [float(inv_pars[idx][1]), float(inv_pars[idx][2])] # range of periods
-					if inv_pars[idx][3] is '2':
-						inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
-					elif inv_pars[idx][3] is '1':
-						inv_dat = [0,0,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
-					elif inv_pars[idx][3] is '0':
-						inv_dat = [1,1,0,0] # [appres zxy, phase zxy, appres zyx, phase zyx]
-				else:
-					# Default values (inv pars)
-					range_p = [0.001,10] # range of periods, default values
-					inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
-					# fitting mode xy or yx: 
-					fit_max_mode = False
-
-				# inversion pars. per station (manual)
-				if True:
-					if sta_obj.name[:-4] == 'WT024a': # station with static shift
-						error_max_per = [5.,2.5]
-						range_p = [0,100.] # range of periods
-					if sta_obj.name[:-4] == 'WT030a': # station with static shift
-						range_p = [0,10.] # range of periods
-					if sta_obj.name[:-4] == 'WT039a': # station with static shift
-						range_p = [0,10.] # range of periods
-						error_max_per = [5.,2.5]
-					if sta_obj.name[:-4] == 'WT060a': # station with static shift
-						range_p = [0.,1.] # range of periods
-						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-						#error_max_per = [20.,10.]
-					if sta_obj.name[:-4] == 'WT068a': # station with static shift
-						range_p = [0,5.] # range of periods
-						error_max_per = [20.,10.]
-						#inv_dat = [1,1,0,1]
-					if sta_obj.name[:-4] == 'WT070b': # station with static shift
-						range_p = [0,5.] # range of periods
-					if sta_obj.name[:-4] == 'WT071a': # station with static shift
-						range_p = [0,5.] # range of periods
-						range_p = [0,10.] # range of periods
-						error_max_per = [5.,2.5]
-					if sta_obj.name[:-4] == 'WT107a': # station with static shift
-						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-						range_p = [0,5.] # range of periods
-						error_max_per = [5.,2.5]
-					if sta_obj.name[:-4] == 'WT111a': # station with static shift
-						range_p = [0,5.] # range of periods
-					if sta_obj.name[:-4] == 'WT223a': # station with static shift
-						range_p = [0,10.] # range of periods
-						error_max_per = [20.,5.]
-					if sta_obj.name[:-4] == 'WT501a': # station with static shift
-						range_p = [0,5.] # range of periods
-					if sta_obj.name[:-4] == 'WT502a': # station with static shift
-						#range_p = [0,5.] # range of periods
-						par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-					if sta_obj.name[:-4] == 'WT003a': # station with static shift
-						error_max_per = [20.,10.]	
-						#inv_dat = [1,0,1,0]
-				## print relevant information
-				print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
-				print('inverted data: '+str(inv_dat))
-				## plot noise
-				try:
-					path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
-					sta_obj.plot_noise(path_img = path_img)
-				except:
+		# run inversion
+		if True:
+			for sta_obj in station_objects:
+				if sta_obj.ref < 0: # start at 0
+				#if sta_obj.name[:-4] != 'WT030a':
 					pass
-				#print('mean noise in app res XY: {:2.2f}'.format(np.mean(sta_obj.rho_app_er[1])))
-				#print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
-				###
-				error_mean = False
-				if error_mean:
-					error_max_per = [1.,1.]
-				
-				mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
-					walk_jump = 2000, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
-						range_p = range_p, autocor_accpfrac = True, data_error = True, \
-							error_max_per=error_max_per, error_mean = error_mean)
+				else: 
+					print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
+					## range for the parameters
+					par_range = [[.01*1e2,2.*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+					#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
+					# error floor
+					error_max_per = [5.,2.5] # [10.,5.]	[20.,10.]			
+					## inv_dat: weighted data to invert and range of periods
+					## 		inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+					## range_p = [0.001,10.] # range of periods
+					if True: # import inversion parameters from file 
+						name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+						inv_pars = [x.split() for x in open(name_file).readlines() if x[0]!='#']
+						inv_pars_names = [x[0] for x in inv_pars] 
+						idx = inv_pars_names.index(sta_obj.name)
+						# load pars
+						range_p = [float(inv_pars[idx][1]), float(inv_pars[idx][2])] # range of periods
+						if inv_pars[idx][3] is '2':
+							inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+						elif inv_pars[idx][3] is '1':
+							inv_dat = [0,0,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+						elif inv_pars[idx][3] is '0':
+							inv_dat = [1,1,0,0] # [appres zxy, phase zxy, appres zyx, phase zyx]
+					else:
+						# Default values (inv pars)
+						range_p = [0.001,10] # range of periods, default values
+						inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
+						# fitting mode xy or yx: 
+						fit_max_mode = False
 
-				if error_max_per:
+					# inversion pars. per station (manual)
+					if True:
+						if sta_obj.name[:-4] == 'WT024a': # station with static shift
+							error_max_per = [5.,2.5]
+							range_p = [0,100.] # range of periods
+						if sta_obj.name[:-4] == 'WT030a': # station with static shift
+							range_p = [0,10.] # range of periods
+						if sta_obj.name[:-4] == 'WT039a': # station with static shift
+							range_p = [0,10.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT060a': # station with static shift
+							range_p = [0.,1.] # range of periods
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							#error_max_per = [20.,10.]
+						if sta_obj.name[:-4] == 'WT068a': # station with static shift
+							range_p = [0,5.] # range of periods
+							error_max_per = [20.,10.]
+							#inv_dat = [1,1,0,1]
+						if sta_obj.name[:-4] == 'WT070b': # station with static shift
+							range_p = [0,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT071a': # station with static shift
+							range_p = [0,5.] # range of periods
+							range_p = [0,10.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT107a': # station with static shift
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							range_p = [0,5.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT111a': # station with static shift
+							range_p = [0,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT223a': # station with static shift
+							range_p = [0,10.] # range of periods
+							error_max_per = [20.,5.]
+						if sta_obj.name[:-4] == 'WT501a': # station with static shift
+							range_p = [0,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT502a': # station with static shift
+							#range_p = [0,5.] # range of periods
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+						if sta_obj.name[:-4] == 'WT003a': # station with static shift
+							error_max_per = [20.,10.]	
+							#inv_dat = [1,0,1,0]
+					## print relevant information
+					print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+					print('inverted data: '+str(inv_dat))
 					## plot noise
 					try:
-						name_file='noise_appres_phase_error_floor'
 						path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
-						sta_obj.plot_noise(path_img = path_img, name_file = name_file)
+						sta_obj.plot_noise(path_img = path_img)
 					except:
 						pass
-				if prior_meb:
-					print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
-					#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
-					print("	distances = {}".format(sta_obj.prior_meb_wl_dist)) 
-					print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
-				## run inversion
-				mcmc_sta.inv()
-				## plot results (save in .png)
-				mcmc_sta.plot_results_mcmc(chain_file = 'chain.dat', corner_plt = True, walker_plt = True)
-				shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_full.png')
-				shutil.move(mcmc_sta.path_results+os.sep+'walkers.png', mcmc_sta.path_results+os.sep+'walkers_full.png')
-				## sample posterior
-				#mcmc_sta.sample_post()
-				if pdf_fit:
-					f, g = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
-				else:
-					mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)		
-				#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
-				## plot results without burn-in section
-				mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
-				shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
-				# save figures
-				if pdf_fit:
-					pp.savefig(g)
-					pp.savefig(f)
-					plt.close('all')
-				#plt.clf()
-				## calculate estimate parameters
-				mcmc_sta.model_pars_est()
-		## enlapsed time for the inversion (every station in station_objects)
-		enlap_time = time.time() - start_time # enlapsed time
-		## print time consumed
-		print("Time consumed:\t{:.1f} min".format(enlap_time/60))
-		if pdf_fit:
-			pp.close()
-			# move figure fit to global results folder
-			shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
-		
+					#print('mean noise in app res XY: {:2.2f}'.format(np.mean(sta_obj.rho_app_er[1])))
+					#print('mean noise in phase XY: {:2.2f}'.format(np.mean(sta_obj.phase_deg_er[1])))
+					###
+					error_mean = False
+					if error_mean:
+						error_max_per = [1.,1.]
+					# set number of walkers and walker jumps
+					nwalkers = 40
+					walk_jump = 2500
+					# run inversion
+					try: 
+						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
+							walk_jump = walk_jump, nwalkers = nwalkers, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
+								range_p = range_p, autocor_accpfrac = True, data_error = True, \
+									error_max_per=error_max_per, error_mean = error_mean)
+					except: # in case that inversion breaks due to low number of independet samples 
+						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
+							walk_jump = walk_jump+1000, nwalkers = nwalkers+10, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
+								range_p = range_p, autocor_accpfrac = True, data_error = True, \
+									error_max_per=error_max_per, error_mean = error_mean)
+
+					if error_max_per:
+						## plot noise
+						try:
+							name_file='noise_appres_phase_error_floor'
+							path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
+							sta_obj.plot_noise(path_img = path_img, name_file = name_file)
+						except:
+							pass
+					if prior_meb:
+						print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
+						#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
+						print("	distances = {}".format(sta_obj.prior_meb_wl_dist)) 
+						print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
+					## run inversion
+					mcmc_sta.inv()
+					## plot results (save in .png)
+					if True: # plot results for full chain 
+						mcmc_sta.plot_results_mcmc(chain_file = 'chain.dat', corner_plt = False, walker_plt = True)
+						#shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_full.png')
+						shutil.move(mcmc_sta.path_results+os.sep+'walkers.png', mcmc_sta.path_results+os.sep+'walkers_full.png')
+					## sample posterior
+					#mcmc_sta.sample_post()
+					if pdf_fit:
+						f, g = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
+					else:
+						mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)		
+					#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
+					## plot results without burn-in section
+					mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
+					shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
+
+					# save figures
+					if pdf_fit:
+						pp.savefig(g)
+						pp.savefig(f)
+						plt.close('all')
+					#plt.clf()
+					## calculate estimate parameters
+					mcmc_sta.model_pars_est()
+			## enlapsed time for the inversion (every station in station_objects)
+			enlap_time_f = time.time() - start_time_f # enlapsed time
+			## print time consumed
+			print("Time consumed:\t{:.1f} min".format(enlap_time_f/60))
+			if pdf_fit:
+				pp.close()
+				# move figure fit to global results folder
+				shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
+
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
 	if prof_2D_MT:
 		print('(4) Plot 2D profile of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
@@ -717,21 +751,35 @@ if __name__ == "__main__":
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
 	if plot_surface_cc:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
-		bound2plot = 'top' # 'top' or 'bottom'
-		## base image and base image
-		#file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
-		#path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
-		file_name = 'interface_LRA_'+bound2plot+'_topo'
-		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
 		##
 		ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
 		x_lim = [175.948466, 176.260520]
 		y_lim = [-38.743590,-38.574484]
 		type_plot = 'scatter'
 		path_plots = '.'+os.sep+'plain_view_plots'# path to place the outputs 
+		##
+		# for plot with rest bound background
+		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
+		bound2plot = 'top' # top bound
+		file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
+		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+		bound2plot = 'bottom' 
+		file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
 		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
 			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
 		
+		# for plot with topo background
+		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
+		bound2plot = 'top' # top bound
+		file_name = 'interface_LRA_'+bound2plot+'_topo'
+		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+		bound2plot = 'bottom' 
+		file_name = 'interface_LRA_'+bound2plot+'_topo'
+		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+	
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
 		print('(5) Calculating beta in wells and fitting temperature profile')
@@ -873,8 +921,8 @@ if __name__ == "__main__":
 ## EXTRAS that use list of objects
 	if False:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
-		if False: 
-			if True: # option 1: print appres fit to pdf
+		if True: 
+			if False: # option 1: print appres fit to pdf
 				from PIL import Image
 				imagelist = []
 				for sta_obj in station_objects:
@@ -886,19 +934,19 @@ if __name__ == "__main__":
 				pngfile.save('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', save_all=True, append_images=[imagelist[1],imagelist[3]])
 				# move
 				try:
-					shutil.move('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', '.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model'+os.sep+'fit.pdf')
+					shutil.move('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', '.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model'+os.sep+'fit.pdf')
 				except:
-					os.mkdir( '.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model')
-					shutil.move('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', '.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model'+os.sep+'fit.pdf')
+					os.mkdir( '.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model')
+					shutil.move('.'+os.sep+'mcmc_inversions'+os.sep+'fit.pdf', '.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model'+os.sep+'fit.pdf')
 
 			# in evaluation
-			if False: # option 2: move appres fit to a folder
+			if True: # option 2: move appres fit to a folder
 				try:
-					os.mkdir('.'+os.sep+'mcmc_inversions'+os.sep+'01_reinverting')
+					os.mkdir('.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model')
 				except:
 					pass
 				for sta_obj in station_objects:
-					shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'00_reinverting'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
+					shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
 
 		# delete chain.dat (text file with the whole markov chains) from station folders
 		if False: 
@@ -918,7 +966,7 @@ if __name__ == "__main__":
 		if False: 
 			for_google_earth(station_objects, name_file = '00_stations_4_google_earth.txt', type_obj = 'Station')
 			#shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'base_map_img'+os.sep+'00_stations_4_google_earth.txt')
-			shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'02_not_model'+os.sep+'00_stations_4_google_earth.txt')
+			shutil.move('00_stations_4_google_earth.txt','.'+os.sep+'mcmc_inversions'+os.sep+'02_bad_sta_map'+os.sep+'00_stations_4_google_earth.txt')
 
 		## create file with range of periods to invert for every station
 		if False: 
