@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
+	#pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	#pc = 'personalMac'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	# Filter has qualitu MT stations
-	filter_lowQ_data = False
+	filter_lowQ_data = True
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================

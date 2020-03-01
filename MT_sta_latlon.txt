@@ -1,2 +1,1 @@
 # sta lat lon lat_dec lon_dec elev
-WT003a.edi	-38:38:08.53	176:00:37.75	-38.635703	176.010486	597.7
