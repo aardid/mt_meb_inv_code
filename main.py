@@ -68,10 +68,10 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
+	prior_MT_meb_read = False
 	mcmc_MT_inv = False
-	prof_2D_MT = False
-	plot_surface_cc = False
+	plot_2D_MT = False
+	plot_3D_MT = True
 	surf_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-			sta2work = ['WT003a']
+			#sta2work = ['WT003a']
 		if sta_2_re_invert:
 			# not modelled correctly: 13
 			sta2work = ['WT003a', 'WT005a', 'WT008a',\
@@ -712,7 +712,7 @@ if __name__ == "__main__":
 				shutil.move('fit.pdf','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'00_fit.pdf')
 
 	# (4) Plot 2D profile of unceratain boundaries z1 and z2 (results of mcmc MT inversion)
-	if prof_2D_MT:
+	if plot_2D_MT:
 		print('(4) Plot 2D profile of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
 		# quality inversion pars. plot (acceptance ratio and autocorrelation time)
 		autocor_accpfrac = False
@@ -749,37 +749,59 @@ if __name__ == "__main__":
 			shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
-	if plot_surface_cc:
+	if plot_3D_MT:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
-		##
-		ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
-		x_lim = [175.948466, 176.260520]
-		y_lim = [-38.743590,-38.574484]
-		type_plot = 'scatter'
-		path_plots = '.'+os.sep+'plain_view_plots'# path to place the outputs 
-		##
-		# for plot with rest bound background
-		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
-		bound2plot = 'top' # top bound
-		file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
-		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
-		bound2plot = 'bottom' 
-		file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
-		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
-		
-		# for plot with topo background
-		path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
-		bound2plot = 'top' # top bound
-		file_name = 'interface_LRA_'+bound2plot+'_topo'
-		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
-		bound2plot = 'bottom' 
-		file_name = 'interface_LRA_'+bound2plot+'_topo'
-		plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-			path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
-	
+		if False: # plot plain view with circles 
+			##
+			ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
+			x_lim = [175.948466, 176.260520]
+			y_lim = [-38.743590,-38.574484]
+			type_plot = 'scatter'
+			path_plots = '.'+os.sep+'plain_view_plots'# path to place the outputs 
+			##
+			# for plot with rest bound background
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
+			bound2plot = 'top' # top bound
+			file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
+			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+			bound2plot = 'bottom' 
+			file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
+			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+			
+			# for plot with topo background
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
+			bound2plot = 'top' # top bound
+			file_name = 'interface_LRA_'+bound2plot+'_topo'
+			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+			bound2plot = 'bottom' 
+			file_name = 'interface_LRA_'+bound2plot+'_topo'
+			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+
+		if True: # plot plain view with countours
+			##
+			# define region to grid
+			coords = [175.95,176.220,-38.72,-38.57] # [min lon, max lon, min lat, max lat]
+			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
+			file_name = 'grid_MT_inv'
+			path_output = '.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'
+			try:
+				os.mkdir('.'+os.sep+'plain_view_plots'+os.sep+'MT_inv')
+			except:
+				pass
+			##
+			# image background
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
+			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+			x_lim = None #[176.0,176.1]
+			y_lim = None #[-38.68,-38.58]
+			# call function 
+			grid_MT_inv_rest(station_objects, coords = coords, n_points = 100, slp = 4*10., file_name = file_name, path_output = path_output,\
+				plot = True, path_base_image = path_base_image, ext_img = ext_file)
+
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
 		print('(5) Calculating beta in wells and fitting temperature profile')
