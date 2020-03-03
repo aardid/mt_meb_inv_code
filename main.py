@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
+	pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	pc = 'personalMac'
+	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -784,7 +784,7 @@ if __name__ == "__main__":
 		if True: # plot plain view with countours
 			##
 			# define region to grid
-			coords = [175.95,176.220,-38.72,-38.57] # [min lon, max lon, min lat, max lat]
+			coords = [175.95,176.250,-38.77,-38.55] # [min lon, max lon, min lat, max lat]
 			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
 			file_name = 'grid_MT_inv'
 			path_output = '.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'
@@ -794,13 +794,17 @@ if __name__ == "__main__":
 				pass
 			##
 			# image background
-			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
-			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
-			x_lim = None #[176.0,176.1]
-			y_lim = None #[-38.68,-38.58]
+			#path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
+			#ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
+			#path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
+			#ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
+			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
+			ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
+			x_lim = [175.9,176.3]
+			y_lim = None #[-38.68,-38.57]
 			# call function 
 			grid_MT_inv_rest(station_objects, coords = coords, n_points = 100, slp = 4*10., file_name = file_name, path_output = path_output,\
-				plot = True, path_base_image = path_base_image, ext_img = ext_file)
+				plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim)
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 

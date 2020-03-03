@@ -833,6 +833,8 @@ def grid_MT_inv_rest(station_objects, coords, n_points = None,  slp = None, file
     Z_z1_std = X*0
     Z_z2_mean = X*0
     Z_z2_std = X*0
+    Z_z1_plus_z2_mean = X*0
+    Z_z1_plus_z2_std = X*0
     # calculate MeB prior at each position 
     f = open(file_name+'.txt', "w")
     f.write("# lat\tlon\tmean_z1\tstd_z1\tmean_z2\tstd_z2\n")
@@ -894,14 +896,15 @@ def grid_MT_inv_rest(station_objects, coords, n_points = None,  slp = None, file
             Z_z1_std[j][i] = z1_std
             Z_z2_mean[j][i] = z2_mean
             Z_z2_std[j][i] = z2_std
-            #Z_tick_conductor[j][i] = z2_mean
+            Z_z1_plus_z2_mean[j][i] = z2_mean + z1_mean
+            Z_z1_plus_z2_std[j][i] = (z1_std + z2_std) / 2
 
     f.close()
     shutil.move('.'+os.sep+file_name+'.txt', path_output+os.sep+file_name+'.txt')
 
     if plot:
         ## 
-        def plot_2Darray_contourf(array, name, levels = None):
+        def plot_2Darray_contourf(array, name, levels = None, xlim = None):
             if levels is None:
                 levels = np.arange(0,501,25)
 
@@ -950,13 +953,20 @@ def grid_MT_inv_rest(station_objects, coords, n_points = None,  slp = None, file
             plt.clf()
         # plot countours with level
         levels = np.arange(100,401,25) # for mean z1
-        plot_2Darray_contourf(Z_z1_mean, name = 'z1 mean', levels = levels)
+        plot_2Darray_contourf(Z_z1_mean, name = 'z1 mean', levels = levels, xlim = xlim)
         levels = np.arange(75,526,25) # for std z1
-        plot_2Darray_contourf(Z_z1_std, name = 'z1 std', levels = levels)
+        plot_2Darray_contourf(Z_z1_std, name = 'z1 std', levels = levels, xlim = xlim)
+        ###
         levels = np.arange(225,551,25) # for mean z2
-        plot_2Darray_contourf(Z_z2_mean, name = 'z2 mean', levels = levels)
+        plot_2Darray_contourf(Z_z2_mean, name = 'z2 mean', levels = levels, xlim = xlim)
         levels = np.arange(175,501,25) # for std z2
-        plot_2Darray_contourf(Z_z2_std, name = 'z2 std', levels = levels)
+        plot_2Darray_contourf(Z_z2_std, name = 'z2 std', levels = levels, xlim = xlim)
+        ###
+        levels = np.arange(450,901,25) # for mean z1+z2
+        plot_2Darray_contourf(Z_z1_plus_z2_mean, name = 'z1+z2 mean', levels = levels, xlim = xlim)
+        levels = np.arange(150,501,25) # for std z1+z2
+        plot_2Darray_contourf(Z_z1_plus_z2_std, name = 'z1+z2 std', levels = levels, xlim = xlim)
+        ###
 
 
 def triangulation_meb_results(station_objects, well_objects, path_base_image = None, ext_img = None, xlim = None, ylim = None, \
