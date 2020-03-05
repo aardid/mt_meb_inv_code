@@ -79,14 +79,22 @@ class Wells(object):
     layer_mod_MT_names      names of MT stations used to calculate layer model in well
                             ['mtsta01',...'mtsta04'] 
     layer_mod_MT_dist       distance to MT stations defined in layer_mod_MT_names (km)
-    z1_pars                 distribution parameters for layer 1 (normal distribution)
-                            thickness (model parameter) calculated 
-                            from layer model of nearest MT stations : [a,b]
+    z1_pars                 distribution parameters for layer 1 
+                            thickness (model parameter) estimated 
+                            from layer model of  MT stations : [a,b]
                             a: mean
                             b: standard deviation 
-    z1_pars                 distribution parameters for layer 2 (normal distribution)
-                            thickness (model parameter) calculated 
-                            from layer model of nearest MT stations : [a,b]
+    z2_pars                 distribution parameters for layer 2 
+                            thickness (model parameter) estimated 
+                            from layer model of  MT stations : [a,b]
+                            a: mean
+                            b: standard deviation 
+    T1_pars                 distribution parameters for temperatures at layer z1 
+                            (top of the conductor) sample from the true temperature profile: [a,b]
+                            a: mean
+                            b: standard deviation 
+    T2_pars                 distribution parameters for temperatures at layer z1 
+                            (bottom of the conductor) sample from the true temperature profile: [a,b]
                             a: mean
                             b: standard deviation 
 
@@ -127,11 +135,13 @@ class Wells(object):
         self.meb_depth = None		# methylene-blue (MeB) depths (samples)
         self.meb_z1_pars = None     #  
         self.meb_z2_pars = None     #  
-        # layer model from MT nearest stations
+        # layer model from MT nearest stations (depths and temperatures)
         self.layer_mod_MT_names = None 
         self.layer_mod_MT_dist  = None
         self.z1_pars = None
         self.z2_pars = None
+        self.T1_pars = None
+        self.T2_pars = None
     # ===================== 
     # Methods               
     # =====================
@@ -477,7 +487,6 @@ class Wells(object):
         mean_tmax3, std_tmax3 = np.mean(tmax[2]), np.std(tmax[2])
         self.Tmax_3l = [[mean_tmax1, std_tmax1],[mean_tmax2, std_tmax2],[mean_tmax3, std_tmax3]]
 
-        
         # 
 # ==============================================================================
 # Read files
@@ -958,3 +967,153 @@ def T_beta_est(Tw, z, Zmin, Zmax):
     return Test, beta, Tmin, Tmax, slopes
 
             
+# ==============================================================================
+# Coorrelation between Temp and boundaries of the conductor 
+# ==============================================================================
+
+def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, masl = None, \
+    plot_temp_prof = None): 
+    '''
+    Fn. to calculate boundaries of the conductor in wells position based on interpolation
+    of MT inversion results. z1 (mean and std) and z2 (mean and std) are calculated and
+    assigned to the well object.   
+    Figures generate:
+    - Temp profile with estimate z1 and z2 from MT, save in well folder.  
+    - plain_view of temperature at BC, save in global folder.
+    '''
+
+    if slp is None: 
+        slp = 4*10.
+    # estimate boundary of the conductor at each well position
+    for wl in wells_objects: # use every stations available
+        # save names of stations to be used 
+        near_stas = [sta for sta in station_objects] 
+        near_stas = list(filter(None, near_stas))
+        dist_stas = [dist_two_points([sta.lon_dec, sta.lat_dec], [wl.lon_dec, wl.lat_dec], type_coord = 'decimal')\
+            for sta in station_objects]
+        dist_stas = list(filter(None, dist_stas))
+        # Calculate values for boundaries of the conductor in well
+        #  mean and std for z1 and z2, calculate as weighted(distance) average from MT stations
+        ## arrays
+        z1_mean_MT = np.zeros(len(near_stas))
+        z1_std_MT = np.zeros(len(near_stas))
+        z2_mean_MT = np.zeros(len(near_stas))
+        z2_std_MT = np.zeros(len(near_stas))
+        #
+        z1_std_MT_incre = np.zeros(len(near_stas))
+        z2_std_MT_incre = np.zeros(len(near_stas))
+        count = 0
+        # extract mcmc results from MT stations 
+        for sta in near_stas:
+            # extract mcmc results from file 
+            mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+"est_par.dat")
+            # values for mean a std for normal distribution representing the prior
+            z1_mean_MT[count] = mt_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+            z1_std_MT[count] =  mt_mcmc_results[0,2] # std z1
+            z2_mean_MT[count] = mt_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+            z2_std_MT[count] =  mt_mcmc_results[1,2] # std z2
+            # calc. increment in std. in the position of the station
+            # std. dev. increases as get farder from the well. It double its values per 2 km.
+            z1_std_MT_incre[count] = z1_std_MT[count]  + (dist_stas[count] *slp)
+            z2_std_MT_incre[count] = z2_std_MT[count]  + (dist_stas[count] *slp)
+            # load pars in well 
+            count+=1
+        # calculete z1 normal prior parameters
+        dist_weigth = [1./d for d in dist_stas]
+        z1_mean = np.dot(z1_mean_MT,dist_weigth)/np.sum(dist_weigth)
+        # std. dev. increases as get farder from the well. It double its values per km.  
+        z1_std = np.dot(z1_std_MT_incre,dist_weigth)/np.sum(dist_weigth)
+        # calculete z2 normal prior parameters
+        # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+        #z2_mean_prior = z2_mean_prior - z1_mean_prior
+        #print(z2_mean_prior)
+        z2_mean = np.dot(z2_mean_MT,dist_weigth)/np.sum(dist_weigth)
+        #z2_mean = z2_mean 
+        if z2_mean < 0.:
+            raise ValueError
+        z2_std = np.dot(z2_std_MT_incre,dist_weigth)/np.sum(dist_weigth)        
+        # assign values to well object
+        wl.z1_pars = [z1_mean, z1_std]
+        wl.z2_pars = [z2_mean, z2_std]
+        # 
+        if masl:
+            z1_mean = sta.elev - z1_mean   # need to import topography (elevation in every point of the grid)
+
+    if plot_temp_prof:
+        pp = PdfPages('Temp_prof_conductor_bound_est.pdf') # pdf to plot the meb profiles
+        for wl in wells_objects:
+            f,(ax1) = plt.subplots(1,1)
+            f.set_size_inches(6,8)
+            ax1.set_xscale("linear")
+            ax1.set_yscale("linear")    
+            ax1.plot(wl.temp_prof_true,wl.red_depth,'o', label = 'data') # plot true data
+            ax1.plot(wl.temp_prof_rs,wl.red_depth_rs,'-', label = 'SC interpolation')
+            
+            # upper boundary (z1 distribution)
+            ax1.plot([-5.,300.], [wl.elev - wl.z1_pars[0], wl.elev - wl.z1_pars[0]],'y-', alpha=0.5)
+            ax1.plot([-5.,300.], [wl.elev - wl.z1_pars[0] - wl.z1_pars[1], wl.elev - wl.z1_pars[0] - wl.z1_pars[1]],'y--', alpha=0.3)
+            ax1.plot([-5.,300.], [wl.elev - wl.z1_pars[0] + wl.z1_pars[1], wl.elev - wl.z1_pars[0] + wl.z1_pars[1]],'y--', alpha=0.3)
+            # lower boundary (z2 distribution)
+            ax1.plot([-5.,300.], [wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]), wl.elev - (wl.z1_pars[0] + wl.z2_pars[0])],'r-', alpha=0.5)
+            ax1.plot([-5.,300.], [wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1], wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1]],'r--', alpha=0.3)
+            ax1.plot([-5.,300.], [wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1], wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1]],'r--', alpha=0.3)
+            
+            ax1.set_xlabel('Temperature [deg C]', fontsize=18)
+            ax1.set_ylabel('Depth [m]', fontsize=18)
+            ax1.grid(True, which='both', linewidth=0.4)
+            #ax1.invert_yaxis()
+            plt.title(wl.name, fontsize=22,)
+            # save image as png
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+            pp.savefig(f)
+            plt.close(f)
+            # save pars in .txt
+            g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt', "w")
+            g.write('# mean_z1(thickness layer 1)\tstd_z1\tmean_z2(thickness layer 2)\tstd_z2\n')
+            g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.z1_pars[0],wl.z1_pars[1],wl.z2_pars[0],wl.z2_pars[1]))
+            g.close()
+
+        pp.close()
+        shutil.move('Temp_prof_conductor_bound_est.pdf','.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'Temp_prof_conductor_bound_est.pdf')
+
+def wl_T1_T2_est(wells_objects):
+    '''
+    Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
+    '''
+    ## load z1 and z2 pars
+    for wl in wells_objects:
+        aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
+        wl.z1_pars = [aux[0],aux[1]]
+        wl.z2_pars = [aux[2],aux[3]]
+    # sample temp values and calc T1 and T2 
+    Ns = 200
+    for wl in wells_objects:
+        # array of samples
+        z1_sam = np.random.normal(wl.z1_pars[0], wl.z1_pars[1], Ns)
+        z2_sam = np.random.normal(wl.z1_pars[0], wl.z1_pars[1], Ns)
+        # 
+        T1_sam = z1_sam*0
+        T2_sam = z1_sam*0
+        # 
+        for i in range(len(T1_sam)):
+            print(wl.name)
+            print(wl.red_depth_rs)
+            # T1
+            z1_s = z1_sam[i]
+            [val, idx] = find_nearest(wl.red_depth_rs, wl.elev - z1_s)
+            asdf
+            T1_sam[i] = wl.temp_prof_rs[idx]
+            # T2
+            val, idx = find_nearest(wl.red_depth_rs, z2_sam[i])
+            T2_sam[i] = wl.temp_prof_rs[idx]
+            # Assign attributes TX_pars and save in .txt
+            wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
+            wl.T1_pars = [np.mean(T2_sam),np.std(T2_sam)]
+            # save pars in .txt
+            g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
+            g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
+            g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.z1_pars[0],wl.z1_pars[1],wl.z2_pars[0],wl.z2_pars[1]))
+            g.close()
+
+

@@ -50,10 +50,10 @@ if __name__ == "__main__":
 	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = False
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = False
+	prof_WRKNW5 = True
 	array_WRKNW5_WRKNW6 = False
 	#
 	prof_NEMT2 = False
@@ -61,18 +61,17 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	# Filter has qualitu MT stations
-	filter_lowQ_data = True
+	filter_lowQ_data = False
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
+	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	plot_2D_MT = False
-	plot_3D_MT = True
-	surf_3D_MT = False
+	plot_2D_MT = True
+	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
 	files_paraview = False
@@ -125,7 +124,6 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-			#sta2work = ['WT003a']
 		if sta_2_re_invert:
 			# not modelled correctly: 13
 			sta2work = ['WT003a', 'WT005a', 'WT008a',\
@@ -145,7 +143,6 @@ if __name__ == "__main__":
 			sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a']#,'WT033b']
 			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT223a','WT107a','WT111a']
 			#sta2work = ['WT039a','WT024a','WT030a']
-			#sta2work = ['WT501a']
 			#sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a','WT068a','WT223a','WT070b','WT107a','WT111a',\
 			#	'WT004a','WT015a','WT048a','WT091a','WT102a','WT111a','WT222a']
 		if array_WRKNW5_WRKNW6:
@@ -495,9 +492,9 @@ if __name__ == "__main__":
 		# Calculate prior values for boundaries of the cc in station
 		# (prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells)
 		# Function assign results as attributes for MT stations in station_objects (list)
-		calc_prior_meb_quadrant(station_objects, wells_objects, slp = 4*10.) # calc prior at MT stations position
+		calc_prior_meb(station_objects, wells_objects, slp = 4*10., quadrant = False) # calc prior at MT stations position
 		# plot surface of prior
-		if True:	
+		if False:	
 			if False: # by Delanuay triangulation 
 				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 				ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
@@ -567,6 +564,7 @@ if __name__ == "__main__":
 					## range for the parameters
 					par_range = [[.01*1e2,2.*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 					#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
+					#par_range = [[.01*1e2,2.*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,20.*1e1],[.5*1e1,1.*1e3]]
 					# error floor
 					error_max_per = [5.,2.5] # [10.,5.]	[20.,10.]			
 					## inv_dat: weighted data to invert and range of periods
@@ -650,7 +648,7 @@ if __name__ == "__main__":
 						error_max_per = [1.,1.]
 					# set number of walkers and walker jumps
 					nwalkers = 40
-					walk_jump = 2500
+					walk_jump = 3000
 					# run inversion
 					try: 
 						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
@@ -721,7 +719,7 @@ if __name__ == "__main__":
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
-		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, 
+		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, \
 			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 112.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
@@ -803,8 +801,8 @@ if __name__ == "__main__":
 			x_lim = [175.9,176.3]
 			y_lim = None #[-38.68,-38.57]
 			# call function 
-			grid_MT_inv_rest(station_objects, coords = coords, n_points = 100, slp = 4*10., file_name = file_name, path_output = path_output,\
-				plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim)
+			grid_MT_inv_rest(station_objects, coords = coords, n_points = 20, slp = 4*10., file_name = file_name, path_output = path_output,\
+				plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 

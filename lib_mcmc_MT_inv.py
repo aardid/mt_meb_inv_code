@@ -811,8 +811,8 @@ class mcmc_inv(object):
             # labels
             #ax.set_xlim([np.min(z_model), np.max(z_model)])
             #ax.set_xlim([0,np.mean(pars_order[2]) + np.mean(pars_order[3]) + 100.])
-            ax.set_xlim([0, 1.e3])
-            ax.set_ylim([1E0,1e3])
+            ax.set_xlim([0, 1.5e3])
+            ax.set_ylim([1E0,1e5])
             #ax.set_ylim([1E-1,1.5e3])
             ax.set_xlabel('depth [m]', size = textsize)
             ax.set_ylabel(r'$\rho$ [$\Omega$ m]', size = textsize)
@@ -852,7 +852,7 @@ class mcmc_inv(object):
                 ax1.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax1.plot(bins, y, 'r-', linewidth=1, label = 'normal fit') #$\mu$:{:3.1f},$\sigma$:{:2.1f}'.format(mu,sigma))
                 # plot lines for mean of z1 and z2 (top plot)
-                ax.plot([mu,mu],[1e-1,1e3],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax.plot([mu,mu],[1e-1,1e5],'r--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
                 #ax1.plot([mu,mu],[0,max(y)],'r--', label = '$\mu$ of  $z_1$', linewidth=1.0)
 
                 # z2
@@ -871,7 +871,7 @@ class mcmc_inv(object):
                 ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu2,sigma), fontsize = textsize, color='gray')#, y=0.8)
                 ax2.plot(bins, y, 'r-', linewidth=1, label = 'normal fit')
                 # plot lines for mean of z1 and z2 (top plot)
-                ax.plot([mu+mu2,mu+mu2],[1e-1,1e3],'b--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                ax.plot([mu+mu2,mu+mu2],[1e-1,1e5],'b--', linewidth=1.5, alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
                 #ax2.plot([mu2,mu2],[0,max(y)],'b--', label = '$\mu$ of  $z_2$', linewidth=1.0)
                 # axis for main plot 
                 ax.set_xlim([0, mu+mu2+200])
@@ -1176,7 +1176,7 @@ class mcmc_inv(object):
 #  Functions
 # ==============================================================================
 
-def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None): 
+def calc_prior_meb(station_objects, wells_objects, slp = None, quadrant = None): 
     """
     Function that calculate MeB prior for each MT station based on MeB mcmc results on wells. 
     First, for each quadrant around the station, the nearest well with MeB data is found. 
@@ -1200,174 +1200,239 @@ def calc_prior_meb_quadrant(station_objects, wells_objects, slp = None):
         slp = 10.
 
     for sta_obj in station_objects:
-        dist_pre_q1 = []
-        dist_pre_q2 = []
-        dist_pre_q3 = []
-        dist_pre_q4 = []
-        #
-        name_aux_q1 = [] 
-        name_aux_q2 = []
-        name_aux_q3 = []
-        name_aux_q4 = []
-        wl_q1 = []
-        wl_q2 = []
-        wl_q3 = []
-        wl_q4 = []
-        for wl in wells_objects:
-            if wl.meb:
-                # search for nearest well to MT station in quadrant 1 (Q1)
-                if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
-                    # distance between station and well
-                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
-                    if not dist_pre_q1:
-                        dist_pre_q1 = dist
-                    # check if distance is longer than the previous wel 
-                    if dist <= dist_pre_q1: 
-                        name_aux_q1 = wl.name
-                        wl_q1 = wl
-                        dist_pre_q1 = dist
-                # search for nearest well to MT station in quadrant 2 (Q2)
-                if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
-                    # distance between station and well
-                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
-                    if not dist_pre_q2:
-                        dist_pre_q2 = dist
-                    # check if distance is longer than the previous wel 
-                    if dist <= dist_pre_q2: 
-                        name_aux_q2 = wl.name
-                        wl_q2 = wl
-                        dist_pre_q2 = dist
-                # search for nearest well to MT station in quadrant 3 (Q3)
-                if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
-                    # distance between station and well
-                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
-                    if not dist_pre_q3:
-                        dist_pre_q3 = dist
-                    # check if distance is longer than the previous wel 
-                    if dist <= dist_pre_q3: 
-                        name_aux_q3 = wl.name
-                        wl_q3 = wl
-                        dist_pre_q3 = dist
-                # search for nearest well to MT station in quadrant 4 (Q4)
-                if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
-                    # distance between station and well
-                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
-                    if not dist_pre_q4:
-                        dist_pre_q4 = dist
-                    # check if distance is longer than the previous wel 
-                    if dist <= dist_pre_q4: 
-                        name_aux_q4 = wl.name
-                        wl_q4 = wl
-                        dist_pre_q4 = dist
 
-        # save names of nearest wells to be used for prior
-        sta_obj.prior_meb_wl_names = [name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
-        sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
-        near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
-        near_wls = list(filter(None, near_wls))
-        dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
-        dist_wels = list(filter(None, dist_wels))
-        sta_obj.prior_meb_wl_dist = dist_wels
+        if quadrant: # use 4 closest wells (search by quadrant approach)
+            dist_pre_q1 = []
+            dist_pre_q2 = []
+            dist_pre_q3 = []
+            dist_pre_q4 = []
+            #
+            name_aux_q1 = [] 
+            name_aux_q2 = []
+            name_aux_q3 = []
+            name_aux_q4 = []
+            wl_q1 = []
+            wl_q2 = []
+            wl_q3 = []
+            wl_q4 = []
+            for wl in wells_objects:
+                if wl.meb:
+                    # search for nearest well to MT station in quadrant 1 (Q1)
+                    if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+                        # distance between station and well
+                        dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                        if not dist_pre_q1:
+                            dist_pre_q1 = dist
+                        # check if distance is longer than the previous wel 
+                        if dist <= dist_pre_q1: 
+                            name_aux_q1 = wl.name
+                            wl_q1 = wl
+                            dist_pre_q1 = dist
+                    # search for nearest well to MT station in quadrant 2 (Q2)
+                    if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec > sta_obj.lon_dec): 
+                        # distance between station and well
+                        dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                        if not dist_pre_q2:
+                            dist_pre_q2 = dist
+                        # check if distance is longer than the previous wel 
+                        if dist <= dist_pre_q2: 
+                            name_aux_q2 = wl.name
+                            wl_q2 = wl
+                            dist_pre_q2 = dist
+                    # search for nearest well to MT station in quadrant 3 (Q3)
+                    if (wl.lat_dec < sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+                        # distance between station and well
+                        dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                        if not dist_pre_q3:
+                            dist_pre_q3 = dist
+                        # check if distance is longer than the previous wel 
+                        if dist <= dist_pre_q3: 
+                            name_aux_q3 = wl.name
+                            wl_q3 = wl
+                            dist_pre_q3 = dist
+                    # search for nearest well to MT station in quadrant 4 (Q4)
+                    if (wl.lat_dec > sta_obj.lat_dec and wl.lon_dec < sta_obj.lon_dec): 
+                        # distance between station and well
+                        dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')
+                        if not dist_pre_q4:
+                            dist_pre_q4 = dist
+                        # check if distance is longer than the previous wel 
+                        if dist <= dist_pre_q4: 
+                            name_aux_q4 = wl.name
+                            wl_q4 = wl
+                            dist_pre_q4 = dist
 
-        # Calculate prior values for boundaries of the cc in station
-        # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
-        # z1
-        z1_mean_prior = np.zeros(len(near_wls))
-        z1_std_prior = np.zeros(len(near_wls))
-        z2_mean_prior = np.zeros(len(near_wls))
-        z2_std_prior = np.zeros(len(near_wls))
-        #
-        z1_std_prior_incre = np.zeros(len(near_wls))
-        z2_std_prior_incre = np.zeros(len(near_wls))
-        count = 0
-        # extract meb mcmc results from nearest wells 
-        for wl in near_wls:
-            # extract meb mcmc results from file 
-            meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
-            # values for mean a std for normal distribution representing the prior
-            z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
-            z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-            z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
-            z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
-            # calc. increment in std. in the position of the station
-            # std. dev. increases as get farder from the well. It double its values per 2 km.
-            #z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
-            #z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
-            z1_std_prior_incre[count] = z1_std_prior[count]  + (sta_obj.prior_meb_wl_dist[count] *slp)
-            z2_std_prior_incre[count] = z2_std_prior[count]  + (sta_obj.prior_meb_wl_dist[count] *slp)
-            # load pars in well 
-            count+=1
+            # save names of nearest wells to be used for prior
+            sta_obj.prior_meb_wl_names = [name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+            sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
+            near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
+            near_wls = list(filter(None, near_wls))
+            dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
+            dist_wels = list(filter(None, dist_wels))
+            sta_obj.prior_meb_wl_dist = dist_wels
 
-        # calculete z1 normal prior parameters
-        dist_weigth = [1./d for d in sta_obj.prior_meb_wl_dist]
-        z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
-        # std. dev. increases as get farder from the well. It double its values per km.  
-        z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
-        # calculete z2 normal prior parameters
-        # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
-        #z2_mean_prior = z2_mean_prior - z1_mean_prior
-        #print(z2_mean_prior)
-        z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
-        #z2_mean = z2_mean 
-        if z2_mean < 0.:
-            raise ValueError
-        z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+            # Calculate prior values for boundaries of the cc in station
+            # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+            # z1
+            z1_mean_prior = np.zeros(len(near_wls))
+            z1_std_prior = np.zeros(len(near_wls))
+            z2_mean_prior = np.zeros(len(near_wls))
+            z2_std_prior = np.zeros(len(near_wls))
+            #
+            z1_std_prior_incre = np.zeros(len(near_wls))
+            z2_std_prior_incre = np.zeros(len(near_wls))
+            count = 0
+            # extract meb mcmc results from nearest wells 
+            for wl in near_wls:
+                # extract meb mcmc results from file 
+                meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+                # values for mean a std for normal distribution representing the prior
+                z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+                z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+                z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+                z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
+                # calc. increment in std. in the position of the station
+                # std. dev. increases as get farder from the well. It double its values per 2 km.
+                #z1_std_prior_incre[count] = z1_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
+                #z2_std_prior_incre[count] = z2_std_prior[count] * (sta_obj.prior_meb_wl_dist[count]*slp  + 1.)
+                z1_std_prior_incre[count] = z1_std_prior[count]  + (sta_obj.prior_meb_wl_dist[count] *slp)
+                z2_std_prior_incre[count] = z2_std_prior[count]  + (sta_obj.prior_meb_wl_dist[count] *slp)
+                # load pars in well 
+                count+=1
+
+            # calculete z1 normal prior parameters
+            dist_weigth = [1./d for d in sta_obj.prior_meb_wl_dist]
+            z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
+            # std. dev. increases as get farder from the well. It double its values per km.  
+            z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+            # calculete z2 normal prior parameters
+            # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+            #z2_mean_prior = z2_mean_prior - z1_mean_prior
+            #print(z2_mean_prior)
+            z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
+            #z2_mean = z2_mean 
+            if z2_mean < 0.:
+                raise ValueError
+            z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+
+        else: # use every well available
+            # save names of nearest wells to be used for prior
+            near_wls = [wl for wl in wells_objects if wl.meb] #list of objects (wells)
+            near_wls = list(filter(None, near_wls))
+            dist_wels = [dist_two_points([wl.lon_dec, wl.lat_dec], [sta_obj.lon_dec, sta_obj.lat_dec], type_coord = 'decimal')\
+                for wl in wells_objects if wl.meb]
+            dist_wels = list(filter(None, dist_wels))
+            # Calculate prior values for boundaries of the cc in station
+            # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+            # z1
+            z1_mean_prior = np.zeros(len(near_wls))
+            z1_std_prior = np.zeros(len(near_wls))
+            z2_mean_prior = np.zeros(len(near_wls))
+            z2_std_prior = np.zeros(len(near_wls))
+            #
+            z1_std_prior_incre = np.zeros(len(near_wls))
+            z2_std_prior_incre = np.zeros(len(near_wls))
+            count = 0
+            # extract meb mcmc results from nearest wells 
+            for wl in near_wls:
+                # extract meb mcmc results from file 
+                meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+                # values for mean a std for normal distribution representing the prior
+                z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+                z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+                z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+                z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
+                # calc. increment in std. in the position of the station
+                # std. dev. increases as get farder from the well. It double its values per 2 km.
+                z1_std_prior_incre[count] = z1_std_prior[count]  + (dist_wels[count] *slp)
+                z2_std_prior_incre[count] = z2_std_prior[count]  + (dist_wels[count] *slp)
+                # load pars in well 
+                count+=1
+            # calculete z1 normal prior parameters
+            dist_weigth = [1./d for d in dist_wels]
+            z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
+            # std. dev. increases as get farder from the well. It double its values per km.  
+            z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+            # calculete z2 normal prior parameters
+            # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+            #z2_mean_prior = z2_mean_prior - z1_mean_prior
+            #print(z2_mean_prior)
+            z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
+            #z2_mean = z2_mean 
+            if z2_mean < 0.:
+                raise ValueError
+            z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)  
+
+            # save names of nearest wells to be used for prior
+            idx_sort = np.argsort(dist_wels)
+            dist_wels =  [dist_wels[idx_sort[i]] for i in range(len(idx_sort))]
+            near_wls =  [near_wls[idx_sort[i]] for i in range(len(idx_sort))]
+            try:
+                sta_obj.prior_meb_wl_names = near_wls[0:3]#[name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+            except:
+                try:
+                    sta_obj.prior_meb_wl_names = near_wls[0:2]#[name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+                except:
+                    sta_obj.prior_meb_wl_names = near_wls[0:1]#[name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
+            sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
         # assign result to attribute
         sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean - z1_mean,z2_std]]
-        # create plot of meb prior and save in station folder. 
-        f = plt.figure(figsize=[7.5,5.5])
-        ax=plt.subplot(2, 1, 1)
-        ax1=plt.subplot(2, 1, 2)
-        # plot for z1
-        min_x = 0#min([z1_mean - 3*z1_std, min(z1_mean_prior) - 3*max(z1_std_prior)])
-        max_x = max([z1_mean - 3*z1_std, max(z1_mean_prior) + 3*max(z1_std_prior)])
-        x_axis = np.arange(min_x, max_x, 1.)
-        count = 0
-        for wl in near_wls:
-            # values for mean a std for normal distribution representing the prior
-            #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
-            #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-            ax.plot(x_axis, norm.pdf(x_axis,z1_mean_prior[count],z1_std_prior[count]), label = '$z_1$ well: '+wl.name)
-            count+=1
-        ax.plot(x_axis, norm.pdf(x_axis,z1_mean,z1_std),label = 'prior $z_1$')
-        #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
-        ax.set_xlabel('$z_1$ [m]', size = textsize)
-        ax.set_ylabel('pdf', size = textsize)
-        ax.set_title('MeB prior for MT station '+ sta_obj.name[:-4], size = textsize)
-        ax.legend(loc=1, prop={'size': textsize})	
-        
-        # plot for z2
-        min_x = min([z2_mean - 3*z2_std, min(z2_mean_prior) - 3*max(z2_std_prior)])
-        max_x = max([z2_mean - 3*z2_std, max(z2_mean_prior) + 3*max(z2_std_prior)])
-        x_axis = np.arange(min_x, max_x, 1.)
-        count = 0
-        for wl in near_wls:
-            # values for mean a std for normal distribution representing the prior
-            #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
-            #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-            ax1.plot(x_axis, norm.pdf(x_axis,z2_mean_prior[count],z2_std_prior[count]), label = '$z_2$ well: '+wl.name)
-            count+=1
-        ax1.plot(x_axis, norm.pdf(x_axis,z2_mean,z2_std),label = 'prior $z_2$')
-        #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
-        ax1.set_xlabel('$z_2$ [m]', size = textsize)
-        ax1.set_ylabel('pdf', size = textsize)
-        #ax1.set_title('MeB prior for station: '+ sta_obj.name, size = textsize)
-        ax1.legend(loc=1, prop={'size': textsize})
 
-        ax.tick_params(axis="x", labelsize=textsize)
-        ax.tick_params(axis="y", labelsize=textsize)
+        if quadrant:
+            # create plot of meb prior and save in station folder. 
+            f = plt.figure(figsize=[7.5,5.5])
+            ax=plt.subplot(2, 1, 1)
+            ax1=plt.subplot(2, 1, 2)
+            # plot for z1
+            min_x = 0#min([z1_mean - 3*z1_std, min(z1_mean_prior) - 3*max(z1_std_prior)])
+            max_x = max([z1_mean - 3*z1_std, max(z1_mean_prior) + 3*max(z1_std_prior)])
+            x_axis = np.arange(min_x, max_x, 1.)
+            count = 0
+            for wl in near_wls:
+                # values for mean a std for normal distribution representing the prior
+                #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+                #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+                ax.plot(x_axis, norm.pdf(x_axis,z1_mean_prior[count],z1_std_prior[count]), label = '$z_1$ well: '+wl.name)
+                count+=1
+            ax.plot(x_axis, norm.pdf(x_axis,z1_mean,z1_std),label = 'prior $z_1$')
+            #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
+            ax.set_xlabel('$z_1$ [m]', size = textsize)
+            ax.set_ylabel('pdf', size = textsize)
+            ax.set_title('MeB prior for MT station '+ sta_obj.name[:-4], size = textsize)
+            ax.legend(loc=1, prop={'size': textsize})	
+            
+            # plot for z2
+            min_x = min([z2_mean - 3*z2_std, min(z2_mean_prior) - 3*max(z2_std_prior)])
+            max_x = max([z2_mean - 3*z2_std, max(z2_mean_prior) + 3*max(z2_std_prior)])
+            x_axis = np.arange(min_x, max_x, 1.)
+            count = 0
+            for wl in near_wls:
+                # values for mean a std for normal distribution representing the prior
+                #z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+                #z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+                ax1.plot(x_axis, norm.pdf(x_axis,z2_mean_prior[count],z2_std_prior[count]), label = '$z_2$ well: '+wl.name)
+                count+=1
+            ax1.plot(x_axis, norm.pdf(x_axis,z2_mean,z2_std),label = 'prior $z_2$')
+            #plt.plot(x_axis, norm.pdf(x_axis,sta_obj.prior_meb[1][0],sta_obj.prior_meb[1][1]), label = 'prior z2')
+            ax1.set_xlabel('$z_2$ [m]', size = textsize)
+            ax1.set_ylabel('pdf', size = textsize)
+            #ax1.set_title('MeB prior for station: '+ sta_obj.name, size = textsize)
+            ax1.legend(loc=1, prop={'size': textsize})
 
-        ax1.tick_params(axis="x", labelsize=textsize)
-        ax1.tick_params(axis="y", labelsize=textsize)
-        
-        plt.tight_layout()
-        sta_obj.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+sta_obj.name[:-4]
-        try:
-            plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',
-                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
-        except:
-            pass
-        plt.close()
+            ax.tick_params(axis="x", labelsize=textsize)
+            ax.tick_params(axis="y", labelsize=textsize)
+
+            ax1.tick_params(axis="x", labelsize=textsize)
+            ax1.tick_params(axis="y", labelsize=textsize)
+            
+            plt.tight_layout()
+            sta_obj.path_results = '.'+os.sep+str('mcmc_inversions')+os.sep+sta_obj.name[:-4]
+            try:
+                plt.savefig(sta_obj.path_results+os.sep+'meb_prior.png', dpi=300, facecolor='w', edgecolor='w',
+                    orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            except:
+                pass
+            plt.close()
 
 def plot_bound_uncert(station_objects, file_name = None): 
     '''Plot uncertainty in boundary depths

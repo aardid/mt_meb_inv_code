@@ -45,19 +45,22 @@ if __name__ == "__main__":
     ## Set of MT data to work with 
     full_dataset = True
     # Filter has qualitu MT stations
-    filter_lowQ_data = True
-
+    filter_lowQ_data_MT = True
     ## run with quality filter per well
-    q_filt = True
-
+    filter_lowQ_data_well = True
     ## Sections of the code tu run
     set_up = True 
+    calc_cond_bound = False
+    calc_cond_bound_temps = True
+    plot_temp_bc = False
 
     # (0) Import data and create objects: wells from spreadsheet files
     if set_up:
         #### Import data: MT from edi files and wells from spreadsheet files
         #########  MT data
         if pc == 'office': 
+            #########  MT data
+            path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
             ####### Temperature in wells data
             path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
             path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt"
@@ -94,7 +97,7 @@ if __name__ == "__main__":
         station_objects = []   # list to be fill with station objects
         count  = 0
         # remove bad quality stations from list 'sta2work' (based on inv_pars.txt)
-        if filter_lowQ_data: 
+        if filter_lowQ_data_MT: 
             name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
             BQ_sta = [x.split()[0][:-4] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
             sta2work = [x for x in sta2work if not x in BQ_sta]
@@ -133,6 +136,12 @@ if __name__ == "__main__":
         # Defined lists of wells
         if full_dataset:
             wl2work = wl_name
+
+		# remove bad quality wells from list 'wl2work' (based on Q_temp_prof.txt)
+        if filter_lowQ_data_well: 
+            name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
+            BQ_sta = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+            wl2work = [x for x in wl2work if not x in BQ_sta]
 
         #########################################################################################
         # ## Loop over the wells to create objects and assing data attributes 
@@ -249,3 +258,50 @@ if __name__ == "__main__":
                 wl.meb_depth = wl_prof_depth_meb[idx]
                 count_meb_wl+=1
                 #wells_meb.append(wl.name)
+        
+        ## create folder structure
+        if True:
+            try: 
+                os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+'00_global')
+            except:
+                pass
+            for wl in wells_objects:
+                try: 
+                    os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+wl.name)
+                except:
+                    pass
+
+    # (1) Calc. z1 and z2 in well positions 
+    if calc_cond_bound:
+        ## Estimate z1 and z2 at wells positions from MT inversion
+        wl_z1_z2_est_mt(wells_objects, station_objects, slp = 10., plot_temp_prof = True)
+
+    # (2) Calc. T1 and T2 at well positions 
+    if calc_cond_bound_temps: 
+        # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
+        wl_T1_T2_est(wells_objects)
+    # (2) grid surface and plot temperature at conductor boundaries
+    if plot_temp_bc: 
+        ## load z1 and z2 pars
+        for wl in wells_objects:
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
+            wl.z1_pars = [aux[0],aux[1]]
+            wl.z2_pars = [aux[2],aux[3]]
+        # define region to grid
+        coords = [175.95,176.250,-38.77,-38.55] # [min lon, max lon, min lat, max lat]
+        # fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
+        file_name = 'grid_temp_bc'
+        path_output = '.'+os.sep+'corr_temp_bc'+os.sep+'00_global'
+        ##
+        # image background
+        path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
+        ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
+        x_lim = [175.9,176.3]
+        y_lim = None #[-38.68,-38.57]
+        # call function 
+        grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 20, slp = 1*10., file_name = file_name, path_output = path_output,\
+            plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
+
+
+
+     
