@@ -17,6 +17,7 @@ import os
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.optimize import curve_fit
 from Maping_functions import*
+from misc_functios import*
 from scipy.stats import norm
 import matplotlib.mlab as mlab
 
@@ -794,22 +795,6 @@ def calc_layer_mod_quadrant(station_objects, wells_objects):
         wl.z1_pars = [z1_mean,z1_std]
         wl.z2_pars = [z2_mean,z2_std]
         
-def find_nearest(array, value):
-    """
-    Find nearest to value in an array
-    
-    Input:
-    - array: numpy array to look in
-    - value: value to search
-    
-    Output:
-    - array[idx]: closest element in array to value
-
-    """
-    array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return array[idx]
-
 def Texp2(z,Zmin,Zmax,Tmin,Tmax,beta): 
     """
     Calculate temp. profile based on model 1D heat transfer model (See Bredehoeft, J. D., and I. S. Papadopulos (1965))
@@ -1087,33 +1072,29 @@ def wl_T1_T2_est(wells_objects):
         wl.z1_pars = [aux[0],aux[1]]
         wl.z2_pars = [aux[2],aux[3]]
     # sample temp values and calc T1 and T2 
-    Ns = 200
+    Ns = 500
     for wl in wells_objects:
         # array of samples
         z1_sam = np.random.normal(wl.z1_pars[0], wl.z1_pars[1], Ns)
-        z2_sam = np.random.normal(wl.z1_pars[0], wl.z1_pars[1], Ns)
+        z2_sam = np.random.normal(wl.z2_pars[0], wl.z2_pars[1], Ns)
         # 
         T1_sam = z1_sam*0
         T2_sam = z1_sam*0
         # 
         for i in range(len(T1_sam)):
-            print(wl.name)
-            print(wl.red_depth_rs)
             # T1
-            z1_s = z1_sam[i]
-            [val, idx] = find_nearest(wl.red_depth_rs, wl.elev - z1_s)
-            asdf
+            val, idx = find_nearest(wl.red_depth_rs, wl.elev - z1_sam[i])
             T1_sam[i] = wl.temp_prof_rs[idx]
             # T2
-            val, idx = find_nearest(wl.red_depth_rs, z2_sam[i])
+            val, idx = find_nearest(wl.red_depth_rs, wl.elev - (z1_sam[i] + z2_sam[i]))
             T2_sam[i] = wl.temp_prof_rs[idx]
-            # Assign attributes TX_pars and save in .txt
-            wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
-            wl.T1_pars = [np.mean(T2_sam),np.std(T2_sam)]
-            # save pars in .txt
-            g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
-            g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
-            g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.z1_pars[0],wl.z1_pars[1],wl.z2_pars[0],wl.z2_pars[1]))
-            g.close()
+        # Assign attributes TX_pars and save in .txt
+        wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
+        wl.T2_pars = [np.mean(T2_sam),np.std(T2_sam)]
+        # save pars in .txt
+        g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
+        g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
+        g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.T1_pars[0], wl.T1_pars[1], wl.T2_pars[0], wl.T2_pars[1]))
+        g.close()
 
 

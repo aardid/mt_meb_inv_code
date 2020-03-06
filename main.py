@@ -44,16 +44,16 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
+	#pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	#pc = 'personalMac'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = False
+	full_dataset = True
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
 	#
 	prof_NEMT2 = False
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	plot_2D_MT = True
+	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False

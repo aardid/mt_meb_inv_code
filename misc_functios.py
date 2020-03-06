@@ -95,4 +95,7 @@ def find_nearest(array, value):
     """
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
-    return array[idx], idx
+    try:    
+        return array[idx], idx
+    except:
+        return array[0][idx], idx            
