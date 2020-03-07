@@ -51,8 +51,8 @@ if __name__ == "__main__":
     ## Sections of the code tu run
     set_up = True 
     calc_cond_bound = False
-    calc_cond_bound_temps = False
-    plot_temp_bc = True
+    calc_cond_bound_temps = True
+    plot_temp_bc = False
 
     # (0) Import data and create objects: wells from spreadsheet files
     if set_up:
@@ -275,11 +275,6 @@ if __name__ == "__main__":
     if calc_cond_bound:
         ## Estimate z1 and z2 at wells positions from MT inversion
         wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5., plot_temp_prof = True)
-
-    # (2) Calc. T1 and T2 at well positions 
-    if calc_cond_bound_temps: 
-        # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
-        wl_T1_T2_est(wells_objects)
         # remove objects from list when BC is deeper than max depth of temp. profiles
         idx2rmv = [] 
         for i, wl in enumerate(wells_objects):
@@ -287,6 +282,11 @@ if __name__ == "__main__":
                 idx2rmv.append(i)
         wells_objects_aux = [wl for i, wl in enumerate(wells_objects) if i not in idx2rmv]
         wells_objects = wells_objects_aux
+
+    # (2) Calc. T1 and T2 at well positions 
+    if calc_cond_bound_temps: 
+        # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
+        wl_T1_T2_est(wells_objects, hist = True)#, hist_filt = [50,100])
 
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 

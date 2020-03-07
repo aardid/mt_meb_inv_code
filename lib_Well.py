@@ -1062,15 +1062,19 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
         pp.close()
         shutil.move('Temp_prof_conductor_bound_est.pdf','.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'Temp_prof_conductor_bound_est.pdf')
 
-def wl_T1_T2_est(wells_objects):
+def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
     '''
     Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
+    hist_filt = [50, 100], wells with temp lower than a and b are not considered in the histogram for top bound. and bottom bound. 
     '''
     ## load z1 and z2 pars
     for wl in wells_objects:
         aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
         wl.z1_pars = [aux[0],aux[1]]
         wl.z2_pars = [aux[2],aux[3]]
+    if hist: 
+        T1_batch = []
+        T2_batch = []
     # sample temp values and calc T1 and T2 
     Ns = 500
     for wl in wells_objects:
@@ -1091,10 +1095,79 @@ def wl_T1_T2_est(wells_objects):
         # Assign attributes TX_pars and save in .txt
         wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
         wl.T2_pars = [np.mean(T2_sam),np.std(T2_sam)]
+        if hist:
+            if hist_filt:
+                if wl.T1_pars[0] > hist_filt[0]:
+                    T1_batch.append(wl.T1_pars[0])
+                if wl.T2_pars[0] > hist_filt[1]:
+                    T2_batch.append(wl.T2_pars[0])
+            else:
+                T1_batch.append(wl.T1_pars[0])
+                T2_batch.append(wl.T2_pars[0])
+
         # save pars in .txt
         g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
         g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
         g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.T1_pars[0], wl.T1_pars[1], wl.T2_pars[0], wl.T2_pars[1]))
         g.close()
+
+    if hist: 
+        f = plt.figure(figsize=(10, 5))
+        gs = gridspec.GridSpec(nrows=1, ncols=2)
+        ax2 = f.add_subplot(gs[0, 0])
+        ax3 = f.add_subplot(gs[0, 1])
+
+        # T1
+        bins = np.linspace(np.min(T1_batch), np.max(T1_batch), int(np.sqrt(2*len(T1_batch))))
+        h,e = np.histogram(T1_batch, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+        ax2.set_xlabel('$T_1$ [°C]', fontsize=textsize)
+        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(T1_batch)
+        med = np.median(T1_batch)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+        #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        ax2.plot([med,med],[0,np.max(h)+np.max(h/4)],'y-', label = 'median')
+        ax2.legend(loc='upper right', shadow=False, fontsize=textsize, framealpha=1.0)
+
+        # T2
+        bins = np.linspace(np.min(T1_batch), np.max(T2_batch), int(np.sqrt(2*len(T2_batch))))
+        h,e = np.histogram(T2_batch, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+        ax3.set_xlabel('$T_2$ [°C]', fontsize=textsize)
+        ax3.set_ylabel('freq.', fontsize=textsize)
+        ax3.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(T2_batch)
+        med = np.median(T2_batch)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+        #ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+        ax3.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        ax3.plot([med,med],[0,np.max(h)+np.max(h/4)],'r-', label = 'median')
+        ax3.legend(loc='upper right', shadow=False, fontsize=textsize, framealpha=1.0)
+
+        f.tight_layout()
+        if hist_filt:
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_filt_nwells_'+str(len(T1_batch))+'.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        else:
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(T1_batch))+'.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
 
 

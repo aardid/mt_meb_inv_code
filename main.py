@@ -61,14 +61,14 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	# Filter has qualitu MT stations
-	filter_lowQ_data = False
+	filter_lowQ_data = True
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
+	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	plot_2D_MT = False
 	plot_3D_MT = False
@@ -943,9 +943,9 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if False:
+	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
-		if True: 
+		if False: 
 			if False: # option 1: print appres fit to pdf
 				from PIL import Image
 				imagelist = []
@@ -1022,8 +1022,161 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		
+		if True:  # histogram of MT inversion parameters for stations inverted
+			z1_batch = []
+			z2_batch = []
+			r1_batch = []
+			r2_batch = []
+			r3_batch = []
+			## load pars
+			for sta in station_objects:
+				aux = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'est_par.dat')
+				sta.z1_pars = [aux[0][1],aux[0][2]]
+				sta.z2_pars = [aux[1][1],aux[1][2]]
+				sta.r1_pars = [aux[2][1],aux[2][2]]
+				sta.r2_pars = [aux[3][1],aux[3][2]]
+				sta.r3_pars = [aux[4][1],aux[4][2]]
+				# add to batch
+				if sta.z2_pars[0] > 50.:
+					z1_batch.append(sta.z1_pars[0])
+					z2_batch.append(sta.z2_pars[0])
+					r1_batch.append(sta.r1_pars[0])
+					r2_batch.append(sta.r2_pars[0])
+					r3_batch.append(sta.r3_pars[0])
+			# plot histograms 
+			f = plt.figure(figsize=(12, 7))
+			gs = gridspec.GridSpec(nrows=2, ncols=3)
+			ax1 = f.add_subplot(gs[0, 0])
+			ax2 = f.add_subplot(gs[0, 1])
+			ax3 = f.add_subplot(gs[1, 0])
+			ax4 = f.add_subplot(gs[1, 1])
+			ax5 = f.add_subplot(gs[1, 2])
+			ax_leg= f.add_subplot(gs[0, 2])
 
+			# z1
+			bins = np.linspace(np.min(z1_batch), np.max(z1_batch), int(np.sqrt(len(z1_batch))))
+			h,e = np.histogram(z1_batch, bins)
+			m = 0.5*(e[:-1]+e[1:])
+			ax1.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+			ax1.set_xlabel('$z_1$ [m]', fontsize=textsize)
+			ax1.set_ylabel('freq.', fontsize=textsize)
+			ax1.grid(True, which='both', linewidth=0.1)
+			# plot normal fit 
+			(mu, sigma) = norm.fit(z1_batch)
+			med = np.median(z1_batch)
+			try:
+				y = mlab.normpdf(bins, mu, sigma)
+			except:
+				#y = stats.norm.pdf(bins, mu, sigma)
+				pass
+			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+			ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+			ax1.plot([med,med],[0,np.max(h)],'r-')
+
+			# z2
+			bins = np.linspace(np.min(z2_batch), np.max(z2_batch), int(np.sqrt(len(z2_batch))))
+			h,e = np.histogram(z2_batch, bins)
+			m = 0.5*(e[:-1]+e[1:])
+			ax2.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+			ax2.set_xlabel('$z_2$ [m]', fontsize=textsize)
+			ax2.set_ylabel('freq.', fontsize=textsize)
+			ax2.grid(True, which='both', linewidth=0.1)
+			# plot normal fit 
+			(mu, sigma) = norm.fit(z2_batch)
+			med = np.median(z2_batch)
+			try:
+				y = mlab.normpdf(bins, mu, sigma)
+			except:
+				#y = stats.norm.pdf(bins, mu, sigma)
+				pass
+			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+			#ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+			ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+			ax2.plot([med,med],[0,np.max(h)],'b-')
+
+			# r1
+			bins = np.linspace(np.min(r1_batch), np.max(r1_batch), int(np.sqrt(len(r1_batch))))
+			h,e = np.histogram(r1_batch, bins)
+			m = 0.5*(e[:-1]+e[1:])
+			ax3.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+			ax3.set_xlabel(r'$\rho_1$ [$\Omega m$]', fontsize=textsize)
+			ax3.set_ylabel('freq.', fontsize=textsize)
+			ax3.grid(True, which='both', linewidth=0.1)
+			# plot normal fit 
+			(mu, sigma) = norm.fit(r1_batch)
+			med = np.median(r1_batch)
+			try:
+				y = mlab.normpdf(bins, mu, sigma)
+			except:
+				#y = stats.norm.pdf(bins, mu, sigma)
+				pass
+			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+			#ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+			#ax3.set_title('$med$:{:1.1e}, $\mu$:{:1.1e}, $\sigma$: {:1.1e}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+			ax3.set_title('$\mu$:{:1.1e}, $\sigma$: {:1.1e}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+			ax3.plot([med,med],[0,np.max(h)],'y-')
+			
+			# r2
+			bins = np.linspace(np.min(r2_batch), np.max(r2_batch), int(np.sqrt(len(r2_batch))))
+			h,e = np.histogram(r2_batch, bins)
+			m = 0.5*(e[:-1]+e[1:])
+			ax4.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+			ax4.set_xlabel(r'$\rho_2$ [$\Omega m$]', fontsize=textsize)
+			ax4.set_ylabel('freq.', fontsize=textsize)
+			ax4.grid(True, which='both', linewidth=0.1)
+			# plot normal fit 
+			(mu, sigma) = norm.fit(r2_batch)
+			med = np.median(r2_batch)
+			try:
+				y = mlab.normpdf(bins, mu, sigma)
+			except:
+				#y = stats.norm.pdf(bins, mu, sigma)
+				pass
+			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+			ax4.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+			ax4.plot([med,med],[0,np.max(h)],'g-')
+
+			# r3
+			bins = np.linspace(np.min(r3_batch), np.max(r3_batch), int(np.sqrt(len(r3_batch))))
+			h,e = np.histogram(r3_batch, bins)
+			m = 0.5*(e[:-1]+e[1:])
+			ax5.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+			ax5.set_xlabel(r'$\rho_3$ [$\Omega m$]', fontsize=textsize)
+			ax5.set_ylabel('freq.', fontsize=textsize)
+			ax5.grid(True, which='both', linewidth=0.1)
+			# plot normal fit 
+			(mu, sigma) = norm.fit(r3_batch)
+			med = np.median(r3_batch)
+			try:
+				y = mlab.normpdf(bins, mu, sigma)
+			except:
+				#y = stats.norm.pdf(bins, mu, sigma)
+				pass
+			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+			ax5.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+			ax5.plot([med,med],[0,np.max(h)],'m-')
+
+			# plor legend 
+			ax_leg.plot([],[],'r-',label = r'median of $z_1$')
+			ax_leg.plot([],[],'b-',label = r'median of $z_2$')
+			ax_leg.plot([],[],'y-',label = r'median of $\rho_1$')
+			ax_leg.plot([],[],'g-',label = r'median of $\rho_2$')
+			ax_leg.plot([],[],'m-',label = r'median of $\rho_3$')
+			ax_leg.legend(loc='center', shadow=False, fontsize=textsize)
+			ax_leg.axis('off')
+
+			f.tight_layout()
+			plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nsta_'+str(len(station_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+
+
+
+
+			
 
 
 
