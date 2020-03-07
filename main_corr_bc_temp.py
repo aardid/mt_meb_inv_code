@@ -286,7 +286,7 @@ if __name__ == "__main__":
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
         # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
-        wl_T1_T2_est(wells_objects, hist = True)#, hist_filt = [50,100])
+        wl_T1_T2_est(wells_objects, hist = True, hist_filt = [50,100])
 
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 
