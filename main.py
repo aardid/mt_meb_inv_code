@@ -50,10 +50,10 @@ if __name__ == "__main__":
 	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = False
+	full_dataset = True
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
 	#
 	prof_NEMT2 = False
@@ -69,8 +69,8 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	plot_2D_MT = True
+	mcmc_MT_inv = True
+	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -492,7 +492,7 @@ if __name__ == "__main__":
 		# Calculate prior values for boundaries of the cc in station
 		# (prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells)
 		# Function assign results as attributes for MT stations in station_objects (list)
-		calc_prior_meb(station_objects, wells_objects, slp = 4*10., quadrant = False) # calc prior at MT stations position
+		calc_prior_meb(station_objects, wells_objects, slp = 3*10., quadrant = False) # calc prior at MT stations position
 		# plot surface of prior
 		if False:	
 			if False: # by Delanuay triangulation 
@@ -556,7 +556,7 @@ if __name__ == "__main__":
 		# run inversion
 		if True:
 			for sta_obj in station_objects:
-				if sta_obj.ref < 0: # start at 0
+				if sta_obj.ref < 240: # start at 0
 				#if sta_obj.name[:-4] != 'WT030a':
 					pass
 				else: 
