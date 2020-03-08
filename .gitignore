@@ -11,6 +11,12 @@ noise_distributions
 modEM_inv
 base_map_img
 corr_temp_bc
+<<<<<<< HEAD
 MT_info
 paraview_files
 plain_view_plots
+=======
+paraview_files
+plain_view_plots
+MT_info
+>>>>>>> 7ec67399ffef3f718e8853b0c2043e7680b62123

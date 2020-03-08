@@ -1453,7 +1453,7 @@ def grid_meb_prior(wells_objects, coords, n_points = None,  slp = None, file_nam
         plot_2Darray_contourf(Z_z2_mean, name = 'z2 mean', levels = levels)
 
 
-def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = None, file_name = None, plot = None, 
+def grid_temp_conductor_bound(wells_objects, coords, n_points = None,  slp = None, file_name = None, plot = None, 
         path_output = None, path_base_image = None, ext_img = None, xlim = None, ylim = None, just_plot = None, masl = None):
     """
     fn for griding and calculate temperature at the top and bottom of the conductor in grid (define by coords) points 
@@ -1464,23 +1464,19 @@ def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = N
     if slp is None: 
         slp = 1*10.
     if n_points is None:
-        n_points = 100
+        n_points = 20
     if path_output is None: 
         path_output = '.'
     
-
-
     #########################################################
     # vectors for coordinates    
     x = np.linspace(coords[0], coords[1], n_points) # long
     y = np.linspace(coords[2], coords[3], n_points) # lat
     X, Y = np.meshgrid(x, y)
-    Z_z1_mean = X*0.
-    Z_z1_std = X*0
-    Z_z2_mean = X*0
-    Z_z2_std = X*0
-    Z_z1_plus_z2_mean = X*0
-    Z_z1_plus_z2_std = X*0
+    T_z1_mean = X*0.
+    T_z1_std = X*0
+    T_z2_mean = X*0
+    T_z2_std = X*0
     # calculate MeB prior at each position 
     f = open(file_name+'.txt', "w")
     f.write("# lat\tlon\tmean_temp_z1\tstd_temp_z1\tmean_temp_z2\tstd_temp_z2\n")
@@ -1488,65 +1484,64 @@ def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = N
         for i,lon in enumerate(x):
             if True: # use every stations available
                 # save names of nearest wells to be used for prior
-                near_stas = [sta for sta in station_objects] #list of objects (wells)
+                near_stas = [wl for wl in wells_objects] #list of objects (wells)
                 near_stas = list(filter(None, near_stas))
-                dist_stas = [dist_two_points([sta.lon_dec, sta.lat_dec], [lon, lat], type_coord = 'decimal')\
-                    for sta in station_objects]
+                dist_stas = [dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')\
+                    for wl in wells_objects]
                 dist_stas = list(filter(None, dist_stas))
                 # Calculate prior values for boundaries of the cc in station
                 # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
                 # z1
-                z1_mean_MT = np.zeros(len(near_stas))
-                z1_std_MT = np.zeros(len(near_stas))
-                z2_mean_MT = np.zeros(len(near_stas))
-                z2_std_MT = np.zeros(len(near_stas))
+                z1_mean_T = np.zeros(len(near_stas))
+                z1_std_T = np.zeros(len(near_stas))
+                z2_mean_T = np.zeros(len(near_stas))
+                z2_std_T = np.zeros(len(near_stas))
                 #
-                z1_std_MT_incre = np.zeros(len(near_stas))
-                z2_std_MT_incre = np.zeros(len(near_stas))
+                z1_std_T_incre = np.zeros(len(near_stas))
+                z2_std_T_incre = np.zeros(len(near_stas))
                 count = 0
                 # extract meb mcmc results from nearest wells 
-                for sta in near_stas:
+                for wl in near_stas:
                     # extract meb mcmc results from file 
-                    mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+"est_par.dat")
+                    wl_temp_cond_bound = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+"conductor_T1_T2.txt")
                     # values for mean a std for normal distribution representing the prior
-                    z1_mean_MT[count] = mt_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
-                    z1_std_MT[count] =  mt_mcmc_results[0,2] # std z1
-                    z2_mean_MT[count] = mt_mcmc_results[1,1] # mean [1] z2 # median [3] z1
-                    z2_std_MT[count] =  mt_mcmc_results[1,2] # std z2
+                    z1_mean_T[count] = wl_temp_cond_bound[0] # mean [1] z1 # median [3] z1 
+                    z1_std_T[count] =  wl_temp_cond_bound[1] # std z1
+                    z2_mean_T[count] = wl_temp_cond_bound[2] # mean [1] z2 # median [3] z1
+                    z2_std_T[count] =  wl_temp_cond_bound[3] # std z2
                     # calc. increment in std. in the position of the station
                     # std. dev. increases as get farder from the well. It double its values per 2 km.
-                    z1_std_MT_incre[count] = z1_std_MT[count]  + (dist_stas[count] *slp)
-                    z2_std_MT_incre[count] = z2_std_MT[count]  + (dist_stas[count] *slp)
+                    z1_std_T_incre[count] = z1_std_T[count]  + (dist_stas[count] *slp)
+                    z2_std_T_incre[count] = z2_std_T[count]  + (dist_stas[count] *slp)
                     # load pars in well 
                     count+=1
+
                 # calculete z1 normal prior parameters
                 dist_weigth = [1./d for d in dist_stas]
-                z1_mean = np.dot(z1_mean_MT,dist_weigth)/np.sum(dist_weigth)
+                z1_mean = np.dot(z1_mean_T,dist_weigth)/np.sum(dist_weigth)
                 # std. dev. increases as get farder from the well. It double its values per km.  
-                z1_std = np.dot(z1_std_MT_incre,dist_weigth)/np.sum(dist_weigth)
+                z1_std = np.dot(z1_std_T_incre,dist_weigth)/np.sum(dist_weigth)
                 # calculete z2 normal prior parameters
                 # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
                 #z2_mean_prior = z2_mean_prior - z1_mean_prior
                 #print(z2_mean_prior)
-                z2_mean = np.dot(z2_mean_MT,dist_weigth)/np.sum(dist_weigth)
+                z2_mean = np.dot(z2_mean_T,dist_weigth)/np.sum(dist_weigth)
                 #z2_mean = z2_mean 
                 if z2_mean < 0.:
                     raise ValueError
-                z2_std = np.dot(z2_std_MT_incre,dist_weigth)/np.sum(dist_weigth)        
+                z2_std = np.dot(z2_std_T_incre,dist_weigth)/np.sum(dist_weigth)        
 
                 if masl:
-                    z1_mean = sta.elev - z1_mean   # need to import topography (elevation in every point of the grid)
+                    z1_mean = wl.elev - z1_mean   # need to import topography (elevation in every point of the grid)
             
             # write values in .txt
             f.write("{:4.4f}\t{:4.4f}\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}\n".\
                 format(lon,lat,z1_mean,z1_std,z2_mean,z2_std))
             #
-            Z_z1_mean[j][i] = z1_mean
-            Z_z1_std[j][i] = z1_std
-            Z_z2_mean[j][i] = z2_mean
-            Z_z2_std[j][i] = z2_std
-            Z_z1_plus_z2_mean[j][i] = z2_mean + z1_mean
-            Z_z1_plus_z2_std[j][i] = (z1_std + z2_std) / 2
+            T_z1_mean[j][i] = z1_mean
+            T_z1_std[j][i] = z1_std
+            T_z2_mean[j][i] = z2_mean
+            T_z2_std[j][i] = z2_std
 
     f.close()
     if masl:
@@ -1556,7 +1551,7 @@ def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = N
 
     if plot:
         ## 
-        def plot_2Darray_contourf(array, name, levels = None, xlim = None, masl = None):
+        def plot_2Darray_contourf_T(array, name, levels = None, xlim = None, masl = None):
             if levels is None:
                 levels = np.arange(0,501,25)
 
@@ -1580,16 +1575,16 @@ def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = N
             else: 
                 ax.set_ylim(ylim)
             
-            cmap = plt.get_cmap('winter')
+            cmap = plt.get_cmap('YlOrRd')
             ax.set_aspect('equal')
 
-            cf = ax.contourf(X,Y,array,levels = levels,cmap=cmap, alpha=.9, antialiased=True)
-            f.colorbar(cf, ax=ax, label ='[m]')
+            cf = ax.contourf(X,Y,array,levels = levels,cmap=cmap, alpha=.8, antialiased=True)
+            f.colorbar(cf, ax=ax, label ='Temperature °C')
 
-            for sta in station_objects:
-                ax.plot(sta.lon_dec,sta.lat_dec,'.k')
-                coord_aux = [sta.lon_dec, sta.lat_dec]
-            ax.plot(coord_aux,'.k', label = 'MT sta')
+            for wl in wells_objects:
+                ax.plot(wl.lon_dec,wl.lat_dec,'.k')
+                coord_aux = [wl.lon_dec, wl.lat_dec]
+            ax.plot(coord_aux,'.k', label = 'Well')
             
             f.tight_layout()
             ax.set_xlabel('latitud [°]', size = textsize)
@@ -1600,11 +1595,11 @@ def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = N
                 ax.set_title(name, size = textsize)
             ax.legend(loc=1, prop={'size': textsize})
             # save figure
-            file_name = name+'_MT_inv_contourf.png'
+            file_name = name+'_contourf.png'
             plt.savefig(file_name, dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
             if masl:
-                shutil.move(file_name, path_output+os.sep+name+'_MT_inv_contourf_masl.png')
+                shutil.move(file_name, path_output+os.sep+name+'_z1_contourf_masl.png')
             else:
                 shutil.move(file_name, path_output+os.sep+file_name)
             plt.clf()
@@ -1613,23 +1608,18 @@ def grid_temp_conductor_bound(station_objects, coords, n_points = None,  slp = N
         if masl:
             levels = np.arange(0,301,25) # for mean z1
         else:
-            levels = np.arange(100,401,25) # for mean z1
-        plot_2Darray_contourf(Z_z1_mean, name = 'z1 mean', levels = levels, xlim = xlim, masl = masl)
-        levels = np.arange(75,526,25) # for std z1
-        plot_2Darray_contourf(Z_z1_std, name = 'z1 std', levels = levels, xlim = xlim)
+            levels = np.arange(60,150,5) # for mean z1
+        plot_2Darray_contourf_T(T_z1_mean, name = 'T1 mean', levels = levels, xlim = xlim, masl = masl)
+        levels = np.arange(0,90,10) # for std z1
+        plot_2Darray_contourf_T(T_z1_std, name = 'T1 std', levels = levels, xlim = xlim)
         ###
         if masl:
             levels = np.arange(-400,551,25) # for mean z2
         else:
-            levels = np.arange(225,551,25) # for mean z2
-        plot_2Darray_contourf(Z_z2_mean, name = 'z2 mean', levels = levels, xlim = xlim)
-        levels = np.arange(175,501,25) # for std z2
-        plot_2Darray_contourf(Z_z2_std, name = 'z2 std', levels = levels, xlim = xlim)
-        ###
-        levels = np.arange(450,901,25) # for mean z1+z2
-        plot_2Darray_contourf(Z_z1_plus_z2_mean, name = 'z1+z2 mean', levels = levels, xlim = xlim, masl = masl)
-        levels = np.arange(150,501,25) # for std z1+z2
-        plot_2Darray_contourf(Z_z1_plus_z2_std, name = 'z1+z2 std', levels = levels, xlim = xlim)
+            levels = np.arange(110,230,5) # for mean z2
+        plot_2Darray_contourf_T(T_z2_mean, name = 'T2 mean', levels = levels, xlim = xlim)
+        levels = np.arange(0,90,10) # for std z2
+        plot_2Darray_contourf_T(T_z2_std, name = 'T2 std', levels = levels, xlim = xlim)
         ###
 
 def map_stations_wells(station_objects, wells_objects, file_name = None, format = None, \

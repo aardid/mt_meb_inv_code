@@ -456,8 +456,10 @@ class mcmc_meb(object):
                 ax2.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
-                #y = mlab.normpdf(bins, mu, sigma)
-                y = stats.norm.pdf(bins, mu, sigma)
+                try:
+                    y = mlab.normpdf(bins, mu, sigma)
+                except:
+                    y = stats.norm.pdf(bins, mu, sigma)
                 ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
                 ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
                 ax2.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
@@ -472,8 +474,10 @@ class mcmc_meb(object):
                 ax3.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z2)
-                #y = mlab.normpdf(bins, mu, sigma)
-                y = stats.norm.pdf(bins, mu, sigma)
+                try:
+                    y = mlab.normpdf(bins, mu, sigma)
+                except:
+                    y = stats.norm.pdf(bins, mu, sigma)
                 ax3.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
                 ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
                 ax3.set_title('$\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)

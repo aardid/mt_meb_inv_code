@@ -39,8 +39,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 if __name__ == "__main__":
     ## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-    pc = 'office'
-	#pc = 'personalMac'
+    #pc = 'office'
+    pc = 'personalMac'
 
     ## Set of MT data to work with 
     full_dataset = True
@@ -274,21 +274,29 @@ if __name__ == "__main__":
     # (1) Calc. z1 and z2 in well positions 
     if calc_cond_bound:
         ## Estimate z1 and z2 at wells positions from MT inversion
-        wl_z1_z2_est_mt(wells_objects, station_objects, slp = 10., plot_temp_prof = True)
+        wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5., plot_temp_prof = True)
+        # remove objects from list when BC is deeper than max depth of temp. profiles
+        idx2rmv = [] 
+        for i, wl in enumerate(wells_objects):
+            if wl.red_depth_rs[-1]+50 > wl.elev - (wl.z1_pars[0] + wl.z1_pars[1]):
+                idx2rmv.append(i)
+        wells_objects_aux = [wl for i, wl in enumerate(wells_objects) if i not in idx2rmv]
+        wells_objects = wells_objects_aux
 
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
         # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
-        wl_T1_T2_est(wells_objects)
+        wl_T1_T2_est(wells_objects, hist = True, hist_filt = [50,100])
+
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 
         ## load z1 and z2 pars
         for wl in wells_objects:
-            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
-            wl.z1_pars = [aux[0],aux[1]]
-            wl.z2_pars = [aux[2],aux[3]]
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+            wl.T1_pars = [aux[0],aux[1]]
+            wl.T2_pars = [aux[2],aux[3]]
         # define region to grid
-        coords = [175.95,176.250,-38.77,-38.55] # [min lon, max lon, min lat, max lat]
+        coords = [175.97,176.200,-38.74,-38.58] # [min lon, max lon, min lat, max lat]
         # fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
         file_name = 'grid_temp_bc'
         path_output = '.'+os.sep+'corr_temp_bc'+os.sep+'00_global'
@@ -299,7 +307,7 @@ if __name__ == "__main__":
         x_lim = [175.9,176.3]
         y_lim = None #[-38.68,-38.57]
         # call function 
-        grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 20, slp = 1*10., file_name = file_name, path_output = path_output,\
+        grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 100, slp = 5., file_name = file_name, path_output = path_output,\
             plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
 
 
