@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
+	pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	pc = 'personalMac'
+	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -68,13 +68,8 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-<<<<<<< HEAD
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-=======
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
->>>>>>> 7ec67399ffef3f718e8853b0c2043e7680b62123
 	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
@@ -948,7 +943,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if True:
+	if False:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf
@@ -979,6 +974,7 @@ if __name__ == "__main__":
 
 		# delete chain.dat (text file with the whole markov chains) from station folders
 		if False: 
+			
 			for sta in station_objects:
 				try:
 					os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
@@ -1027,7 +1023,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if True:  # histogram of MT inversion parameters for stations inverted
+		if False:  # histogram of MT inversion parameters for stations inverted
 			z1_batch = []
 			z2_batch = []
 			r1_batch = []

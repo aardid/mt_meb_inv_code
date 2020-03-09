@@ -1622,6 +1622,109 @@ def grid_temp_conductor_bound(wells_objects, coords, n_points = None,  slp = Non
         plot_2Darray_contourf_T(T_z2_std, name = 'T2 std', levels = levels, xlim = xlim)
         ###
 
+def scatter_temp_conductor_bound(wells_objects,  path_output = None, \
+    path_base_image = None, ext_img = None, xlim = None, ylim = None, \
+        alpha_img = None):
+    """
+    scatter plot of temperature at the top and bottom of the conductor
+    """   
+    if path_output is None: 
+        path_output = '.'
+    if ext_img is None: 
+        pass
+    else:
+        ext = ext_img
+        if alpha_img is None:
+            alpha_img = 1.0
+        else:
+            alpha_img = alpha_img
+    
+    #########################################################
+    # fill lists with temps at boundaries for each well 
+
+    T1_mean = np.zeros(len(wells_objects))
+    T1_std = np.zeros(len(wells_objects))
+    T2_mean = np.zeros(len(wells_objects))
+    T2_std = np.zeros(len(wells_objects))
+    lon_wells = []
+    lat_wells = []
+
+    count = 0
+    # extract conductor T1 and T2
+    for i, wl in enumerate(wells_objects):
+        # values for mean a std for normal distribution representing the prior
+        T1_mean[i] =  wl.T1_pars[0] # mean [1] z1 # median [3] z1 
+        T1_std[i] =  wl.T1_pars[1] # std z1
+        T2_mean[i] = wl.T2_pars[0] # mean [1] z2 # median [3] z1
+        T2_std[i] =  wl.T2_pars[1] # std z2
+        lon_wells.append(wl.lon_dec)
+        lat_wells.append(wl.lat_dec)
+
+    # fn for scatter plot
+    def plot_2Darray_scatter_T(lon_wells, lat_wells, data, data_std, name_data, \
+        path_base_image = path_base_image, ext_img = None, xlim = None, ylim = None):
+
+        # figure
+        fig, ax = plt.subplots(figsize=(15,12))
+        # plot base image (if given)
+        if ext_img:
+            img=mpimg.imread(path_base_image)
+            ax.imshow(img, extent = ext, alpha = alpha_img) 
+        if xlim is None:
+            ax.set_xlim(ext[:2])
+        else: 
+            ax.set_xlim(xlim)
+        if ylim is None:
+            ax.set_ylim(ext[-2:])
+        else: 
+            ax.set_ylim(ylim)
+
+        alphas = np.zeros(len(lon_wells))
+        #mx_data_std, mn_data_std = max(data_std), min(data_std) 
+        for i in range(len(alphas)):
+            alphas[i] = 1. - data_std[i] / max(data_std) # -. increase the level of transparency
+
+        rgba_colors = np.zeros((len(lon_wells),4))
+        # for red the first column needs to be one
+        rgba_colors[:,0] = .5
+        # the fourth column needs to be your alphas
+        rgba_colors[:, 3] = alphas
+        # size 
+        size = abs(max(data) - data)/1
+
+        # 
+        color = data
+        size = 400*np.ones(len(data))
+        scatter = ax.scatter(lon_wells,lat_wells, s = size, c = color, cmap = 'YlOrRd')#alpha = 0.5)
+        fig.colorbar(scatter, ax=ax, label ='Temperature °C')
+
+        # not sure if clay cap is there 
+
+        ax.set_xlabel('Latitude [°]', size = textsize)
+        ax.set_ylabel('Longitude [°]', size = textsize)
+        #ax.set_title('Depth to inferred clay cap '+bound2plot+' boundary', size = textsize)
+        
+        # Legend 
+        #rgba_color = [.5,0,0,1.]
+        #l1 = plt.scatter([],[], s=400,  color = rgba_color, edgecolors='none')
+
+        #labels = [str(int(abs(max(data)- 400)))+' meters', str(int(abs(max(data)- 200)))+' meters',\
+        #    str(int(abs(max(data)- 100)))+' meters', str(int(abs(max(data)- 50)))+' meters']
+        # save figure
+        plt.savefig(name_data+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+        shutil.move(name_data+'.png', '.'+os.sep+path_output+os.sep+name_data+'_scatter.png')
+        plt.tight_layout()
+        plt.clf()
+    
+    # plot
+    plot_2Darray_scatter_T(lon_wells, lat_wells, T1_mean, T1_std, name_data = 'T1 mean', path_base_image = path_base_image, \
+        ext_img = ext_img, xlim = xlim, ylim = ylim)
+
+
+    ###
+
+
 def map_stations_wells(station_objects, wells_objects, file_name = None, format = None, \
     path_base_image = None, alpha_img = None, ext_img = None, xlim = None, ylim = None, dash_arrow = None):
     
