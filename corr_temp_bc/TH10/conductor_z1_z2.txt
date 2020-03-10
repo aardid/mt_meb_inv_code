@@ -1,2 +1,2 @@
 # mean_z1(thickness layer 1)	std_z1	mean_z2(thickness layer 2)	std_z2
-247.26	85.77	449.54	156.89
+267.96	93.19	504.58	161.36

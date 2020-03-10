@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
+	#pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	#pc = 'personalMac'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	plot_2D_MT = False
-	plot_3D_MT = False
+	plot_3D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
 	files_paraview = False
@@ -943,7 +943,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if False:
+	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf
@@ -1023,7 +1023,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if False:  # histogram of MT inversion parameters for stations inverted
+		if True:  # histogram of MT inversion parameters for stations inverted
 			z1_batch = []
 			z2_batch = []
 			r1_batch = []

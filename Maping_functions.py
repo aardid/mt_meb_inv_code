@@ -1679,37 +1679,15 @@ def scatter_temp_conductor_bound(wells_objects,  path_output = None, \
         else: 
             ax.set_ylim(ylim)
 
-        alphas = np.zeros(len(lon_wells))
-        #mx_data_std, mn_data_std = max(data_std), min(data_std) 
-        for i in range(len(alphas)):
-            alphas[i] = 1. - data_std[i] / max(data_std) # -. increase the level of transparency
-
-        rgba_colors = np.zeros((len(lon_wells),4))
-        # for red the first column needs to be one
-        rgba_colors[:,0] = .5
-        # the fourth column needs to be your alphas
-        rgba_colors[:, 3] = alphas
-        # size 
-        size = abs(max(data) - data)/1
-
-        # 
-        color = data
-        size = 400*np.ones(len(data))
-        scatter = ax.scatter(lon_wells,lat_wells, s = size, c = color, cmap = 'YlOrRd')#alpha = 0.5)
+        size = 200*np.ones(len(data))
+        scatter = ax.scatter(lon_wells,lat_wells, s = size, c = data, cmap = 'YlOrRd')#alpha = 0.5)
         fig.colorbar(scatter, ax=ax, label ='Temperature °C')
 
         # not sure if clay cap is there 
 
         ax.set_xlabel('Latitude [°]', size = textsize)
         ax.set_ylabel('Longitude [°]', size = textsize)
-        #ax.set_title('Depth to inferred clay cap '+bound2plot+' boundary', size = textsize)
-        
-        # Legend 
-        #rgba_color = [.5,0,0,1.]
-        #l1 = plt.scatter([],[], s=400,  color = rgba_color, edgecolors='none')
 
-        #labels = [str(int(abs(max(data)- 400)))+' meters', str(int(abs(max(data)- 200)))+' meters',\
-        #    str(int(abs(max(data)- 100)))+' meters', str(int(abs(max(data)- 50)))+' meters']
         # save figure
         plt.savefig(name_data+'.png', dpi=300, facecolor='w', edgecolor='w',
             orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	

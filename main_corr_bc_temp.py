@@ -39,8 +39,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 if __name__ == "__main__":
     ## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-    pc = 'office'
-    #pc = 'personalMac'
+    #pc = 'office'
+    pc = 'personalMac'
 
     ## Set of MT data to work with 
     full_dataset = True
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     set_up = True 
     calc_cond_bound = False
     calc_cond_bound_temps = False
-    plot_temp_bc = True
+    plot_temp_bc = False
 
     # (0) Import data and create objects: wells from spreadsheet files
     if set_up:
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
         # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
-        wl_T1_T2_est(wells_objects, hist = True, hist_filt = [50,100])
+        wl_T1_T2_est(wells_objects, hist = True, hist_filt = [0,0])
 
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 
@@ -308,6 +308,7 @@ if __name__ == "__main__":
         y_lim = None #[-38.68,-38.57]
         # call function 
         if False: # contourf plot
+            print('gridding temp at cond. bound')
             grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 100, slp = 5., file_name = file_name, path_output = path_output,\
                 plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
         # scatter plot of temps at conductor boundaries
