@@ -782,7 +782,7 @@ if __name__ == "__main__":
 		if True: # plot plain view with countours
 			##
 			# define region to grid
-			coords = [175.95,176.250,-38.77,-38.55] # [min lon, max lon, min lat, max lat]
+			coords = [175.935, 176.255,-38.77,-38.545] # [min lon, max lon, min lat, max lat]
 			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
 			file_name = 'grid_MT_inv'
 			path_output = '.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'
@@ -943,7 +943,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if True:
+	if False:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf

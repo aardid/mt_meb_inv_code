@@ -8,7 +8,8 @@ textsize = 15.
 
 if __name__ == "__main__":
     split = False
-    merge = True
+    merge = False
+    crop = True
 
     if split:
         # load file
@@ -53,8 +54,21 @@ if __name__ == "__main__":
                 line_count_gen += 1
                 if line_count_gen == nc:
                     break
-
         file1.close() 
             
-
-
+    if crop: 
+        # open original 
+        latlon_coords = np.genfromtxt('Topography_25_m_vertices_LatLonDec.csv', delimiter = ',', skip_header = 1)
+        # filter per coords
+        x_lim = [175.935, 176.255]
+        y_lim = [-38.77,-38.545]
+        rsample = np.arange(0,len(latlon_coords),100)
+        file1 = open("Topography_zoom_WT_re_sample_vertices_LatLonDec.csv","w") # file to be written 
+        file1.write('lat_dec, lon_dec, elev [m] \n')
+        count = 0
+        for i, coord in enumerate(latlon_coords): 
+            if i in rsample:
+                if (coord[1]>x_lim[0] and coord[1]<x_lim[1] and coord[0]>y_lim[0] and coord[0]<y_lim[1]):
+                    if coord[2] != 357.00: # surface of lake Taupo
+                        file1.write("{:.3f}".format(latlon_coords[i][0])+','+"{:.3f}".format(latlon_coords[i][1])+','+"{:.2f}".format(latlon_coords[i][2])+'\n')
+        file1.close()   

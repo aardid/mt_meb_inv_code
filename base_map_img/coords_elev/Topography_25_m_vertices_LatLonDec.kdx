@@ -1,0 +1,22 @@
+Layout {
+  FileType : "delimited"
+  Delimiter : ","
+  Latitude : "0"
+  Longitude : "1"
+  SkipRows : "1"
+  TextCodec : "System"
+  FieldDefinitions {
+    0 {
+      Name : "lat_dec"
+      Type : "double"
+    }
+    1 {
+      Name : " lon_dec"
+      Type : "double"
+    }
+    2 {
+      Name : " elev [m] "
+      Type : "double"
+    }
+  }
+}
