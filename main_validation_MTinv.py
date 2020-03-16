@@ -351,7 +351,7 @@ if __name__ == "__main__":
                     for j in range(Ns):
                         sq_prof_est = square_fn([z1[j],mu_z1+z2[j],r1[j],r2[j],r3[j]], x_axis=z_model)
                         ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0)
-                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0, label= '1D profile from 1D stochastic inversion')
+                    #ax.semilogx(sq_prof_est,z_model,'b-', lw = 1.0, alpha=0.2, zorder=0, label= '1D profile from 1D stochastic inversion')
 
                 if True: # sample from true samples 
                     chain = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'chain_sample_order.dat')

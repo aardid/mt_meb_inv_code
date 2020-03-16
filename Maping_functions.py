@@ -864,7 +864,8 @@ def plot_2D_uncert_isotherms(sta_objects, wells_objects, pref_orient = 'EW', fil
     plt.clf()
 
 def grid_MT_inv_rest(station_objects, coords, n_points = None,  slp = None, file_name = None, plot = None, 
-        path_output = None, path_base_image = None, ext_img = None, xlim = None, ylim = None, just_plot = None, masl = None):
+        path_output = None, path_base_image = None, ext_img = None, xlim = None, 
+            ylim = None, just_plot = None, masl = None):
     """
     fn for griding and calculate meb prior in grid (define by coords) points 
     output: file_name.txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
@@ -1038,6 +1039,200 @@ def grid_MT_inv_rest(station_objects, coords, n_points = None,  slp = None, file
         levels = np.arange(150,501,25) # for std z1+z2
         plot_2Darray_contourf(Z_z1_plus_z2_std, name = 'z1+z2 std', levels = levels, xlim = xlim)
         ###
+
+def topo_MT_inv_rest(station_objects, topo_path, slp = None, file_name = None, path_output = None,\
+	plot = None, path_base_image = None, ext_img = None, xlim = None, ylim = None, masl = None): 
+    """
+    fn to plot the plainview MT results using a grid the topography 
+    """  
+    if file_name is None:
+        file_name = 'topo_MT_inv'
+    if slp is None: 
+        slp = 4*10.
+    if path_output is None: 
+        path_output = '.'
+
+    # import topography and create list of coords. pairs 
+    topo = np.genfromtxt(topo_path, delimiter = ',', skip_header = 1)
+    Lat = [t[0] for t in topo]
+    Lon = [t[1] for t in topo]
+    Elev = [t[2] for t in topo]
+    
+    if False: # plot topography 
+        f = plt.figure(figsize=[12.5,10.5])
+        ax = plt.axes([0.1,0.1,0.9,0.7]) # [left, bottom, width, height]
+        # background img
+        if path_base_image:
+            img=mpimg.imread(path_base_image)
+        else:
+            raise 'no path base image'
+        if ext_img:
+            ext = ext_img
+        else:
+            raise 'no external (bound) values for image image'
+        ax.imshow(img, extent = ext)
+        if xlim is None:
+            ax.set_xlim(ext[:2])
+        else: 
+            ax.set_xlim(xlim)
+        if ylim is None:
+            ax.set_ylim(ext[-2:])
+        else: 
+            ax.set_ylim(ylim)
+        # plot topo 
+        cmap = plt.get_cmap('cividis')
+        ax.set_aspect('equal')
+        cf =  ax.tricontourf(Lon, Lat, Elev, cmap=cmap)
+        f.colorbar(cf, ax=ax, label ='[m]')
+        ax.plot(Lon, Lat,'.')
+        f.tight_layout()
+        ax.set_xlabel('latitud [°]', size = textsize)
+        ax.set_ylabel('longitud [°]', size = textsize)
+        ax.set_title('Topography Wairakei-Tauhara (500 m)', size = textsize)
+        # save figure
+        file_name = 'Topo_WT.png'
+        plt.savefig(file_name, dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+        shutil.move(file_name, path_output+os.sep+file_name)
+        plt.clf()
+
+    # vectors to plot    
+    Z_z1_mean = []
+    Z_z1_std = []
+    Z_z2_mean = []
+    Z_z2_std = []
+    Z_z1_plus_z2_mean = []
+    Z_z1_plus_z2_std = []
+
+    # ----------
+    for i in range(len(Lat)):
+        # save names of nearest wells to be used for prior
+        near_stas = [sta for sta in station_objects] #list of objects (wells)
+        near_stas = list(filter(None, near_stas))
+        dist_stas = [dist_two_points([sta.lon_dec, sta.lat_dec], [Lon[i], Lat[i]], type_coord = 'decimal')\
+            for sta in station_objects]
+        dist_stas = list(filter(None, dist_stas))      
+
+        # Calculate z1 and z1 at topo positions or boundaries of the cc in station
+        # z1
+        z1_mean_MT = np.zeros(len(near_stas))
+        z1_std_MT = np.zeros(len(near_stas))
+        z2_mean_MT = np.zeros(len(near_stas))
+        z2_std_MT = np.zeros(len(near_stas))
+        #
+        z1_std_MT_incre = np.zeros(len(near_stas))
+        z2_std_MT_incre = np.zeros(len(near_stas))
+        count = 0
+        # extract MT mcmc results from nearest wells (z1 and z2)
+        for sta in near_stas:
+            # extract mt results from file 
+            mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+"est_par.dat")
+            # values for mean a std for normal distribution representing the prior
+            z1_mean_MT[count] = mt_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+            z1_std_MT[count] =  mt_mcmc_results[0,2] # std z1
+            z2_mean_MT[count] = mt_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+            z2_std_MT[count] =  mt_mcmc_results[1,2] # std z2
+            # calc. increment in std. in the position of the station
+            # std. dev. increases as get farder from the well. It double its values per 2 km.
+            z1_std_MT_incre[count] = z1_std_MT[count]  + (dist_stas[count] *slp)
+            z2_std_MT_incre[count] = z2_std_MT[count]  + (dist_stas[count] *slp)
+            # load pars in well 
+            count+=1
+            # calculete z1 normal prior parameters
+            dist_weigth = [1./d for d in dist_stas]
+            z1_mean = np.dot(z1_mean_MT,dist_weigth)/np.sum(dist_weigth)
+            # std. dev. increases as get farder from the well. It double its values per km.  
+            z1_std = np.dot(z1_std_MT_incre,dist_weigth)/np.sum(dist_weigth)
+            # calculete z2 normal prior parameters
+            # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+            #z2_mean_prior = z2_mean_prior - z1_mean_prior
+            #print(z2_mean_prior)
+            z2_mean = np.dot(z2_mean_MT,dist_weigth)/np.sum(dist_weigth)
+            #z2_mean = z2_mean 
+            if z2_mean < 0.:
+                raise ValueError
+            z2_std = np.dot(z2_std_MT_incre,dist_weigth)/np.sum(dist_weigth)        
+
+        #
+        Z_z1_mean.append(z1_mean)
+        Z_z1_std.append(z1_std)
+        Z_z2_mean.append(z2_mean)
+        Z_z2_std.append(z2_std)
+        Z_z1_plus_z2_mean.append(z2_mean + z1_mean)
+        Z_z1_plus_z2_std.append((z1_std + z2_std) / 2)
+
+    if plot:
+        ## 
+        def plot_2Darray_tricontourf(array, name, levels = None, xlim = None, ylim = None, masl = None):
+            f = plt.figure(figsize=[12.5,10.5])
+            ax = plt.axes([0.1,0.1,0.9,0.7]) # [left, bottom, width, height]
+            if path_base_image:
+                img=mpimg.imread(path_base_image)
+            else:
+                raise 'no path base image'
+            if ext_img:
+                ext = ext_img
+            else:
+                raise 'no external (bound) values for image image'
+            ax.imshow(img, extent = ext)
+            if xlim is None:
+                ax.set_xlim(ext[:2])
+            else: 
+                ax.set_xlim(xlim)
+            if ylim is None:
+                ax.set_ylim(ext[-2:])
+            else: 
+                ax.set_ylim(ylim)
+            
+            if masl:
+                array = [Elev[i] - array[i] for i in range(len(Elev))]
+
+            # plot topo 
+            if masl:
+                cmap = plt.get_cmap('winter_r')
+            else: 
+                cmap = plt.get_cmap('winter')
+            ax.set_aspect('equal')
+            cf =  ax.tricontourf(Lon, Lat, array, cmap=cmap, levels = levels, alpha = .8)
+            f.colorbar(cf, ax=ax, label ='[m]')
+            #ax.plot(Lon, Lat,'.')
+            for sta in station_objects:
+                ax.plot(sta.lon_dec,sta.lat_dec,'.k')
+                coord_aux = [sta.lon_dec, sta.lat_dec]
+            ax.plot(coord_aux,'.c', label = 'MT sta')
+            #
+            f.tight_layout()
+            ax.set_xlabel('latitud [°]', size = textsize)
+            ax.set_ylabel('longitud [°]', size = textsize)
+            ax.set_title(name, size = textsize)            # save figure          
+            if masl:
+                ax.set_title(name+' m.a.s.l', size = textsize)
+            else:
+                ax.set_title(name, size = textsize)
+            ax.legend(loc=1, prop={'size': textsize})
+            # save figure
+            file_name = name+'_MT_inv_tricontourf.png' 
+            plt.savefig(file_name, dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+            if masl:
+                shutil.move(file_name, path_output+os.sep+file_name[:-4]+'_masl.png')
+            else:
+                shutil.move(file_name, path_output+os.sep+file_name)
+            plt.clf()
+        
+        # plot countours with level
+        # z1
+        levels = np.arange(100,401,25) # for mean z1
+        plot_2Darray_tricontourf(Z_z1_mean, name = 'z1 mean',levels = levels,  xlim = xlim, masl = False)
+        # masl
+        levels = np.arange(-50,351,50) # for mean z1
+        plot_2Darray_tricontourf(Z_z1_mean, name = 'z1 mean',levels = levels, xlim = xlim, masl = True)
+        # z1 + z2
+        levels = np.arange(450,901,25)
+        plot_2Darray_tricontourf(Z_z1_plus_z2_mean, name = 'z1+z2 mean',levels = None, xlim = xlim, masl = False)
+        # masl
+        levels = np.arange(-600,50,80)
+        plot_2Darray_tricontourf(Z_z1_plus_z2_mean, name = 'z1+z2 mean', levels = levels, xlim = xlim, masl = True)
 
 
 def triangulation_meb_results(station_objects, well_objects, path_base_image = None, ext_img = None, xlim = None, ylim = None, \

@@ -71,10 +71,10 @@ if __name__ == "__main__":
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	plot_2D_MT = False
-	plot_3D_MT = True
+	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
-	files_paraview = False
+	files_paraview = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -782,7 +782,7 @@ if __name__ == "__main__":
 		if True: # plot plain view with countours
 			##
 			# define region to grid
-			coords = [175.935, 176.255,-38.77,-38.545] # [min lon, max lon, min lat, max lat]
+			grid = [175.935, 176.255,-38.77,-38.545] # [min lon, max lon, min lat, max lat]
 			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
 			file_name = 'grid_MT_inv'
 			path_output = '.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'
@@ -800,9 +800,23 @@ if __name__ == "__main__":
 			ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
 			x_lim = [175.9,176.3]
 			y_lim = None #[-38.68,-38.57]
-			# call function 
-			grid_MT_inv_rest(station_objects, coords = coords, n_points = 20, slp = 4*10., file_name = file_name, path_output = path_output,\
-				plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
+			#path topo 
+			path_topo = '.'+os.sep+'base_map_img'+os.sep+'coords_elev'+os.sep+'Topography_zoom_WT_re_sample_vertices_LatLonDec.csv'
+			# call function to grid and plot 
+			if False:
+				grid_MT_inv_rest(station_objects, coords = grid, n_points = 20, slp = 4*10., file_name = file_name, path_output = path_output,\
+					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
+			# call function to plot with topo
+			if True: 
+				file_name = 'topo_MT_inv' 
+				try:
+					os.mkdir('.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'+os.sep+'Topo')
+				except:
+					pass
+				path_output = '.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'+os.sep+'Topo'
+				path_topo = '.'+os.sep+'base_map_img'+os.sep+'coords_elev'+os.sep+'Topography_zoom_WT_re_sample_vertices_LatLonDec.csv'
+				topo_MT_inv_rest(station_objects, path_topo, slp = 4*10., file_name = file_name, path_output = path_output, \
+					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
@@ -877,6 +891,9 @@ if __name__ == "__main__":
 			# .csv for mean
 			f = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_mean.csv','w')
 			f.write('station, lon_dec, lat_dec, z1, z2\n')
+			# .csv for mean
+			f0 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_mean_byrow.csv','w')
+			f0.write('station, lon_dec, lat_dec, z\n') # contains z1 and z2 mean as one collumn 
 			# .csv for percentils
 			f10 = open('.'+os.sep+str('paraview_files')+os.sep+'z1_z2_10.csv','w')
 			f10.write('station, lon_dec, lat_dec, z1, z2\n')
@@ -900,6 +917,8 @@ if __name__ == "__main__":
 						z, l, x, y = project([sta.lon_dec, sta.lat_dec])
 						f.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0]))+', '+
 							str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0])))+'\n')
+						f0.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[0]))+'\n')
+						f0.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - (sta.z1_pars[0]+sta.z2_pars[0])))+'\n')
 						# percentils
 						# [mean, std, med, [5%, 10%, 15%, ..., 85%, 90%, 95%]]
 						f10.write(str(sta.name[:-4])+', '+str(x)+', '+str(y)+', '+str((sta.elev - sta.z1_pars[3][1]))+', '+
