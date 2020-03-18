@@ -361,7 +361,7 @@ if __name__ == "__main__":
                         sam = random.randint(0,N_ind_s-1)
                         sq_prof_est = square_fn([chain[sam,2],chain[sam,2]+chain[sam,3],chain[sam,4],chain[sam,5],chain[sam,6]], x_axis=z_model)
                         ax.semilogx(sq_prof_est,z_model,'b-', lw = .5, alpha=0.1, zorder=0)
-                    ax.semilogx(sq_prof_est,z_model,'b-', lw = .5, alpha=0.1, zorder=0, label= '1D profile from 1D stochastic inversion')
+                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1., alpha=0.5, zorder=0, label= '1D profile from 1D stochastic inversion')
 
 
             if plot_meb: 

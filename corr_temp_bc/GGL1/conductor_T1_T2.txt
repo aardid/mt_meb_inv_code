@@ -1,2 +1,2 @@
 # mean_T1(temp at z1)	std_T1	mean_T2(temp at z2)	std_T2
-84.14	28.45	159.60	28.48
+86.28	27.87	161.01	27.78

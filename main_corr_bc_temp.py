@@ -39,8 +39,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 if __name__ == "__main__":
     ## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-    #pc = 'office'
-    pc = 'personalMac'
+    pc = 'office'
+    #pc = 'personalMac'
 
     ## Set of MT data to work with 
     full_dataset = True
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     set_up = True 
     calc_cond_bound = False
     calc_cond_bound_temps = False
-    plot_temp_bc = False
+    plot_temp_bc = True
 
     # (0) Import data and create objects: wells from spreadsheet files
     if set_up:
@@ -301,9 +301,16 @@ if __name__ == "__main__":
         file_name = 'grid_temp_bc' # txt file with grid values
         path_output = '.'+os.sep+'corr_temp_bc'+os.sep+'00_global'
         ##
-        # image background
-        path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
-        ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
+        img_back_topo_ge = True
+        img_back_rest_bound = False
+        # image background: topo 
+        if img_back_topo_ge:
+            path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
+            ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
+        # image background: rest_bound 
+        if img_back_rest_bound:
+            path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
+            ext_file = [175.948466, 176.260520, -38.743590, -38.574484]             
         x_lim = [175.9,176.3]
         y_lim = None #[-38.68,-38.57]
         # call function 

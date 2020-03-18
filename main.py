@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
+	pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	pc = 'personalMac'
+	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -71,10 +71,10 @@ if __name__ == "__main__":
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	plot_2D_MT = False
-	plot_3D_MT = False
+	plot_3D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
-	files_paraview = True
+	files_paraview = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -749,7 +749,7 @@ if __name__ == "__main__":
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
 	if plot_3D_MT:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
-		if False: # plot plain view with circles 
+		if True: # plot plain view with circles 
 			##
 			ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
 			x_lim = [175.948466, 176.260520]
@@ -779,7 +779,7 @@ if __name__ == "__main__":
 			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
 				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
 
-		if True: # plot plain view with countours
+		if False: # plot plain view with countours
 			##
 			# define region to grid
 			grid = [175.935, 176.255,-38.77,-38.545] # [min lon, max lon, min lat, max lat]
@@ -803,7 +803,7 @@ if __name__ == "__main__":
 			#path topo 
 			path_topo = '.'+os.sep+'base_map_img'+os.sep+'coords_elev'+os.sep+'Topography_zoom_WT_re_sample_vertices_LatLonDec.csv'
 			# call function to grid and plot 
-			if False:
+			if True:
 				grid_MT_inv_rest(station_objects, coords = grid, n_points = 20, slp = 4*10., file_name = file_name, path_output = path_output,\
 					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
 			# call function to plot with topo
@@ -817,6 +817,47 @@ if __name__ == "__main__":
 				path_topo = '.'+os.sep+'base_map_img'+os.sep+'coords_elev'+os.sep+'Topography_zoom_WT_re_sample_vertices_LatLonDec.csv'
 				topo_MT_inv_rest(station_objects, path_topo, slp = 4*10., file_name = file_name, path_output = path_output, \
 					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
+
+		if True: # plot plain vien as scatter plot (colorbar as depths)
+			## load z1 and z2 pars
+			# load mcmc results and assign to attributes of pars to station attributes 
+			load_sta_est_par(station_objects)
+			file_name = 'MT_inv' 
+			try:
+				os.mkdir('.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'+os.sep+'Scatter')
+			except:
+				pass
+			path_output = '.'+os.sep+'plain_view_plots'+os.sep+'MT_inv'+os.sep+'Scatter'
+
+			# define region to grid
+			coords = [175.97,176.200,-38.74,-38.58] # [min lon, max lon, min lat, max lat]
+			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
+			##
+			img_back_topo_ge = True
+			img_back_rest_bound = False
+			# image background: topo 
+			if img_back_topo_ge:
+				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
+				ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
+			# image background: rest_bound 
+			if img_back_rest_bound:
+				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_res_map_gearth_2.jpg'
+				ext_file = [175.948466, 176.260520, -38.743590, -38.574484]             
+			x_lim = [175.9,176.3]
+			y_lim = None #[-38.68,-38.57]
+			# call function 
+			if False: # contourf plot
+				print('gridding temp at cond. bound')
+				grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 100, slp = 5., file_name = file_name, path_output = path_output,\
+					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
+			# scatter plot of temps at conductor boundaries
+			if True: # scatter plot
+				x_lim = [175.99,176.21]
+				y_lim = [-38.75,-38.58]
+				scatter_MT_conductor_bound(station_objects,  path_output = path_output, alpha_img = 0.6,\
+					path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
+
+
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
