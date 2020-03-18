@@ -44,10 +44,10 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
+	#pc = 'office'
 	#pc = 'personalSuse'
 	#pc = 'personalWin'
-	#pc = 'personalMac'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -61,17 +61,17 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	# Filter has qualitu MT stations
-	filter_lowQ_data = False
+	filter_lowQ_data = True
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
+	prior_MT_meb_read = False
+	mcmc_MT_inv = False
 	plot_2D_MT = False
-	plot_3D_MT = False
+	plot_3D_MT = True
 	wells_temp_fit = False
 	sta_temp_est = False
 	files_paraview = False
@@ -557,11 +557,11 @@ if __name__ == "__main__":
 		if True:
 			for sta_obj in station_objects:
 				if sta_obj.ref < 134: # start at 0
-				#if sta_obj.name[:-4] != 'WT030a':
+				#if sta_obj.name[:-4] != 'WT081a':
 					pass
 				else: 
 					print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
-					verbose = False
+					verbose = True
 					
 					## range for the parameters
 					par_range = [[.01*1e2,2.*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
@@ -759,7 +759,7 @@ if __name__ == "__main__":
 	# (4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)
 	if plot_3D_MT:
 		print('(4.1) Plot surface of uncertain boundaries z1 and z2 (results of mcmc MT inversion)')
-		if True: # plot plain view with circles 
+		if False: # plot plain view with circles 
 			##
 			ext_file = [175.948466, 176.260520, -38.743590, -38.574484]
 			x_lim = [175.948466, 176.260520]
@@ -843,8 +843,8 @@ if __name__ == "__main__":
 			coords = [175.97,176.200,-38.74,-38.58] # [min lon, max lon, min lat, max lat]
 			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
 			##
-			img_back_topo_ge = True
-			img_back_rest_bound = False
+			img_back_topo_ge = False
+			img_back_rest_bound = True
 			# image background: topo 
 			if img_back_topo_ge:
 				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
@@ -856,15 +856,15 @@ if __name__ == "__main__":
 			x_lim = [175.9,176.3]
 			y_lim = None #[-38.68,-38.57]
 			# call function 
-			if False: # contourf plot
-				print('gridding temp at cond. bound')
-				grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 100, slp = 5., file_name = file_name, path_output = path_output,\
-					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
+			#if False: # contourf plot
+			#	print('gridding temp at cond. bound')
+			#	grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 100, slp = 5., file_name = file_name, path_output = path_output,\
+			#		plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
 			# scatter plot of temps at conductor boundaries
 			if True: # scatter plot
 				x_lim = [175.99,176.21]
 				y_lim = [-38.75,-38.58]
-				scatter_MT_conductor_bound(station_objects,  path_output = path_output, alpha_img = 0.6,\
+				scatter_MT_conductor_bound(station_objects, path_output = path_output, alpha_img = 0.6,\
 					path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well

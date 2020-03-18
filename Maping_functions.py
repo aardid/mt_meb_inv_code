@@ -1647,7 +1647,6 @@ def grid_meb_prior(wells_objects, coords, n_points = None,  slp = None, file_nam
         levels = np.arange(700,1501,25) # for mean z2
         plot_2Darray_contourf(Z_z2_mean, name = 'z2 mean', levels = levels)
 
-
 def grid_temp_conductor_bound(wells_objects, coords, n_points = None,  slp = None, file_name = None, plot = None, 
         path_output = None, path_base_image = None, ext_img = None, xlim = None, ylim = None, just_plot = None, masl = None):
     """
@@ -1817,6 +1816,84 @@ def grid_temp_conductor_bound(wells_objects, coords, n_points = None,  slp = Non
         plot_2Darray_contourf_T(T_z2_std, name = 'T2 std', levels = levels, xlim = xlim)
         ###
 
+def scatter_temp_conductor_bound(wells_objects,  path_output = None, \
+    path_base_image = None, ext_img = None, xlim = None, ylim = None, \
+        alpha_img = None):
+    """
+    scatter plot of temperature at the top and bottom of the conductor
+    """   
+    if path_output is None: 
+        path_output = '.'
+    if ext_img is None: 
+        pass
+    else:
+        ext = ext_img
+        if alpha_img is None:
+            alpha_img = 1.0
+        else:
+            alpha_img = alpha_img
+    #########################################################
+        # fill lists with temps at boundaries for each well 
+    T1_mean = np.zeros(len(wells_objects))
+    T1_std = np.zeros(len(wells_objects))
+    T2_mean = np.zeros(len(wells_objects))
+    T2_std = np.zeros(len(wells_objects))
+    lon_wells = []
+    lat_wells = []
+    count = 0
+    # extract conductor T1 and T2
+    for i, wl in enumerate(wells_objects):
+        # values for mean a std for normal distribution representing the prior
+        T1_mean[i] =  wl.T1_pars[0] # mean [1] z1 # median [3] z1 
+        T1_std[i] =  wl.T1_pars[1] # std z1
+        T2_mean[i] = wl.T2_pars[0] # mean [1] z2 # median [3] z1
+        T2_std[i] =  wl.T2_pars[1] # std z2
+        lon_wells.append(wl.lon_dec)
+        lat_wells.append(wl.lat_dec)
+
+     # fn for scatter plot
+    def plot_2Darray_scatter_T(lon_wells, lat_wells, data, data_std, name_data, \
+        path_base_image = path_base_image, ext_img = None, xlim = None, ylim = None):
+        # figure
+        fig, ax = plt.subplots(figsize=(15,12))
+        # plot base image (if given)
+        if ext_img:
+            img=mpimg.imread(path_base_image)
+            ax.imshow(img, extent = ext, alpha = alpha_img) 
+        if xlim is None:
+            ax.set_xlim(ext[:2])
+        else: 
+            ax.set_xlim(xlim)
+
+        if ylim is None:
+            ax.set_ylim(ext[-2:])
+        else: 
+            ax.set_ylim(ylim)
+        size = 200*np.ones(len(data))
+        scatter = ax.scatter(lon_wells,lat_wells, s = size, c = data, cmap = 'YlOrRd')#alpha = 0.5)
+        fig.colorbar(scatter, ax=ax, label ='Temperature °C')
+        # not sure if clay cap is there 
+        ax.set_xlabel('Latitude [°]', size = textsize)
+        ax.set_ylabel('Longitude [°]', size = textsize)
+
+        if name_data == 'T2 mean':
+            ax.set_title('T2: Temperature at the BOTTOM of the conductor', size = textsize)
+        if name_data == 'T1 mean':
+            ax.set_title('T1: Temperature at the TOP of the conductor', size = textsize)
+        # save figure
+        plt.savefig(name_data+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+        shutil.move(name_data+'.png', '.'+os.sep+path_output+os.sep+name_data+'_scatter.png')
+        plt.tight_layout()
+        plt.clf()
+        # plot
+    # call fn for figures
+    plot_2Darray_scatter_T(lon_wells, lat_wells, T1_mean, T1_std, name_data = 'T1 mean', path_base_image = path_base_image, \
+    ext_img = ext_img, xlim = xlim, ylim = ylim)
+    plot_2Darray_scatter_T(lon_wells, lat_wells, T2_mean, T2_std, name_data = 'T2 mean', path_base_image = path_base_image, \
+    ext_img = ext_img, xlim = xlim, ylim = ylim)
+
+
 def scatter_MT_conductor_bound(station_objects,  path_output = None, \
     path_base_image = None, ext_img = None, xlim = None, ylim = None, \
         alpha_img = None):
@@ -1850,7 +1927,7 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
         # values for mean a std for normal distribution representing the prior
         z1_mean[i] =  sta.z1_pars[0] # mean [1] z1 # median [3] z1 
         z1_std[i] =  sta.z1_pars[1] # std z1
-        z2_mean[i] = sta.z2_pars[0] + z1_mean[i] # mean [1] z2 # median [3] z1
+        z2_mean[i] = sta.z2_pars[0] + sta.z1_pars[1] # mean [1] z2 # median [3] z1
         z2_std[i] =  sta.z2_pars[1] # std z2
         lon_stas.append(sta.lon_dec)
         lat_stas.append(sta.lat_dec)
@@ -1875,7 +1952,7 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
             ax.set_ylim(ylim)
 
         size = 200*np.ones(len(data))
-        scatter = ax.scatter(lon_stas,lat_stas, s = size, c = data, cmap = 'YlOrRd')#alpha = 0.5)
+        scatter = ax.scatter(lon_stas,lat_stas, s = size, c = data, cmap = 'winter')#alpha = 0.5)
         fig.colorbar(scatter, ax=ax, label ='Depth [m]')
 
         # not sure if clay cap is there 
@@ -1887,6 +1964,12 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
 
         if name_data == 'z1 mean':
             ax.set_title('z1: depth at the TOP of the conductor', size = textsize)
+
+        # absence of CC (no_cc)
+        for sta in station_objects:
+            if (sta.z2_pars[0] < 50.):
+                plt.plot(sta.lon_dec, sta.lat_dec,'w.', markersize=28) 
+                plt.plot(sta.lon_dec, sta.lat_dec,'bx', markersize=12)
 
         # save figure
         plt.savefig(name_data+'.png', dpi=300, facecolor='w', edgecolor='w',
@@ -1901,11 +1984,7 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
     plot_2Darray_scatter_Z(lon_stas, lat_stas, z2_mean, z2_std, name_data = 'z2 mean', path_base_image = path_base_image, \
         ext_img = ext_img, xlim = xlim, ylim = ylim)
 
-
-
     ###
-
-
 
 def map_stations_wells(station_objects, wells_objects, file_name = None, format = None, \
     path_base_image = None, alpha_img = None, ext_img = None, xlim = None, ylim = None, dash_arrow = None):
