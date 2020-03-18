@@ -61,17 +61,17 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	# Filter has qualitu MT stations
-	filter_lowQ_data = True
+	filter_lowQ_data = False
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
-	mcmc_MT_inv = False
+	prior_MT_meb_read = True
+	mcmc_MT_inv = True
 	plot_2D_MT = False
-	plot_3D_MT = True
+	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
 	files_paraview = False
@@ -550,17 +550,19 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
-		prior_meb = True  # if false -> None
+		prior_meb = False  # if false -> None
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
 		if True:
 			for sta_obj in station_objects:
-				if sta_obj.ref < 240: # start at 0
+				if sta_obj.ref < 134: # start at 0
 				#if sta_obj.name[:-4] != 'WT030a':
 					pass
 				else: 
 					print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
+					verbose = False
+					
 					## range for the parameters
 					par_range = [[.01*1e2,2.*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
 					#par_range = [[.01*1e2,.5*1e3],[.5*1e1,.5*1e3],[1.*1e1,1.*1e3],[1.*1e0,1.*1e1],[1.*1e1,1.*1e3]]
@@ -632,8 +634,9 @@ if __name__ == "__main__":
 							error_max_per = [20.,10.]	
 							#inv_dat = [1,0,1,0]
 					## print relevant information
-					print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
-					print('inverted data: '+str(inv_dat))
+					if verbose:
+						print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+						print('inverted data: '+str(inv_dat))
 					## plot noise
 					try:
 						path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
@@ -656,10 +659,13 @@ if __name__ == "__main__":
 								range_p = range_p, autocor_accpfrac = True, data_error = True, \
 									error_max_per=error_max_per, error_mean = error_mean)
 					except: # in case that inversion breaks due to low number of independet samples 
-						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
-							walk_jump = walk_jump+1000, nwalkers = nwalkers+10, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
-								range_p = range_p, autocor_accpfrac = True, data_error = True, \
-									error_max_per=error_max_per, error_mean = error_mean)
+						try:
+							mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
+								walk_jump = walk_jump+1000, nwalkers = nwalkers+10, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
+									range_p = range_p, autocor_accpfrac = True, data_error = True, \
+										error_max_per=error_max_per, error_mean = error_mean)
+						except:
+							pass
 
 					if error_max_per:
 						## plot noise
@@ -670,10 +676,11 @@ if __name__ == "__main__":
 						except:
 							pass
 					if prior_meb:
-						print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
-						#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
-						print("	distances = {}".format(sta_obj.prior_meb_wl_dist)) 
-						print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
+						if verbose:
+							print("	wells for MeB prior: {} ".format(sta_obj.prior_meb_wl_names))
+							#print("	[[z1_mean,z1_std],[z2_mean,z2_std]] = {} \n".format(sta_obj.prior_meb))
+							print("	distances = {}".format(sta_obj.prior_meb_wl_dist)) 
+							print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
 					## run inversion
 					mcmc_sta.inv()
 					## plot results (save in .png)
@@ -700,6 +707,9 @@ if __name__ == "__main__":
 					#plt.clf()
 					## calculate estimate parameters
 					mcmc_sta.model_pars_est()
+					## delete chain.dat
+					#os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
+
 			## enlapsed time for the inversion (every station in station_objects)
 			enlap_time_f = time.time() - start_time_f # enlapsed time
 			## print time consumed
@@ -856,8 +866,6 @@ if __name__ == "__main__":
 				y_lim = [-38.75,-38.58]
 				scatter_MT_conductor_bound(station_objects,  path_output = path_output, alpha_img = 0.6,\
 					path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
-
-
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
@@ -1033,7 +1041,7 @@ if __name__ == "__main__":
 					shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
 
 		# delete chain.dat (text file with the whole markov chains) from station folders
-		if False: 
+		if True: 
 			
 			for sta in station_objects:
 				try:
@@ -1083,7 +1091,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if True:  # histogram of MT inversion parameters for stations inverted
+		if False:  # histogram of MT inversion parameters for stations inverted
 			z1_batch = []
 			z2_batch = []
 			r1_batch = []
