@@ -50,8 +50,8 @@ if __name__ == "__main__":
     filter_lowQ_data_well = True
     ## Sections of the code tu run
     set_up = True 
-    calc_cond_bound = False
-    calc_cond_bound_temps = False
+    calc_cond_bound = True
+    calc_cond_bound_temps = True
     plot_temp_bc = True
 
     # (0) Import data and create objects: wells from spreadsheet files
