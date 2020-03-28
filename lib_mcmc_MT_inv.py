@@ -1346,6 +1346,10 @@ def calc_prior_meb(station_objects, wells_objects, slp = None, quadrant = None):
                 # std. dev. increases as get farder from the well. It double its values per 2 km.
                 z1_std_prior_incre[count] = z1_std_prior[count]  + (dist_wels[count] *slp)
                 z2_std_prior_incre[count] = z2_std_prior[count]  + (dist_wels[count] *slp)
+                # assing attribute to well (invs. pars)
+                wl.meb_z1_pars = [meb_mcmc_results[0,1], meb_mcmc_results[0,2]]
+                wl.meb_z2_pars = [meb_mcmc_results[1,1], meb_mcmc_results[1,2]]
+
                 # load pars in well 
                 count+=1
             # calculete z1 normal prior parameters

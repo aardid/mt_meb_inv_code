@@ -14,7 +14,7 @@ from matplotlib import gridspec
 import numpy as np
 from math import sin, cos, sqrt, atan2, radians, isnan
 import glob
-import os
+import os, json
 import shutil
 from lib_sample_data import*
 import chart_studio.plotly as py
@@ -1391,11 +1391,15 @@ def triangulation_meb_results(station_objects, well_objects, path_base_image = N
     plt.clf()
 
 def grid_meb_prior(wells_objects, coords, n_points = None,  slp = None, file_name = None, plot = None, 
-        path_output = None, path_base_image = None, ext_img = None, xlim = None, ylim = None):
+        path_output = None, path_base_image = None, ext_img = None, xlim = None, ylim = None, 
+        cont_plot = True, scat_plot = True):
     """
     fn for griding and calculate meb prior in grid (define by coords) points 
     output: file_name.txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
-    """   
+    """  
+    # sort by latitud 
+    wells_objects.sort(key=lambda x: x.lat_dec, reverse=False)
+
     if file_name is None:
         file_name = 'grid_meb_prior'
     if slp is None: 
@@ -1405,187 +1409,207 @@ def grid_meb_prior(wells_objects, coords, n_points = None,  slp = None, file_nam
     if path_output is None: 
         path_output = '.'
     
-    # vectors for coordinates    
-    x = np.linspace(coords[0], coords[1], n_points) # long
-    y = np.linspace(coords[2], coords[3], n_points) # lat
-    X, Y = np.meshgrid(x, y)
-    Z_z1_mean = X*0.
-    Z_z1_std = X*0
-    Z_z2_mean = X*0
-    Z_z2_std = X*0
-    # calculate MeB prior at each position 
-    f = open(file_name+'.txt', "w")
-    f.write("# lat\tlon\tmean_z1\tstd_z1\tmean_z2\tstd_z2\n")
-    for j,lat in enumerate(y):
-        for i,lon in enumerate(x):
+    if True:#cont_plot:
+        # vectors for coordinates    
+        x = np.linspace(coords[0], coords[1], n_points) # long
+        y = np.linspace(coords[2], coords[3], n_points) # lat
+        X, Y = np.meshgrid(x, y)
+        Z_z1_mean = X*0.
+        Z_z1_std = X*0
+        Z_z2_mean = X*0
+        Z_z2_std = X*0
+        # calculate MeB prior at each position 
+        f = open(file_name+'.txt', "w")
+        f.write("# lat\tlon\tmean_z1\tstd_z1\tmean_z2\tstd_z2\n")
+        for j,lat in enumerate(y):
+            for i,lon in enumerate(x):
 
-            if False: # use 4 closest wells (search by quadrant approach)
-                dist_pre_q1 = []
-                dist_pre_q2 = []
-                dist_pre_q3 = []
-                dist_pre_q4 = []
+                if False: # use 4 closest wells (search by quadrant approach)
+                    dist_pre_q1 = []
+                    dist_pre_q2 = []
+                    dist_pre_q3 = []
+                    dist_pre_q4 = []
+                    #
+                    name_aux_q1 = [] 
+                    name_aux_q2 = []
+                    name_aux_q3 = []
+                    name_aux_q4 = []
+                    wl_q1 = []
+                    wl_q2 = []
+                    wl_q3 = []
+                    wl_q4 = []
+                    for wl in wells_objects:
+                        if wl.meb:
+                            if True: # search by quadrant approach
+                                # search for nearest well to MT station in quadrant 1 (Q1)
+                                if (wl.lat_dec > lat and wl.lon_dec > lon): 
+                                    # distance between station and well
+                                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
+                                    if not dist_pre_q1:
+                                        dist_pre_q1 = dist
+                                    # check if distance is longer than the previous wel 
+                                    if dist <= dist_pre_q1: 
+                                        name_aux_q1 = wl.name
+                                        wl_q1 = wl
+                                        dist_pre_q1 = dist
+                                # search for nearest well to MT station in quadrant 2 (Q2)
+                                if (wl.lat_dec < lat and wl.lon_dec > lon): 
+                                    # distance between station and well
+                                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
+                                    if not dist_pre_q2:
+                                        dist_pre_q2 = dist
+                                    # check if distance is longer than the previous wel 
+                                    if dist <= dist_pre_q2: 
+                                        name_aux_q2 = wl.name
+                                        wl_q2 = wl
+                                        dist_pre_q2 = dist
+                                # search for nearest well to MT station in quadrant 3 (Q3)
+                                if (wl.lat_dec < lat and wl.lon_dec < lon): 
+                                    # distance between station and well
+                                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
+                                    if not dist_pre_q3:
+                                        dist_pre_q3 = dist
+                                    # check if distance is longer than the previous wel 
+                                    if dist <= dist_pre_q3: 
+                                        name_aux_q3 = wl.name
+                                        wl_q3 = wl
+                                        dist_pre_q3 = dist
+                                # search for nearest well to MT station in quadrant 4 (Q4)
+                                if (wl.lat_dec > lat and wl.lon_dec < lon): 
+                                    # distance between station and well
+                                    dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
+                                    if not dist_pre_q4:
+                                        dist_pre_q4 = dist
+                                    # check if distance is longer than the previous wel 
+                                    if dist <= dist_pre_q4: 
+                                        name_aux_q4 = wl.name
+                                        wl_q4 = wl
+                                        dist_pre_q4 = dist
+
+                    # save names of nearest wells to be used for prior
+                    near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
+                    near_wls = list(filter(None, near_wls))
+                    dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
+                    dist_wels = list(filter(None, dist_wels))
+                    # Calculate prior values for boundaries of the cc in station
+                    # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+                    # z1
+                    z1_mean_prior = np.zeros(len(near_wls))
+                    z1_std_prior = np.zeros(len(near_wls))
+                    z2_mean_prior = np.zeros(len(near_wls))
+                    z2_std_prior = np.zeros(len(near_wls))
+                    #
+                    z1_std_prior_incre = np.zeros(len(near_wls))
+                    z2_std_prior_incre = np.zeros(len(near_wls))
+                    count = 0
+                    # extract meb mcmc results from nearest wells 
+                    for wl in near_wls:
+                        # extract meb mcmc results from file 
+                        meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+                        # values for mean a std for normal distribution representing the prior
+                        z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+                        z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+                        z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+                        z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
+                        # calc. increment in std. in the position of the station
+                        # std. dev. increases as get farder from the well. It double its values per 2 km.
+                        z1_std_prior_incre[count] = z1_std_prior[count]  + (dist_wels[count] *slp)
+                        z2_std_prior_incre[count] = z2_std_prior[count]  + (dist_wels[count] *slp)
+                        # load pars in well 
+                        count+=1
+                    # calculete z1 normal prior parameters
+                    dist_weigth = [1./d for d in dist_wels]
+                    z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
+                    # std. dev. increases as get farder from the well. It double its values per km.  
+                    z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+                    # calculete z2 normal prior parameters
+                    # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+                    #z2_mean_prior = z2_mean_prior - z1_mean_prior
+                    #print(z2_mean_prior)
+                    z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
+                    #z2_mean = z2_mean 
+                    if z2_mean < 0.:
+                        raise ValueError
+                    z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+
+                if True: # use every well available
+                    # save names of nearest wells to be used for prior
+                    near_wls = [wl for wl in wells_objects if wl.meb] #list of objects (wells)
+                    near_wls = list(filter(None, near_wls))
+                    dist_wels = [dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')\
+                        for wl in wells_objects if wl.meb]
+                    dist_wels = list(filter(None, dist_wels))
+                    # Calculate prior values for boundaries of the cc in station
+                    # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
+                    # z1
+                    z1_mean_prior = np.zeros(len(near_wls))
+                    z1_std_prior = np.zeros(len(near_wls))
+                    z2_mean_prior = np.zeros(len(near_wls))
+                    z2_std_prior = np.zeros(len(near_wls))
+                    #
+                    z1_std_prior_incre = np.zeros(len(near_wls))
+                    z2_std_prior_incre = np.zeros(len(near_wls))
+                    count = 0
+                    # extract meb mcmc results from nearest wells 
+                    for wl in near_wls:
+                        # extract meb mcmc results from file 
+                        meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
+                        # values for mean a std for normal distribution representing the prior
+                        z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
+                        z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
+                        z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
+                        z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
+                        # calc. increment in std. in the position of the station
+                        # std. dev. increases as get farder from the well. It double its values per 2 km.
+                        z1_std_prior_incre[count] = z1_std_prior[count]  + (dist_wels[count] *slp)
+                        z2_std_prior_incre[count] = z2_std_prior[count]  + (dist_wels[count] *slp)
+                        # load pars in well 
+                        count+=1
+                    # calculete z1 normal prior parameters
+                    dist_weigth = [1./d for d in dist_wels]
+                    z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
+                    # std. dev. increases as get farder from the well. It double its values per km.  
+                    z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+                    # calculete z2 normal prior parameters
+                    # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
+                    #z2_mean_prior = z2_mean_prior - z1_mean_prior
+                    #print(z2_mean_prior)
+                    z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
+                    #z2_mean = z2_mean 
+                    if z2_mean < 0.:
+                        raise ValueError
+                    z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)        
+                
+                # write values in .txt
+                f.write("{:4.4f}\t{:4.4f}\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}\n".\
+                    format(lon,lat,z1_mean,z1_std,z2_mean-z1_mean,z2_std))
                 #
-                name_aux_q1 = [] 
-                name_aux_q2 = []
-                name_aux_q3 = []
-                name_aux_q4 = []
-                wl_q1 = []
-                wl_q2 = []
-                wl_q3 = []
-                wl_q4 = []
-                for wl in wells_objects:
-                    if wl.meb:
-                        if True: # search by quadrant approach
-                            # search for nearest well to MT station in quadrant 1 (Q1)
-                            if (wl.lat_dec > lat and wl.lon_dec > lon): 
-                                # distance between station and well
-                                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
-                                if not dist_pre_q1:
-                                    dist_pre_q1 = dist
-                                # check if distance is longer than the previous wel 
-                                if dist <= dist_pre_q1: 
-                                    name_aux_q1 = wl.name
-                                    wl_q1 = wl
-                                    dist_pre_q1 = dist
-                            # search for nearest well to MT station in quadrant 2 (Q2)
-                            if (wl.lat_dec < lat and wl.lon_dec > lon): 
-                                # distance between station and well
-                                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
-                                if not dist_pre_q2:
-                                    dist_pre_q2 = dist
-                                # check if distance is longer than the previous wel 
-                                if dist <= dist_pre_q2: 
-                                    name_aux_q2 = wl.name
-                                    wl_q2 = wl
-                                    dist_pre_q2 = dist
-                            # search for nearest well to MT station in quadrant 3 (Q3)
-                            if (wl.lat_dec < lat and wl.lon_dec < lon): 
-                                # distance between station and well
-                                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
-                                if not dist_pre_q3:
-                                    dist_pre_q3 = dist
-                                # check if distance is longer than the previous wel 
-                                if dist <= dist_pre_q3: 
-                                    name_aux_q3 = wl.name
-                                    wl_q3 = wl
-                                    dist_pre_q3 = dist
-                            # search for nearest well to MT station in quadrant 4 (Q4)
-                            if (wl.lat_dec > lat and wl.lon_dec < lon): 
-                                # distance between station and well
-                                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')
-                                if not dist_pre_q4:
-                                    dist_pre_q4 = dist
-                                # check if distance is longer than the previous wel 
-                                if dist <= dist_pre_q4: 
-                                    name_aux_q4 = wl.name
-                                    wl_q4 = wl
-                                    dist_pre_q4 = dist
+                Z_z1_mean[j][i] = z1_mean
+                Z_z1_std[j][i] = z1_std
+                Z_z2_mean[j][i] = z2_mean+z1_mean
+                Z_z2_std[j][i] = z2_std
 
-                # save names of nearest wells to be used for prior
-                near_wls = [wl_q1,wl_q2,wl_q3,wl_q4] #list of objects (wells)
-                near_wls = list(filter(None, near_wls))
-                dist_wels = [dist_pre_q1,dist_pre_q2,dist_pre_q3,dist_pre_q4]
-                dist_wels = list(filter(None, dist_wels))
-                # Calculate prior values for boundaries of the cc in station
-                # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
-                # z1
-                z1_mean_prior = np.zeros(len(near_wls))
-                z1_std_prior = np.zeros(len(near_wls))
-                z2_mean_prior = np.zeros(len(near_wls))
-                z2_std_prior = np.zeros(len(near_wls))
-                #
-                z1_std_prior_incre = np.zeros(len(near_wls))
-                z2_std_prior_incre = np.zeros(len(near_wls))
-                count = 0
-                # extract meb mcmc results from nearest wells 
-                for wl in near_wls:
-                    # extract meb mcmc results from file 
-                    meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
-                    # values for mean a std for normal distribution representing the prior
-                    z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
-                    z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-                    z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
-                    z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
-                    # calc. increment in std. in the position of the station
-                    # std. dev. increases as get farder from the well. It double its values per 2 km.
-                    z1_std_prior_incre[count] = z1_std_prior[count]  + (dist_wels[count] *slp)
-                    z2_std_prior_incre[count] = z2_std_prior[count]  + (dist_wels[count] *slp)
-                    # load pars in well 
-                    count+=1
-                # calculete z1 normal prior parameters
-                dist_weigth = [1./d for d in dist_wels]
-                z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
-                # std. dev. increases as get farder from the well. It double its values per km.  
-                z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
-                # calculete z2 normal prior parameters
-                # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
-                #z2_mean_prior = z2_mean_prior - z1_mean_prior
-                #print(z2_mean_prior)
-                z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
-                #z2_mean = z2_mean 
-                if z2_mean < 0.:
-                    raise ValueError
-                z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
+        f.close()
+        shutil.move('.'+os.sep+file_name+'.txt', path_output+os.sep+file_name+'.txt')
 
-            if True: # use every well available
-                # save names of nearest wells to be used for prior
-                near_wls = [wl for wl in wells_objects if wl.meb] #list of objects (wells)
-                near_wls = list(filter(None, near_wls))
-                dist_wels = [dist_two_points([wl.lon_dec, wl.lat_dec], [lon, lat], type_coord = 'decimal')\
-                    for wl in wells_objects if wl.meb]
-                dist_wels = list(filter(None, dist_wels))
-                # Calculate prior values for boundaries of the cc in station
-                # prior consist of mean and std for parameter, calculate as weighted(distance) average from nearest wells
-                # z1
-                z1_mean_prior = np.zeros(len(near_wls))
-                z1_std_prior = np.zeros(len(near_wls))
-                z2_mean_prior = np.zeros(len(near_wls))
-                z2_std_prior = np.zeros(len(near_wls))
-                #
-                z1_std_prior_incre = np.zeros(len(near_wls))
-                z2_std_prior_incre = np.zeros(len(near_wls))
-                count = 0
-                # extract meb mcmc results from nearest wells 
-                for wl in near_wls:
-                    # extract meb mcmc results from file 
-                    meb_mcmc_results = np.genfromtxt(wl.path_mcmc_meb+os.sep+"est_par.dat")
-                    # values for mean a std for normal distribution representing the prior
-                    z1_mean_prior[count] = meb_mcmc_results[0,1] # mean [1] z1 # median [3] z1 
-                    z1_std_prior[count] =  meb_mcmc_results[0,2] # std z1
-                    z2_mean_prior[count] = meb_mcmc_results[1,1] # mean [1] z2 # median [3] z1
-                    z2_std_prior[count] =  meb_mcmc_results[1,2] # std z2
-                    # calc. increment in std. in the position of the station
-                    # std. dev. increases as get farder from the well. It double its values per 2 km.
-                    z1_std_prior_incre[count] = z1_std_prior[count]  + (dist_wels[count] *slp)
-                    z2_std_prior_incre[count] = z2_std_prior[count]  + (dist_wels[count] *slp)
-                    # load pars in well 
-                    count+=1
-                # calculete z1 normal prior parameters
-                dist_weigth = [1./d for d in dist_wels]
-                z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
-                # std. dev. increases as get farder from the well. It double its values per km.  
-                z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
-                # calculete z2 normal prior parameters
-                # change z2 from depth (meb mcmc) to tickness of second layer (mcmc MT)
-                #z2_mean_prior = z2_mean_prior - z1_mean_prior
-                #print(z2_mean_prior)
-                z2_mean = np.dot(z2_mean_prior,dist_weigth)/np.sum(dist_weigth)
-                #z2_mean = z2_mean 
-                if z2_mean < 0.:
-                    raise ValueError
-                z2_std = np.dot(z2_std_prior_incre,dist_weigth)/np.sum(dist_weigth)        
-            
-            # write values in .txt
-            f.write("{:4.4f}\t{:4.4f}\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}\n".\
-                format(lon,lat,z1_mean,z1_std,z2_mean-z1_mean,z2_std))
-            #
-            Z_z1_mean[j][i] = z1_mean
-            Z_z1_std[j][i] = z1_std
-            Z_z2_mean[j][i] = z2_mean+z1_mean
-            Z_z2_std[j][i] = z2_std
-
-    f.close()
-    shutil.move('.'+os.sep+file_name+'.txt', path_output+os.sep+file_name+'.txt')
+    if scat_plot:
+        z1_mean = []
+        z1_std = []
+        z2_mean = []
+        z2_std = []
+        lon_stas = []
+        lat_stas = []
+        count = 0
+        # extract conductor T1 and T2
+        for i, wl in enumerate(wells_objects):
+            if wl.meb:
+                # values for mean a std for normal distribution representing the prior
+                z1_mean.append(wl.meb_z1_pars[0]) # mean [1] z1 # median [3] z1 
+                z1_std.append(wl.meb_z1_pars[1]) # std z1
+                z2_mean.append(wl.meb_z2_pars[0]) # mean [1] z2 # median [3] z1
+                z2_std.append(wl.meb_z2_pars[1]) # std z2
+                lon_stas.append(wl.lon_dec)
+                lat_stas.append(wl.lat_dec)
 
     if plot:
         ## 
@@ -1616,28 +1640,68 @@ def grid_meb_prior(wells_objects, coords, n_points = None,  slp = None, file_nam
             cmap = plt.get_cmap('winter')
             ax.set_aspect('equal')
 
-            cf = ax.contourf(X,Y,array,levels = levels,cmap=cmap, alpha=.9, antialiased=True)
-            f.colorbar(cf, ax=ax, label ='[m]')
+            # contourf plot
+            if cont_plot:
+                cf = ax.contourf(X,Y,array,levels = levels,cmap=cmap, alpha=.8, antialiased=True)
+                f.colorbar(cf, ax=ax, label ='[m]')
 
-
-            for wl in wells_objects:
-                if wl.meb:
-                    ax.plot(wl.lon_dec,wl.lat_dec,'.k')
-                    coord_aux = [wl.lon_dec, wl.lat_dec]
-            ax.plot(coord_aux,'.k', label = 'MeB well')
+            if not scat_plot:
+                for wl in wells_objects:
+                    if wl.meb:
+                        ax.plot(wl.lon_dec,wl.lat_dec,'.k')
+                        coord_aux = [wl.lon_dec, wl.lat_dec]
+                ax.plot(coord_aux,'.k', label = 'MeB well')
+            
+            # scatter plot
+            if scat_plot:
+                if name == 'z1 mean':
+                    data = z1_mean
+                if name == 'z2 mean':
+                    data = z2_mean
+                if name == 'z1 std':
+                    data = z1_std
+                if name == 'z2 std':
+                    data = z2_std
+                # plot one circle for the legend
+                ax.plot(lon_stas[0],lat_stas[0], c = 'lightgray', label = 'MeB well', zorder=0, \
+                    marker='o', markersize = 8, markeredgecolor = 'k')
+                
+                #plt.scatter(lon_stas[0],lat_stas[0],s=2, c = 1,facecolors='none', label = 'MeB well', zorder=0)
+                # scatter plot
+                size = 50*np.ones(len(array))
+                vmin = min(levels)
+                vmax = max(levels)
+                normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+                scatter = ax.scatter(lon_stas,lat_stas, s = size, c = data, edgecolors = 'k', cmap = 'winter', \
+                    norm = normalize)#alpha = 0.5)
+                if not cont_plot:
+                    f.colorbar(scatter, ax=ax, label ='[m]')
             
             f.tight_layout()
             ax.set_xlabel('latitud [°]', size = textsize)
             ax.set_ylabel('longitud [°]', size = textsize)
-            ax.set_title(name, size = textsize)
-
+            if name == 'z1 mean':
+                ax.set_title('Depth to the clay cap TOP boundary', size = textsize)
+            if name == 'z2 mean':
+                ax.set_title('Depth to the clay cap BOTTOM boundary', size = textsize)
+            if name == 'z1 std':
+                ax.set_title('Uncertainty of the TOP clay cap TOP boundary', size = textsize)
+            if name == 'z2 std':
+                ax.set_title('Uncertainty of the BOTTOM clay cap TOP boundary', size = textsize)
+            
             ax.legend(loc=1, prop={'size': textsize})
             # save figure
-            file_name = name+'_meb_prior_contourf.png'
+            if cont_plot:
+                file_name = name+'_meb_prior_contourf.png'
+            if scat_plot:
+                file_name = name+'_meb_prior_scatter.png'
+            if cont_plot and scat_plot:
+                file_name = name+'_meb_prior_cont_scat.png'
             plt.savefig(file_name, dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
             shutil.move(file_name, path_output+os.sep+file_name)
             plt.clf()
+       
         # plot countours with level
         levels = np.arange(125,501,25) # for std z1
         plot_2Darray_contourf(Z_z1_std, name = 'z1 std', levels = levels)
@@ -1895,8 +1959,8 @@ def scatter_temp_conductor_bound(wells_objects,  path_output = None, \
 
 
 def scatter_MT_conductor_bound(station_objects,  path_output = None, \
-    path_base_image = None, ext_img = None, xlim = None, ylim = None, \
-        alpha_img = None):
+    path_base_image = None, ext_img = None, xlim = None, ylim = None, alpha_img = None, \
+            WK_resbound_line = None, taupo_lake_shoreline = None):
     """
     scatter plot of MT result depths at the top and bottom of the conductor
     """   
@@ -1933,11 +1997,14 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
         lat_stas.append(sta.lat_dec)
 
     # fn for scatter plot
-    def plot_2Darray_scatter_Z(lon_stas, lat_stas, data, data_std, name_data, \
-        path_base_image = path_base_image, ext_img = None, xlim = None, ylim = None):
-
+    def plot_2Darray_scatter_Z(lon_stas, lat_stas, data, data_std, name_data, 
+            path_base_image = path_base_image, ext_img = None, xlim = None, ylim = None, unct_trans = True, 
+                WK_resbound_line = None, taupo_lake_shoreline = None):
+        '''
+        unct_trans: transparency on scatter plot fn of std of z1 and z2
+        '''
         # figure
-        fig, ax = plt.subplots(figsize=(15,12))
+        fig, ax = plt.subplots(figsize=(13,10))
         # plot base image (if given)
         if ext_img:
             img=mpimg.imread(path_base_image)
@@ -1952,8 +2019,13 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
             ax.set_ylim(ylim)
 
         size = 200*np.ones(len(data))
-        scatter = ax.scatter(lon_stas,lat_stas, s = size, c = data, cmap = 'winter')#alpha = 0.5)
+
+        scatter = ax.scatter(lon_stas,lat_stas, s = size, c = data, edgecolors = 'k', cmap = 'winter')#alpha = 0.5)
         fig.colorbar(scatter, ax=ax, label ='Depth [m]')
+
+        # plot one circle for the legend
+        ax.plot(lon_stas[0],lat_stas[0], c = 'lightgray', label = 'MT station', zorder=0, \
+            marker='o', markersize = 10, markeredgecolor = 'k')
 
         # not sure if clay cap is there 
 
@@ -1971,6 +2043,15 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
                 plt.plot(sta.lon_dec, sta.lat_dec,'w.', markersize=28) 
                 plt.plot(sta.lon_dec, sta.lat_dec,'bx', markersize=12)
 
+        if WK_resbound_line: 
+            lats, lons = np.genfromtxt(WK_resbound_line, skip_header=1, delimiter=',').T
+            plt.plot(lons, lats, color = 'r' ,linewidth = 4, label = 'DC resistivity boundary', zorder = 1)
+
+        if taupo_lake_shoreline: 
+            lats, lons = np.genfromtxt(taupo_lake_shoreline, skip_header=1, delimiter=',').T
+            plt.plot(lons, lats, color = 'b' ,linewidth= 4, label = 'Taupo lake shoreline', zorder = 1)
+            
+        ax.legend(loc=1, prop={'size': textsize})
         # save figure
         plt.savefig(name_data+'.png', dpi=300, facecolor='w', edgecolor='w',
             orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
@@ -1980,9 +2061,9 @@ def scatter_MT_conductor_bound(station_objects,  path_output = None, \
     
     # plot
     plot_2Darray_scatter_Z(lon_stas, lat_stas, z1_mean, z1_std, name_data = 'z1 mean', path_base_image = path_base_image, \
-        ext_img = ext_img, xlim = xlim, ylim = ylim)
+        ext_img = ext_img, xlim = xlim, ylim = ylim, WK_resbound_line = WK_resbound_line, taupo_lake_shoreline = taupo_lake_shoreline)
     plot_2Darray_scatter_Z(lon_stas, lat_stas, z2_mean, z2_std, name_data = 'z2 mean', path_base_image = path_base_image, \
-        ext_img = ext_img, xlim = xlim, ylim = ylim)
+        ext_img = ext_img, xlim = xlim, ylim = ylim, WK_resbound_line = WK_resbound_line, taupo_lake_shoreline = taupo_lake_shoreline)
 
     ###
 
@@ -2441,3 +2522,103 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
             orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
         shutil.move(file_name+'.png', '.'+os.sep+path_plots+os.sep+file_name+'.png')
         plt.clf()
+
+###########################################################################################
+# Functions for base maps 
+
+def base_map_region(path_topo = None , xlim = None, ylim = None,
+    path_rest_bound = None, path_lake_shoreline = None, 
+	path_faults = None, path_powerlines = None): 
+    '''
+    Create base map with topography and return figure. 
+    '''
+    # figure
+    fig, ax = plt.subplots(figsize=(13,10))
+    ax.set_xlabel('Latitude [°]', size = textsize)
+    ax.set_ylabel('Longitude [°]', size = textsize)
+    if xlim is None:
+        pass
+    else: 
+        ax.set_xlim(xlim)
+    if ylim is None:
+        pass
+    else: 
+        ax.set_ylim(ylim)
+
+    # plot topography
+    if path_topo: 
+        lats, lons, elev = np.genfromtxt(path_topo, skip_header=1, delimiter=',').T
+        #plt.plot(lons, lats, '.')
+        ax.tricontour(lons, lats, elev, levels=10, linewidths=0.5, colors='g', alpha = 0.7)
+        topo_cb = ax.tricontourf(lons, lats, elev, levels=10, cmap="BuGn", alpha = 0.7)
+        #fig.colorbar(topo_cb, ax=ax, label ='elevation [m] (m.a.s.l.)')
+
+    if path_rest_bound: 
+        for path in path_rest_bound:
+            lats, lons = np.genfromtxt(path, skip_header=1, delimiter=',').T
+            plt.plot(lons, lats, color = 'orange' ,linewidth = 2, zorder = 1)
+        plt.plot([],[], color = 'orange' ,linewidth = 2, label = 'DC resistivity boundary', zorder = 1)
+
+    if path_lake_shoreline: 
+        lats, lons = np.genfromtxt(path_lake_shoreline, skip_header=1, delimiter=',').T
+        plt.plot(lons, lats, color = 'c' ,linewidth= 2, label = 'Taupo lake shoreline', zorder = 1)
+
+    if path_faults:
+        def read_nzafd():
+            reload = False
+            if reload:
+                with open('NZAFD_Dec_2018.kml') as data:
+                    kml_soup = Soup(data, 'lxml-xml') # Parse as XML
+
+                    faults = kml_soup.find_all('Placemark')
+                    coords = {}
+                    for fault in faults:
+                        coord = fault.find_all('coordinates')[0].contents[0].strip().split()
+                        coord = ([(np.float(ci.split(',')[0]), np.float(ci.split(',')[1])) for ci in coord])
+                        try:
+                            name = fault.find_all('name')[0].contents[0].strip()
+                        except:
+                            name = '{:d}'.format(np.random.randint(0,99999))
+                            #continue
+                            
+                        try:
+                            coords[name].append(coord)
+                        except KeyError:
+                            #print(name)
+                            coords.update({name:[coord,]})
+                coords = dict(coords)
+                with open('nzafd.json', 'w') as fp:
+                    json.dump(coords, fp)
+
+            with open(path_faults, 'r') as fp:
+                coords = json.load(fp)
+                for k in coords.keys():
+                    for i in range(len(coords[k])):
+                        coords[k][i] = np.array(coords[k][i])
+            return coords
+        def add_faults(ax, c='c', labels=False, no_tfb=False, lw=0.45):
+            #import cartopy.crs as ccrs
+
+            coords = read_nzafd()
+
+            zo = 3
+            x_extent = np.array([175.95, 176.25])
+            y_extent = np.array([-38.9, -38.55])
+
+            for name,coord in coords.items():
+                for coordi in coord:
+                    if any([x_extent[0] < ci[0] < x_extent[1] and y_extent[0] < ci[1] < y_extent[1] for ci in coordi]):
+                        #ax.plot(coordi[:,0],coordi[:,1],c+'-',lw=lw,transform=ccrs.PlateCarree(), zorder=zo) 
+                        ax.plot(coordi[:,0],coordi[:,1],c+'-',lw=lw, zorder=zo) 
+            ax.plot([],[],c+'-',lw=lw, zorder=zo, label = 'Faults') 
+        add_faults(ax,'r',labels=True)
+
+    if path_powerlines: # not working: need to be separated by nodes
+        for path in path_powerlines:
+            lats, lons = np.genfromtxt(path, skip_header=1, delimiter=',').T
+            plt.plot(lons, lats, '-' , color = 'y', linewidth= 1, zorder = 3)
+        plt.plot([], [], '-',color = 'y',linewidth= 1, label = 'Powerlines', zorder = 3)
+
+    return fig, ax, topo_cb
+
+                

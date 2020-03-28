@@ -45,8 +45,6 @@ textsize = 15.
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
 	#pc = 'office'
-	#pc = 'personalSuse'
-	#pc = 'personalWin'
 	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
@@ -60,21 +58,25 @@ if __name__ == "__main__":
 	prof_THNW03 = False
 	prof_THNW04 = False
 	prof_THNW05 = False
+	#
 	# Filter has qualitu MT stations
 	filter_lowQ_data = True
+	## run with quality filter per well
+	filter_lowQ_data_well = True
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
-	set_up = True
+	set_up = False
 	mcmc_meb_inv = False
 	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	plot_2D_MT = False
-	plot_3D_MT = True
+	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
 	files_paraview = False
+
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -91,17 +93,6 @@ if __name__ == "__main__":
 			####### MeB data in wells 
 			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
 			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
-
-		## Data paths for personal's pc SUSE (uncommend the one to use)
-		if pc == 'personalSuse':
-			#########  MT data
-			path_files = "/home/aardid/Documentos/data/Wairakei_Tauhara/MT_Survey/EDI_Files/*.edi" # Whole array 			
-			####### Temperature in wells data
-			path_wells_loc = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/wells_loc.txt"
-			path_wells_temp = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt"
-			path_wells_temp_date = "/home/aardid/Documentos/data/Wairakei_Tauhara/Temp_wells/well_depth_redDepth_temp_date.txt"
-			####### MeB data in wells 
-			path_wells_meb = "/home/aardid/Documentos/data/Wairakei_Tauhara/MeB_wells/MeB_data.txt"
 	
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalMac':
@@ -229,6 +220,11 @@ if __name__ == "__main__":
 		if full_dataset:
 			wl2work = wl_name
 			#wl2work = ['TH01']
+			# remove bad quality wells from list 'wl2work' (based on Q_temp_prof.txt)
+			if filter_lowQ_data_well: 
+				name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
+				BQ_sta = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+				wl2work = [x for x in wl2work if not x in BQ_sta]
 		if sta_2_re_invert:
 			wl2work = wl_name
 		if prof_WRKNW6:
@@ -414,7 +410,7 @@ if __name__ == "__main__":
 
 		## Figure of station and well positons on top of satelite image of the field (save in current folder)
 		# plot over topography
-		if False:
+		if False: # for profiles
 			file_name = 'map_stations_wells'
 			ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
 			x_lim = [176.0,176.1]
@@ -494,7 +490,7 @@ if __name__ == "__main__":
 		# Function assign results as attributes for MT stations in station_objects (list)
 		calc_prior_meb(station_objects, wells_objects, slp = 3*10., quadrant = False) # calc prior at MT stations position
 		# plot surface of prior
-		if False:	
+		if True:	
 			if False: # by Delanuay triangulation 
 				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 				ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
@@ -525,6 +521,7 @@ if __name__ == "__main__":
 			if True: # by gridding surface
 				# define region to grid
 				coords = [175.97,176.178,-38.69,-38.59] # [min lon, max lon, min lat, max lat]
+				coords = [175.99,176.178,-38.69,-38.59] # [min lon, max lon, min lat, max lat]
 				# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
 				file_name = 'grid_meb_prior'
 				path_output = '.'+os.sep+'plain_view_plots'+os.sep+'meb_prior'
@@ -534,13 +531,21 @@ if __name__ == "__main__":
 					pass
 				##
 				# image background
+				# image 1
 				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd.jpg'
 				ext_file = [175.934859, 176.226398, -38.722805, -38.567571]
-				x_lim = None #[176.0,176.1]
+				# image 2
+				#path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
+				#ext_file = [175.781956, 176.408620, -38.802528, -38.528097]
+				#
+				x_lim = [175.95,176.21]
 				y_lim = None #[-38.68,-38.58]
+				#x_lim = [175.99,176.21]
+				#y_lim = [-38.75,-38.58]
 				# call function 
-				grid_meb_prior(wells_objects, coords = coords, n_points = 100, slp = 4*10., file_name = file_name, path_output = path_output,\
-					plot = True, path_base_image = path_base_image, ext_img = ext_file)
+				grid_meb_prior(wells_objects, coords = coords, n_points = 10, slp = 4*10., file_name = file_name, path_output = path_output,\
+					plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim, \
+						cont_plot = True, scat_plot = True)
 				
 	# (3) Run MCMC inversion for each staion, obtaning 1D 3 layer res. model
 	# 	  Sample posterior, construct uncertain resistivity distribution and create result plots 
@@ -772,22 +777,22 @@ if __name__ == "__main__":
 			bound2plot = 'top' # top bound
 			file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
 			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = False, path_plots = path_plots)
 			bound2plot = 'bottom' 
 			file_name = 'interface_LRA_'+bound2plot+'_rest_bound'
 			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = False, path_plots = path_plots)
 			
 			# for plot with topo background
 			path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_2.jpg'
 			bound2plot = 'top' # top bound
 			file_name = 'interface_LRA_'+bound2plot+'_topo'
 			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = False, path_plots = path_plots)
 			bound2plot = 'bottom' 
 			file_name = 'interface_LRA_'+bound2plot+'_topo'
 			plot_surface_cc_count(station_objects, wells_objects, file_name = file_name, bound2plot = bound2plot, type_plot = type_plot,format = 'png', \
-				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = True, path_plots = path_plots)
+				path_base_image = path_base_image, alpha_img = 0.6, ext_img = ext_file, xlim = x_lim, ylim = y_lim, hist_pars = False, path_plots = path_plots)
 
 		if False: # plot plain view with countours
 			##
@@ -843,8 +848,8 @@ if __name__ == "__main__":
 			coords = [175.97,176.200,-38.74,-38.58] # [min lon, max lon, min lat, max lat]
 			# fn. for griding and calculate prior => print .txt with [lon, lat, mean_z1, std_z1, mean_z2, std_z2]
 			##
-			img_back_topo_ge = False
-			img_back_rest_bound = True
+			img_back_topo_ge = True
+			img_back_rest_bound = False
 			# image background: topo 
 			if img_back_topo_ge:
 				path_base_image = '.'+os.sep+'base_map_img'+os.sep+'WT_area_gearth_hd_3.jpg'
@@ -861,11 +866,14 @@ if __name__ == "__main__":
 			#	grid_temp_conductor_bound(wells_objects, coords = coords, n_points = 100, slp = 5., file_name = file_name, path_output = path_output,\
 			#		plot = True, path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, masl = False)
 			# scatter plot of temps at conductor boundaries
-			if True: # scatter plot
-				x_lim = [175.99,176.21]
-				y_lim = [-38.75,-38.58]
+			if img_back_topo_ge: # scatter plot
+				x_lim = [175.95,176.23]#[175.98,176.22] 
+				y_lim = [-38.78,-38.57]
+				WK_resbound_line = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
+				taupo_lake_shoreline= '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'shoreline_TaupoLake.dat'
 				scatter_MT_conductor_bound(station_objects, path_output = path_output, alpha_img = 0.6,\
-					path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
+					path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim, \
+						WK_resbound_line = WK_resbound_line, taupo_lake_shoreline = taupo_lake_shoreline)
 
 	# (5) Estimated distribution of temperature profile in wells. Calculate 3-layer model in wells and alpha parameter for each well
 	if wells_temp_fit: 
@@ -1041,7 +1049,7 @@ if __name__ == "__main__":
 					shutil.copy('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'app_res_fit.png', '.'+os.sep+'mcmc_inversions'+os.sep+'01_bad_model'+os.sep+'app_res_fit_'+sta_obj.name[:-4]+'.png')
 
 		# delete chain.dat (text file with the whole markov chains) from station folders
-		if True: 
+		if False: 
 			
 			for sta in station_objects:
 				try:
@@ -1241,7 +1249,69 @@ if __name__ == "__main__":
 			plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nsta_'+str(len(station_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
 				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
+		if False:   # .dat of latlon for of wells and MT stations 
+			# mt
+			mt_loc = open('.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_MT_stations.dat','w')
+			for sta in station_objects:
+				mt_loc.write(str(sta.lon_dec)+','+str(sta.lat_dec)+'\n')
+			mt_loc.close()
+			# wells
+			wl_loc = open('.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls.dat','w')
+			wlmeb_loc = open('.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls_meb.dat','w')
+			for wl in wells_objects:
+				wl_loc.write(str(wl.lon_dec)+','+str(wl.lat_dec)+'\n')
+				if wl.meb:
+					wlmeb_loc.write(str(wl.lon_dec)+','+str(wl.lat_dec)+'\n')
+			wl_loc.close()
+			wlmeb_loc.close()
 
+		if False:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
+			# mcmc MeB results 
+			if False:
+				wl_meb_results = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wl_meb_results.dat','w')
+				wl_meb_results.write('well_name'+','+'lon_dec'+','+'lat_dec'+','+'z1_mean'+','+'z1_std'+','+'z2_mean'+','+'z2_std'+'\n')
+				for wl in wells_objects:
+					if wl.meb:
+						# extract meb mcmc results from file 
+						meb_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+str(wl.name)+os.sep+"est_par.dat")
+						# values for mean a std for normal distribution representing the prior
+						wl.meb_z1_pars = [meb_mcmc_results[0,1], meb_mcmc_results[0,2]] # mean [1] z1 # median [3] z1 
+						wl.meb_z2_pars = [meb_mcmc_results[1,1], meb_mcmc_results[1,2]] # mean [1] z1 # median [3] z1 
+						# write results 
+						wl_meb_results.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','
+							+str(wl.meb_z1_pars[0])+','+str(wl.meb_z1_pars[1])+','+str(wl.meb_z2_pars[0])+','+str(wl.meb_z2_pars[1])+'\n')
+				wl_meb_results.close()
+			# mcmc MT results 
+			if False:
+				sta_mcmc_results = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'mt_sta_results.dat','w')
+				sta_mcmc_results.write('sta_name'+','+'lon_dec'+','+'lat_dec'+','+'z1_mean'+','+'z1_std'+','+'z2_mean'+','+'z2_std'+'\n')
+				for sta in station_objects:
+					# extract meb mcmc results from file 
+					mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+str(sta.name[:-4])+os.sep+"est_par.dat")
+					# values for mean a std for normal distribution representing the prior
+					sta.z1_pars = [mt_mcmc_results[0,1], mt_mcmc_results[0,2]] # mean [1] z1 # median [3] z1 
+					sta.z2_pars = [mt_mcmc_results[1,1], mt_mcmc_results[1,2]] # mean [1] z1 # median [3] z1 
+					# write results 
+					sta_mcmc_results.write(str(sta.name[:-4])+','+str(sta.lon_dec)+','+str(sta.lat_dec)+','
+						+str(sta.z1_pars[0])+','+str(sta.z1_pars[1])+','+str(sta.z2_pars[0])+','+str(sta.z2_pars[1])+'\n')
+				sta_mcmc_results.close()
+			# temp at z1 an z2 in wells  
+			if True:
+				wl_temp_z1_z2 = open('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_T1_T2.dat','w')
+				wl_temp_z1_z2.write('wl_name'+','+'lon_dec'+','+'lat_dec'+','+'T1_mean'+','+'T1_std'+','+'T2_mean'+','+'T2_std'+'\n')
+				for wl in wells_objects:
+					# extract meb mcmc results from file 
+					try:
+						wl_temp_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_T1_T2.txt")
+						# values for mean a std for normal distribution representing the prior
+						wl.T1_pars = [wl_temp_results[0], wl_temp_results[1]] # mean [1] z1 # median [3] z1 
+						wl.T2_pars = [wl_temp_results[2], wl_temp_results[3]] # mean [1] z1 # median [3] z1 
+						# write results 
+						wl_temp_z1_z2.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','
+							+str(wl.T1_pars[0])+','+str(wl.T1_pars[1])+','+str(wl.T2_pars[0])+','+str(wl.T2_pars[1])+'\n')
+					except:
+						pass
+				wl_temp_z1_z2.close()
 
 
 
