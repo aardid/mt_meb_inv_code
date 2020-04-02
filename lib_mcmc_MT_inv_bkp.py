@@ -875,7 +875,7 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
             count+=1
 
         # calculete z1 normal prior parameters
-        dist_weigth = [1./d for d in sta_obj.prior_meb_wl_dist]
+        dist_weigth = [1./d**3 for d in sta_obj.prior_meb_wl_dist]
         z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
         # std. dev. increases as get farder from the well. It double its values per km.  
         z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)

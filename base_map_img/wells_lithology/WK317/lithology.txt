@@ -1,0 +1,6 @@
+#depth_from,depth_to,formation
+0,40,SPFAT
+40,100,HFFUP
+100,190,HFFMD
+190,370,HFFLW
+370,1200,WRFM

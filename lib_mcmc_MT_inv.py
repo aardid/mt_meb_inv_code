@@ -1379,6 +1379,9 @@ def calc_prior_meb(station_objects, wells_objects, slp = None, quadrant = None):
                 except:
                     sta_obj.prior_meb_wl_names = near_wls[0:1]#[name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
             sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
+            #sta_obj.prior_meb_wl_names = [sta_obj.prior_meb_wl_names[i].name for i in len(range(sta_obj.prior_meb_wl_names))]
+
+
         # assign result to attribute
         sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean - z1_mean,z2_std]]
 

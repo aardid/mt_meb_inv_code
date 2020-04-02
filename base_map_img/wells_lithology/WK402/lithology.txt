@@ -1,0 +1,5 @@
+#depth_from,depth_to,formation
+0,230,NR
+230,480,KR2A_RHY
+480,720,WRF3_4
+720,1200,WHK_IG

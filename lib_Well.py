@@ -14,6 +14,7 @@ import numpy as np
 import math
 import glob
 import os
+import shutil as sh
 from matplotlib.backends.backend_pdf import PdfPages
 from scipy.optimize import curve_fit
 from Maping_functions import*
@@ -39,13 +40,14 @@ class Wells(object):
     ref		 			    reference number in the code
 	path				    path to the edi file
 	
-	lat					latitud	in dd:mm:ss
-    lon					longitud in dd:mm:ss
-	lat_dec				latitud	in decimal
-    lon_dec				longitud in decimal	
+	lat					    latitud	in dd:mm:ss
+    lon					    longitud in dd:mm:ss
+	lat_dec				    latitud	in decimal
+    lon_dec				    longitud in decimal	
 	elev					topography (elevation of the station)
 	
-	depth				 	depths for temperature profile
+	no_temp                 well with no temperature data               False
+    depth				 	depths for temperature profile
 	red_depth				reduced depths for temperature profile
 	depth_dev				depths deviation
 	temp_prof_true		    temperature profile 
@@ -115,6 +117,7 @@ class Wells(object):
         self.lon_dec = None 	# longitud  in decimal
         self.elev = None 		# topography (elevation of the well)
         # Temp data
+        self.no_temp = False         # well with no temp data
         self.depth = None		     # Depths for temperature profile
         self.red_depth = None		 # Reduced depths for temperature profile
         self.depth_dev = None		 # Depths deviation
@@ -957,7 +960,7 @@ def T_beta_est(Tw, z, Zmin, Zmax):
 # ==============================================================================
 
 def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, masl = None, \
-    plot_temp_prof = None): 
+    plot_temp_prof = None, with_meb = None, with_litho = None): 
     '''
     Fn. to calculate boundaries of the conductor in wells position based on interpolation
     of MT inversion results. z1 (mean and std) and z2 (mean and std) are calculated and
@@ -1003,8 +1006,8 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
             z2_std_MT_incre[count] = z2_std_MT[count]  + (dist_stas[count] *slp)
             # load pars in well 
             count+=1
-        # calculete z1 normal prior parameters
-        dist_weigth = [1./d for d in dist_stas]
+        # calculete z1 in well position
+        dist_weigth = [1./d**3 for d in dist_stas]
         z1_mean = np.dot(z1_mean_MT,dist_weigth)/np.sum(dist_weigth)
         # std. dev. increases as get farder from the well. It double its values per km.  
         z1_std = np.dot(z1_std_MT_incre,dist_weigth)/np.sum(dist_weigth)
@@ -1030,35 +1033,90 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
             f,(ax1) = plt.subplots(1,1)
             f.set_size_inches(6,8)
             ax1.set_xscale("linear")
-            ax1.set_yscale("linear")    
-            ax1.plot(wl.temp_prof_true,wl.red_depth,'o', label = 'data') # plot true data
-            ax1.plot(wl.temp_prof_rs,wl.red_depth_rs,'-', label = 'SC interpolation')
-            
+            ax1.set_yscale("linear") 
+            try:   
+                ax1.plot(wl.temp_prof_true, [r-wl.elev for r in wl.red_depth], 'o', label = 'Temperature data') # plot true data
+                ax1.plot(wl.temp_prof_rs, [r-wl.elev for r in wl.red_depth_rs], '-')#, label = 'SC interpolation')
+            except:
+                pass
             # upper boundary (z1 distribution)
-            ax1.plot([-5.,300.], [wl.elev - wl.z1_pars[0], wl.elev - wl.z1_pars[0]],'y-', alpha=0.5)
-            ax1.plot([-5.,300.], [wl.elev - wl.z1_pars[0] - wl.z1_pars[1], wl.elev - wl.z1_pars[0] - wl.z1_pars[1]],'y--', alpha=0.3)
-            ax1.plot([-5.,300.], [wl.elev - wl.z1_pars[0] + wl.z1_pars[1], wl.elev - wl.z1_pars[0] + wl.z1_pars[1]],'y--', alpha=0.3)
-            # lower boundary (z2 distribution)
-            ax1.plot([-5.,300.], [wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]), wl.elev - (wl.z1_pars[0] + wl.z2_pars[0])],'r-', alpha=0.5)
-            ax1.plot([-5.,300.], [wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1], wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1]],'r--', alpha=0.3)
-            ax1.plot([-5.,300.], [wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1], wl.elev - (wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1]],'r--', alpha=0.3)
+            #ax1.plot([-5.,300.], [-wl.z1_pars[0],-wl.z1_pars[0]],'r-', alpha=0.5, label = 'MT upper bound.')
+            #ax1.plot([-5.,300.], [-wl.z1_pars[0] - wl.z1_pars[1],-wl.z1_pars[0] - wl.z1_pars[1]],'r--', alpha=0.3)
+            #ax1.plot([-5.,300.], [-wl.z1_pars[0] + wl.z1_pars[1],-wl.z1_pars[0] + wl.z1_pars[1]],'r--', alpha=0.3)
+            ax1.fill_between([55.,105.],[-wl.z1_pars[0] + wl.z1_pars[1], -wl.z1_pars[0] + wl.z1_pars[1]], 
+                [-wl.z1_pars[0] - wl.z1_pars[1], -wl.z1_pars[0] - wl.z1_pars[1]], color = 'r', alpha=0.3, label = 'MT upper bound.')
             
+            # lower boundary (z2 distribution)
+            #ax1.plot([-5.,300.], [-(wl.z1_pars[0] + wl.z2_pars[0]),-(wl.z1_pars[0] + wl.z2_pars[0])],'b-', alpha=0.5, label = 'MT lower bound.')
+            #ax1.plot([-5.,300.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1]],'b--', alpha=0.3)
+            #ax1.plot([-5.,300.], [-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1]],'b--', alpha=0.3)
+            ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1]], 
+                [-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1]], 
+                color = 'b', alpha=0.3, label = 'MT lower bound.')
+
             ax1.set_xlabel('Temperature [deg C]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)
             #ax1.invert_yaxis()
             plt.title(wl.name, fontsize=22,)
+            # plot MeB inversion
+            if wl.meb:
+                if with_meb:
+                    meb_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+"est_par.dat")
+                    # values for mean a std for normal distribution representing the prior
+                    # assign values to well object
+                    wl.meb_z1_pars = [meb_mcmc_results[0,1], meb_mcmc_results[0,2]]
+                    wl.meb_z2_pars = [meb_mcmc_results[1,1], meb_mcmc_results[1,2]]
+                    
+                    # upper boundary (z1 distribution)
+                    #ax1.plot([-5.,300.], [-wl.meb_z1_pars[0],-wl.meb_z1_pars[0]],'c-', alpha=0.5, label = 'MeB upper bound.')
+                    #ax1.plot([-5.,300.], [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]],'c--', alpha=0.3)
+                    #ax1.plot([-5.,300.], [-wl.meb_z1_pars[0] + wl.meb_z1_pars[1],-wl.meb_z1_pars[0] + wl.meb_z1_pars[1]],'c--', alpha=0.3)
+                    ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1])],
+                        [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]], color = 'c', alpha=0.3, label = 'MeB upper bound.')
+                    
+                    # lower boundary (z2 distribution)
+                    #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]),-(wl.meb_z2_pars[0])],'m-', alpha=0.5, label = 'MeB lower bound.')
+                    #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1]],'m--', alpha=0.3)
+                    #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1]],'m--', alpha=0.3)
+                    ax1.fill_between([0.,50.],[-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1]], 
+                        [-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1]], color = 'm', alpha=0.3, label = 'MeB lower bound.')
+                    # save pars in .txt: MeB
+                    g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'meb_z1_z2.txt', "w")
+                    g.write('# mean_z1(detph to bottom layer 1)\tstd_z1\tmean_z2(depth to bottom layer 2)\tstd_z2\n')
+                    g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.meb_z1_pars[0],wl.meb_z1_pars[1],wl.meb_z2_pars[0],wl.meb_z2_pars[1]))
+                    g.close()               
+
+            if with_litho:
+                try:   
+                    depths_from, depths_to, lito  = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+wl.name+os.sep+"lithology.txt", \
+                        delimiter=',').T
+                    N = len(depths_to) # number of lithological layers
+                    colors = ['g','r','orange','r','m','g','r','orange','r','m']
+                    #with open(r'data\nzafd.json', 'r') as fp:
+                    for i in range(N):
+                        ax1.fill_between([-35,-5],[-depths_from[i], -depths_from[i]], [-depths_to[i], -depths_to[i]], color = colors[i])
+                except:
+                    pass
+
+            ax1.legend(loc='lower left', shadow=False, fontsize=textsize, framealpha=1.0)
+            ax1.set_ylim([-1700.,20.])
             # save image as png
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+            if with_litho:
+                try:
+                    sh.copyfile('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png',
+                        '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png')
+                except:
+                    pass
             pp.savefig(f)
             plt.close(f)
-            # save pars in .txt
+            # save pars in .txt: MT
             g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt', "w")
             g.write('# mean_z1(thickness layer 1)\tstd_z1\tmean_z2(thickness layer 2)\tstd_z2\n')
             g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.z1_pars[0],wl.z1_pars[1],wl.z2_pars[0],wl.z2_pars[1]))
             g.close()
-
         pp.close()
         shutil.move('Temp_prof_conductor_bound_est.pdf','.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'Temp_prof_conductor_bound_est.pdf')
 
@@ -1087,10 +1145,10 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
         # 
         for i in range(len(T1_sam)):
             # T1
-            val, idx = find_nearest(wl.red_depth_rs, wl.elev - z1_sam[i])
+            val, idx = find_nearest(wl.red_depth_rs,z1_sam[i])
             T1_sam[i] = wl.temp_prof_rs[idx]
             # T2
-            val, idx = find_nearest(wl.red_depth_rs, wl.elev - (z1_sam[i] + z2_sam[i]))
+            val, idx = find_nearest(wl.red_depth_rs,(z1_sam[i] + z2_sam[i]))
             T2_sam[i] = wl.temp_prof_rs[idx]
         # Assign attributes TX_pars and save in .txt
         wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]

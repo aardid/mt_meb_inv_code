@@ -47,12 +47,12 @@ if __name__ == "__main__":
     # Filter has qualitu MT stations
     filter_lowQ_data_MT = True
     ## run with quality filter per well
-    filter_lowQ_data_well = True
+    filter_lowQ_data_well = False
     ## Sections of the code tu run
     set_up = True 
     calc_cond_bound = True
-    calc_cond_bound_temps = True
-    plot_temp_bc = True
+    calc_cond_bound_temps = False
+    plot_temp_bc = False
 
     # (0) Import data and create objects: wells from spreadsheet files
     if set_up:
@@ -136,6 +136,15 @@ if __name__ == "__main__":
         # Defined lists of wells
         if full_dataset:
             wl2work = wl_name
+            # add to wl2work names of well with meb data and no temp
+            wls_meb_notemp = []
+            for wl_meb in wl_name_meb:
+                if wl_meb not in wl_name:
+                    #wl2work.append(wl_meb)
+                    wls_meb_notemp.append(wl_meb)
+            #
+            #wl_name = wl_name_meb # just for inverting meb data with no temp data
+            #wl2work = ['WK317']
 
 		# remove bad quality wells from list 'wl2work' (based on Q_temp_prof.txt)
         if filter_lowQ_data_well: 
@@ -149,7 +158,7 @@ if __name__ == "__main__":
         count  = 0
         count2 = 0
         for wl in wl_name:
-            if wl in wl2work and wl != 'THM24':
+            if wl in wl2work: # and wl != 'THM24':
                 # create well object
                 wl_obj = Wells(wl, count)
                 # Search for location of the well and add to attributes	
@@ -159,6 +168,11 @@ if __name__ == "__main__":
                         wl_obj.lat_dec = wells_location[i][2]
                         wl_obj.lon_dec = wells_location[i][1]
                         wl_obj.elev = wells_location[i][3]
+                # check if well have meb data and no temp data 
+                #if wl in wls_meb_notemp:
+                #    wl_obj.no_temp = True
+            
+                #   if not wl_obj.no_temp:
                 ## load data attributes
                 ## filter the data to the most recent one (well has overlap data cooresponding to reintepretations)
                 filter_by_date = True
@@ -244,7 +258,22 @@ if __name__ == "__main__":
                 ## add well object to directory of well objects
                 wells_objects.append(wl_obj)
                 count  += 1
-            count2 +=1
+                #if not wl_obj.no_temp:
+                count2 +=1
+        
+        # create well objects of wells with meb data and no temp data
+        for wl in wls_meb_notemp:
+            # create well object
+            wl_obj = Wells(wl, count)
+            # Search for location of the well and add to attributes	
+            for i in range(len(wells_location)): 
+                wl_name = wells_location[i][0]
+                if wl_obj.name == wl_name: 
+                    wl_obj.lat_dec = wells_location[i][2]
+                    wl_obj.lon_dec = wells_location[i][1]
+                    wl_obj.elev = wells_location[i][3]
+            wells_objects.append(wl_obj)
+            count  += 1
 
         ## Loop wells_objects (list) to assing data attributes from MeB files 
         # list of wells with MeB (names)
@@ -273,15 +302,18 @@ if __name__ == "__main__":
 
     # (1) Calc. z1 and z2 in well positions 
     if calc_cond_bound:
+        print('(1) Calc. z1 and z2 in well positions\n')
         ## Estimate z1 and z2 at wells positions from MT inversion
-        wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5., plot_temp_prof = True)
+        wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5., plot_temp_prof = True, 
+            with_meb = True, with_litho = True)
         # remove objects from list when BC is deeper than max depth of temp. profiles
-        idx2rmv = [] 
-        for i, wl in enumerate(wells_objects):
-            if wl.red_depth_rs[-1]+50 > wl.elev - (wl.z1_pars[0] + wl.z1_pars[1]):
-                idx2rmv.append(i)
-        wells_objects_aux = [wl for i, wl in enumerate(wells_objects) if i not in idx2rmv]
-        wells_objects = wells_objects_aux
+        if False:
+            idx2rmv = [] 
+            for i, wl in enumerate(wells_objects):
+                if wl.red_depth_rs[-1]+50 > wl.elev - (wl.z1_pars[0] + wl.z1_pars[1]):
+                    idx2rmv.append(i)
+            wells_objects_aux = [wl for i, wl in enumerate(wells_objects) if i not in idx2rmv]
+            wells_objects = wells_objects_aux
 
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
