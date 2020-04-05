@@ -1034,9 +1034,14 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
             f.set_size_inches(6,8)
             ax1.set_xscale("linear")
             ax1.set_yscale("linear") 
-            try:   
-                ax1.plot(wl.temp_prof_true, [r-wl.elev for r in wl.red_depth], 'o', label = 'Temperature data') # plot true data
-                ax1.plot(wl.temp_prof_rs, [r-wl.elev for r in wl.red_depth_rs], '-')#, label = 'SC interpolation')
+            try: 
+                depth_2_zero = [r-wl.elev  for r in wl.red_depth]
+                depth_2_zero_rs = [r-wl.elev  for r in wl.red_depth_rs]
+                ax1.plot(wl.temp_prof_true, [r for r in depth_2_zero], 'o', label = 'Temperature data') # plot true data
+                ax1.plot(wl.temp_prof_rs, [r for r in depth_2_zero_rs], '-')#, label = 'SC interpolation')
+                # alpha for surface temp point 
+                ax1.plot(wl.temp_prof_true[0], depth_2_zero[0], '.', c = 'w', zorder = 6) # plot true data
+
             except:
                 pass
             # upper boundary (z1 distribution)

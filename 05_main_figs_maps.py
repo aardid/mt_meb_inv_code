@@ -36,15 +36,15 @@ textsize = 15.
 
 if __name__ == "__main__":
 	##
-	if True: # base map figures
+	if False: # base map figures
 		base_map = True # plot map with wells and stations
 		zones = True # add injection and extraction zones
-		wells_loc = False # add wells
-		stations_loc = False # add mt stations
+		wells_loc = True # add wells
+		stations_loc = True # add mt stations
 		########
 		meb_results = False # add scatter MeB results 
 		mt_results = False # add scatter MT results
-		temp_results = True # add scatter Temp results 
+		temp_results = False # add scatter Temp results 
 		########
 		# plot map with wells and stations
 		if base_map:

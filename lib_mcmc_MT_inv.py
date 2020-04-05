@@ -23,6 +23,7 @@ import multiprocessing
 from misc_functios import find_nearest
 import csv
 import matplotlib.mlab as mlab
+from shapely.geometry import Polygon
 
 textsize = 15.
 min_val = 1.e-7
@@ -1498,6 +1499,357 @@ def plot_bound_uncert(station_objects, file_name = None):
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
     plt.close()
     
+def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_count = None): 
+    """
+    filt_in_count (or filt_out_count) : file of countour (i.e. WT resisitvity boundary)
+    """
+
+    if filt_in_count:
+        lats, lons = np.genfromtxt(filt_in_count, skip_header=1, delimiter=',').T
+        poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+    if filt_out_count:
+        lats, lons = np.genfromtxt(filt_out_count, skip_header=1, delimiter=',').T
+        poli_out = [[lons[i],lats[i]] for i in range(len(lats))]
+
+    z1_batch = []
+    z2_batch = []
+    r1_batch = []
+    r2_batch = []
+    r3_batch = []
+    if filt_in_count:
+        z1_batch_filt_in = []
+        z2_batch_filt_in = []
+        r1_batch_filt_in = []
+        r2_batch_filt_in = []
+        r3_batch_filt_in = []
+    if filt_out_count:
+        z1_batch_filt_out = []
+        z2_batch_filt_out = []
+        r1_batch_filt_out = []
+        r2_batch_filt_out = []
+        r3_batch_filt_out = []
+
+    ## load pars
+    for sta in station_objects:
+        aux = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'est_par.dat')
+        sta.z1_pars = [aux[0][1],aux[0][2]]
+        sta.z2_pars = [aux[1][1],aux[1][2]]
+        sta.r1_pars = [aux[2][1],aux[2][2]]
+        sta.r2_pars = [aux[3][1],aux[3][2]]
+        sta.r3_pars = [aux[4][1],aux[4][2]]
+
+        # add to batch
+        if sta.z2_pars[0] > 50.:
+            z1_batch.append(sta.z1_pars[0])
+            z2_batch.append(sta.z2_pars[0])
+            r1_batch.append(sta.r1_pars[0])
+            r2_batch.append(sta.r2_pars[0])
+            r3_batch.append(sta.r3_pars[0])
+            
+        if filt_in_count:
+            # check if station is inside poligon 
+            val = ray_tracing_method(sta.lon_dec, sta.lat_dec, poli_in)
+            if val:
+                z1_batch_filt_in.append(sta.z1_pars[0])
+                z2_batch_filt_in.append(sta.z2_pars[0])
+                r1_batch_filt_in.append(sta.r1_pars[0])
+                r2_batch_filt_in.append(sta.r2_pars[0])
+                r3_batch_filt_in.append(sta.r3_pars[0])
+
+        if filt_out_count:
+            # check if station is inside poligon 
+            val = ray_tracing_method(sta.lon_dec, sta.lat_dec, poli_out)
+            if not val:
+                z1_batch_filt_out.append(sta.z1_pars[0])
+                z2_batch_filt_out.append(sta.z2_pars[0])
+                r1_batch_filt_out.append(sta.r1_pars[0])
+                r2_batch_filt_out.append(sta.r2_pars[0])
+                r3_batch_filt_out.append(sta.r3_pars[0])
+    
+    # plot histograms 
+    f = plt.figure(figsize=(14, 9))
+    gs = gridspec.GridSpec(nrows=2, ncols=3)
+    ax1 = f.add_subplot(gs[0, 0])
+    ax2 = f.add_subplot(gs[0, 1])
+    ax3 = f.add_subplot(gs[1, 0])
+    ax4 = f.add_subplot(gs[1, 1])
+    ax5 = f.add_subplot(gs[1, 2])
+    ax_leg= f.add_subplot(gs[0, 2])
+
+    # z1
+    bins = np.linspace(np.min(z1_batch), np.max(z1_batch), int(np.sqrt(len(z1_batch))))
+    h,e = np.histogram(z1_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax1.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
+    ax1.set_xlabel('$z_1$ [m]', fontsize=textsize)
+    ax1.set_ylabel('freq.', fontsize=textsize)
+    ax1.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(z1_batch)
+    med = np.median(z1_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+    
+    if not filt_in_count:
+        ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3)
+        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # z1
+        bins = np.linspace(np.min(z1_batch_filt_in), np.max(z1_batch_filt_in), int(np.sqrt(len(z1_batch_filt_in))))
+        h,e = np.histogram(z1_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(z1_batch_filt_in)
+        med = np.median(z1_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # z1
+        bins = np.linspace(np.min(z1_batch_filt_out), np.max(z1_batch_filt_out), int(np.sqrt(len(z1_batch_filt_out))))
+        h,e = np.histogram(z1_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+
+    # z2
+    bins = np.linspace(np.min(z2_batch), np.max(z2_batch), int(np.sqrt(len(z2_batch))))
+    h,e = np.histogram(z2_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax2.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w', zorder = 1, color = 'lightsteelblue')
+    ax2.set_xlabel('$z_2$ [m]', fontsize=textsize)
+    ax2.set_ylabel('freq.', fontsize=textsize)
+    ax2.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(z2_batch)
+    med = np.median(z2_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+    #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+    #ax2.plot([med,med],[0,np.max(h)],'b-')
+    
+    if not filt_in_count:
+        ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3)
+        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # z1
+        bins = np.linspace(np.min(z2_batch_filt_in), np.max(z2_batch_filt_in), int(np.sqrt(len(z2_batch_filt_in))))
+        h,e = np.histogram(z2_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(z2_batch_filt_in)
+        med = np.median(z2_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3, linewidth=3)
+        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # z1
+        bins = np.linspace(np.min(z1_batch_filt_out), np.max(z1_batch_filt_out), int(np.sqrt(len(z1_batch_filt_out))))
+        h,e = np.histogram(z1_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+
+
+    # r1
+    bins = np.linspace(np.min(r1_batch), np.max(r1_batch), int(np.sqrt(len(r1_batch))))
+    h,e = np.histogram(r1_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax3.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
+    ax3.set_xlabel(r'$\rho_1$ [m]', fontsize=textsize)
+    ax3.set_ylabel('freq.', fontsize=textsize)
+    ax3.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(z1_batch)
+    med = np.median(z1_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+    
+    if not filt_in_count:
+        ax3.plot([med,med],[0,np.max(h)], '-', c = 'gray', zorder = 3)
+        ax3.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # z1
+        bins = np.linspace(np.min(r1_batch_filt_in), np.max(r1_batch_filt_in), int(np.sqrt(len(r1_batch_filt_in))))
+        h,e = np.histogram(r1_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(r1_batch_filt_in)
+        med = np.median(r1_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax3.plot([med,med],[0,np.max(h)], '-', c = 'gray', zorder = 3, linewidth=3)
+        ax3.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # z1
+        bins = np.linspace(np.min(r1_batch_filt_out), np.max(r1_batch_filt_out), int(np.sqrt(len(r1_batch_filt_out))))
+        h,e = np.histogram(r1_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+    
+    # r2
+    bins = np.linspace(np.min(r2_batch), np.max(r2_batch), int(np.sqrt(len(r2_batch))))
+    h,e = np.histogram(r2_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax4.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+    ax4.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
+    ax4.set_xlabel(r'$\rho_2$ [m]', fontsize=textsize)
+    ax4.set_ylabel('freq.', fontsize=textsize)
+    ax4.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(z1_batch)
+    med = np.median(z1_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+    
+    if not filt_in_count:
+        ax4.plot([med,med],[0,np.max(h)],'g-', zorder = 3)
+        ax4.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # z1
+        bins = np.linspace(np.min(r2_batch_filt_in), np.max(r2_batch_filt_in), int(np.sqrt(len(r2_batch_filt_in))))
+        h,e = np.histogram(r2_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax4.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(r2_batch_filt_in)
+        med = np.median(r2_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax4.plot([med,med],[0,np.max(h)],'g-', zorder = 3, linewidth=3)
+        ax4.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # z1
+        bins = np.linspace(np.min(r2_batch_filt_out), np.max(r2_batch_filt_out), int(np.sqrt(len(r2_batch_filt_out))))
+        h,e = np.histogram(r2_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax4.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+
+    # r3
+    bins = np.linspace(np.min(r3_batch), np.max(r3_batch), int(np.sqrt(len(r3_batch))))
+    h,e = np.histogram(r3_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax5.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
+    ax5.set_xlabel(r'$\rho_3$ [m]', fontsize=textsize)
+    ax5.set_ylabel('freq.', fontsize=textsize)
+    ax5.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(z1_batch)
+    med = np.median(z1_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+    
+    if not filt_in_count:
+        ax5.plot([med,med],[0,np.max(h)],'m-', zorder = 3)
+        ax5.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # z1
+        bins = np.linspace(np.min(r3_batch_filt_in), np.max(r3_batch_filt_in), int(np.sqrt(len(r3_batch_filt_in))))
+        h,e = np.histogram(r3_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax5.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(r3_batch_filt_in)
+        med = np.median(r3_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax5.plot([med,med],[0,np.max(h)],'m-', zorder = 3, linewidth=3)
+        ax5.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # z1
+        bins = np.linspace(np.min(r3_batch_filt_out), np.max(r3_batch_filt_out), int(np.sqrt(len(r3_batch_filt_out))))
+        h,e = np.histogram(r3_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax5.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+
+    # plor legend 
+    if filt_in_count and filt_out_count:
+        #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
+        # active zone
+        ax_leg.plot([],[],c = 'LightSalmon', linewidth=10,label = r'Active zone',  alpha =.8)
+        # cooling zone
+        ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
+        # full array
+        ax_leg.plot([],[], c = 'lightsteelblue', linewidth=12,label = r'Full array',  alpha =.6)
+
+    ax_leg.plot([],[],'r-',label = r'median of $z_1$')
+    ax_leg.plot([],[],'b-',label = r'median of $z_2$')
+    ax_leg.plot([],[],'-', c='gray',label = r'median of $\rho_1$')
+    ax_leg.plot([],[],'g-',label = r'median of $\rho_2$')
+    ax_leg.plot([],[],'m-',label = r'median of $\rho_3$')
+    ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+    ax_leg.axis('off')
+
+    f.tight_layout()
+
+    if filt_in_count and filt_out_count: 
+        plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nsta_'+str(len(station_objects))+'_zones'+'.png', dpi=300, facecolor='w', edgecolor='w', orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+    else:
+        plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nsta_'+str(len(station_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
 
 

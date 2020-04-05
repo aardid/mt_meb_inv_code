@@ -69,7 +69,7 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
+	prior_MT_meb_read = False
 	mcmc_MT_inv = False
 	plot_2D_MT = False
 	plot_3D_MT = False
@@ -78,251 +78,250 @@ if __name__ == "__main__":
 	files_paraview = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
-    if set_up:
-        #### Import data: MT from edi files and wells from spreadsheet files
-        #########  MT data
-        if pc == 'office': 
-            #########  MT data
-            path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
-            ####### Temperature in wells data
-            path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
-            path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt"
-            path_wells_temp_date = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp_date.txt" 
-            # Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
-            ####### MeB data in wells 
-            path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
-            #path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
+	if set_up:
+		#### Import data: MT from edi files and wells from spreadsheet files
+		#########  MT data
+		if pc == 'office': 
+			#########  MT data
+			path_files = "D:\workflow_data\kk_full\*.edi" 	# Whole array 
+			####### Temperature in wells data
+			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
+			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt"
+			path_wells_temp_date = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp_date.txt" 
+			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
+			####### MeB data in wells 
+			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
+			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
 
-        ## Data paths for personal's pc SUSE (uncommend the one to use)
-        if pc == 'personalMac':
-            #########  MT data
-            path_files = os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MT_survey'+os.sep+'EDI_Files'+os.sep+'*.edi'
-            # Whole array 			
-            ####### Temperature in wells data
-            path_wells_loc = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_location_latlon.txt'
-            path_wells_temp = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt'
-            path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
-            ####### MeB data in wells 
-            path_wells_meb = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MeB_wells'+os.sep+'MeB_data.txt'
+		## Data paths for personal's pc SUSE (uncommend the one to use)
+		if pc == 'personalMac':
+			#########  MT data
+			path_files = os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MT_survey'+os.sep+'EDI_Files'+os.sep+'*.edi'
+			# Whole array 			
+			####### Temperature in wells data
+			path_wells_loc = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_location_latlon.txt'
+			path_wells_temp = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt'
+			path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
+			####### MeB data in wells 
+			path_wells_meb = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MeB_wells'+os.sep+'MeB_data.txt'
 
-        ## Create a directory of the name of the files of the stations
-        pos_ast = path_files.find('*')
-        file_dir = glob.glob(path_files)
+		## Create a directory of the name of the files of the stations
+		pos_ast = path_files.find('*')
+		file_dir = glob.glob(path_files)
 
-        #########################################################################################
-        ## Create station objects 
-        # Defined lists of MT station 
-        if full_dataset:
-            sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
+		#########################################################################################
+		## Create station objects 
+		# Defined lists of MT station 
+		if full_dataset:
+			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
 
-        #########################################################################################
-        ## Loop over the file directory to collect the data, create station objects and fill them
-        station_objects = []   # list to be fill with station objects
-        count  = 0
-        # remove bad quality stations from list 'sta2work' (based on inv_pars.txt)
-        if filter_lowQ_data_MT: 
-            name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
-            BQ_sta = [x.split()[0][:-4] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
-            sta2work = [x for x in sta2work if not x in BQ_sta]
-        #
-        for file_aux in file_dir:
-            if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
-                file = file_aux[pos_ast:] # name on the file
-                sta_obj = Station(file, count, path_files)
-                sta_obj.read_edi_file()
-                ## correction in elevation for discrepancy between elev in wells and MT stations (temporal solition, to check)
-                sta_obj.elev = float(sta_obj.elev) - 42.
-                ##
-                sta_obj.rotate_Z()
-                sta_obj.app_res_phase()
-                # import PT derotated data 
-                sta_obj.read_PT_Z(pc = pc) 
-                sta_obj.app_res_phase() # [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er]
-                ## Create station objects and fill them
-                station_objects.append(sta_obj)
-                count  += 1
-        #########################################################################################
-        #########################################################################################
-        ## Import wells data:
-        #wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
-        # 	read_well_temperature(path_wells_temp_date)
-        wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red, wl_prof_date = \
-            read_well_temperature_date(path_wells_temp_date)
-        # # Note: dir_no_depth_red contain a list of wells with no information of reduced depth
-        # ## Recover location for wells from path_wells_loc
-        wells_location = read_well_location(path_wells_loc)
-        # # Note: wells_location = [[wl_name1,lat1,lon1,elev1],...] list of arrays
-        # ## Recover MeB data for wells from path_wells_meb
-        wl_name_meb, wl_prof_depth_meb, wl_prof_meb = read_well_meb(path_wells_meb)
-        #########################################################################################
-        ## Create wells objects
-        # Defined lists of wells
-        if full_dataset:
-            wl2work = wl_name
-            # add to wl2work names of well with meb data and no temp
-            wls_meb_notemp = []
-            for wl_meb in wl_name_meb:
-                if wl_meb not in wl_name:
-                    #wl2work.append(wl_meb)
-                    wls_meb_notemp.append(wl_meb)
-            #
-            #wl_name = wl_name_meb # just for inverting meb data with no temp data
-            #wl2work = ['WK317']
+		#########################################################################################
+		## Loop over the file directory to collect the data, create station objects and fill them
+		station_objects = []   # list to be fill with station objects
+		count  = 0
+		# remove bad quality stations from list 'sta2work' (based on inv_pars.txt)
+		if filter_lowQ_data_MT: 
+			name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
+			BQ_sta = [x.split()[0][:-4] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+			sta2work = [x for x in sta2work if not x in BQ_sta]
+		#
+		for file_aux in file_dir:
+			if (file_aux[pos_ast:-4] in sta2work and file_aux[pos_ast:-4] != 'WT067a'):# incomplete station WT067a, no tipper
+				file = file_aux[pos_ast:] # name on the file
+				sta_obj = Station(file, count, path_files)
+				sta_obj.read_edi_file()
+				## correction in elevation for discrepancy between elev in wells and MT stations (temporal solition, to check)
+				sta_obj.elev = float(sta_obj.elev) - 42.
+				##
+				sta_obj.rotate_Z()
+				sta_obj.app_res_phase()
+				# import PT derotated data 
+				sta_obj.read_PT_Z(pc = pc) 
+				sta_obj.app_res_phase() # [self.rho_app, self.phase_deg, self.rho_app_er, self.phase_deg_er]
+				## Create station objects and fill them
+				station_objects.append(sta_obj)
+				count  += 1
+		#########################################################################################
+		#########################################################################################
+		## Import wells data:
+		#wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red = \
+		# 	read_well_temperature(path_wells_temp_date)
+		wl_name, wl_prof_depth, wl_prof_depth_red, wl_prof_temp, dir_no_depth_red, wl_prof_date = \
+			read_well_temperature_date(path_wells_temp_date)
+		# # Note: dir_no_depth_red contain a list of wells with no information of reduced depth
+		# ## Recover location for wells from path_wells_loc
+		wells_location = read_well_location(path_wells_loc)
+		# # Note: wells_location = [[wl_name1,lat1,lon1,elev1],...] list of arrays
+		# ## Recover MeB data for wells from path_wells_meb
+		wl_name_meb, wl_prof_depth_meb, wl_prof_meb = read_well_meb(path_wells_meb)
+		#########################################################################################
+		## Create wells objects
+		# Defined lists of wells
+		if full_dataset:
+			wl2work = wl_name
+			# add to wl2work names of well with meb data and no temp
+			wls_meb_notemp = []
+			for wl_meb in wl_name_meb:
+				if wl_meb not in wl_name:
+					#wl2work.append(wl_meb)
+					wls_meb_notemp.append(wl_meb)
+			#
+			#wl_name = wl_name_meb # just for inverting meb data with no temp data
+			#wl2work = ['WK317']
 
 		# remove bad quality wells from list 'wl2work' (based on Q_temp_prof.txt)
-        if filter_lowQ_data_well: 
-            name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
-            BQ_sta = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
-            wl2work = [x for x in wl2work if not x in BQ_sta]
+		if filter_lowQ_data_well: 
+			name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
+			BQ_sta = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+			wl2work = [x for x in wl2work if not x in BQ_sta]
 
-        #########################################################################################
-        # ## Loop over the wells to create objects and assing data attributes 
-        wells_objects = []   # list to be fill with station objects
-        count  = 0
-        count2 = 0
-        for wl in wl_name:
-            if wl in wl2work: # and wl != 'THM24':
-                # create well object
-                wl_obj = Wells(wl, count)
-                # Search for location of the well and add to attributes	
-                for i in range(len(wells_location)): 
-                    wl_name = wells_location[i][0]
-                    if wl_obj.name == wl_name: 
-                        wl_obj.lat_dec = wells_location[i][2]
-                        wl_obj.lon_dec = wells_location[i][1]
-                        wl_obj.elev = wells_location[i][3]
-                # check if well have meb data and no temp data 
-                #if wl in wls_meb_notemp:
-                #    wl_obj.no_temp = True
-            
-                #   if not wl_obj.no_temp:
-                ## load data attributes
-                ## filter the data to the most recent one (well has overlap data cooresponding to reintepretations)
-                filter_by_date = True
-                filter_by_temp = False
-                if filter_by_date:
-                    #year = max(wl_prof_date[count2]) # last year of interpretation 
-                    wl_prof_date[count2].sort() # last year of interpretation
-                    idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x == wl_prof_date[count2][-1]]  # great
-                    if len(idx_year) < 2: 
-                        idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if (x == wl_prof_date[count2][-1] or x == wl_prof_date[count2][-2])]  # great
-                    # condition for data in part. wells
-                    if wl == 'WK047':
-                        idx_year = [0,2,-1]
-                    if wl == 'WK028':
-                        idx_year = [-1]
-                    if wl == 'WK401':
-                        idx_year = [i for i, x in enumerate(wl_prof_date[count2])]  
-                    if wl == 'WK045':
-                        idx_year = [i for i, x in enumerate(wl_prof_date[count2])]  
-                    if wl == 'WK005':
-                        wdata = [1,2]
-                        idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i not in wdata] 
-                    if wl == 'TH12':
-                        idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x is not '2016']
-                    if wl == 'WK219':
-                        idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i != 5]
-                    # if wl == 'WK684':
-                    # 	idx_year = [i for i in idx_year if i != 3]
+		#########################################################################################
+		# ## Loop over the wells to create objects and assing data attributes 
+		wells_objects = []   # list to be fill with station objects
+		count  = 0
+		count2 = 0
+		for wl in wl_name:
+			if wl in wl2work: # and wl != 'THM24':
+				# create well object
+				wl_obj = Wells(wl, count)
+				# Search for location of the well and add to attributes	
+				for i in range(len(wells_location)): 
+					wl_name = wells_location[i][0]
+					if wl_obj.name == wl_name: 
+						wl_obj.lat_dec = wells_location[i][2]
+						wl_obj.lon_dec = wells_location[i][1]
+						wl_obj.elev = wells_location[i][3]
+				# check if well have meb data and no temp data 
+				#if wl in wls_meb_notemp:
+				#    wl_obj.no_temp = True
+			
+				#   if not wl_obj.no_temp:
+				## load data attributes
+				## filter the data to the most recent one (well has overlap data cooresponding to reintepretations)
+				filter_by_date = True
+				filter_by_temp = False
+				if filter_by_date:
+					#year = max(wl_prof_date[count2]) # last year of interpretation 
+					wl_prof_date[count2].sort() # last year of interpretation
+					idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x == wl_prof_date[count2][-1]]  # great
+					if len(idx_year) < 2: 
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if (x == wl_prof_date[count2][-1] or x == wl_prof_date[count2][-2])]  # great
+					# condition for data in part. wells
+					if wl == 'WK047':
+						idx_year = [0,2,-1]
+					if wl == 'WK028':
+						idx_year = [-1]
+					if wl == 'WK401':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2])]  
+					if wl == 'WK045':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2])]  
+					if wl == 'WK005':
+						wdata = [1,2]
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i not in wdata] 
+					if wl == 'TH12':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if x is not '2016']
+					if wl == 'WK219':
+						idx_year = [i for i, x in enumerate(wl_prof_date[count2]) if i != 5]
+					# if wl == 'WK684':
+					# 	idx_year = [i for i in idx_year if i != 3]
 
-                    wl_obj.depth = [wl_prof_depth[count2][i] for i in idx_year]
-                    wl_obj.red_depth = [wl_prof_depth_red[count2][i] for i in idx_year]
-                    wl_obj.temp_prof_true = [wl_prof_temp[count2][i] for i in idx_year]
-                
-                elif filter_by_temp:
-                    pass
-                else:	
-                    wl_obj.depth = wl_prof_depth[count2]	
-                    wl_obj.red_depth = wl_prof_depth_red[count2]
-                    wl_obj.temp_prof_true = wl_prof_temp[count2]	
-                
-                wl_obj.depth_raw = wl_prof_depth[count2]	
-                wl_obj.red_depth_raw = wl_prof_depth_red[count2]
-                wl_obj.temp_prof_true_raw = wl_prof_temp[count2]	
+					wl_obj.depth = [wl_prof_depth[count2][i] for i in idx_year]
+					wl_obj.red_depth = [wl_prof_depth_red[count2][i] for i in idx_year]
+					wl_obj.temp_prof_true = [wl_prof_temp[count2][i] for i in idx_year]
+				
+				elif filter_by_temp:
+					pass
+				else:	
+					wl_obj.depth = wl_prof_depth[count2]	
+					wl_obj.red_depth = wl_prof_depth_red[count2]
+					wl_obj.temp_prof_true = wl_prof_temp[count2]	
+				
+				wl_obj.depth_raw = wl_prof_depth[count2]	
+				wl_obj.red_depth_raw = wl_prof_depth_red[count2]
+				wl_obj.temp_prof_true_raw = wl_prof_temp[count2]	
 
-                # check if measure points are too close
-                # find indexes of repeat values in red_depth and create vectors with no repetitions (ex. wel WK401)
-                wl_obj.red_depth, rep_idx= np.unique(wl_obj.red_depth, return_index = True)
-                temp_aux = [wl_obj.temp_prof_true[i] for i in rep_idx]
-                wl_obj.temp_prof_true = temp_aux 
-                ## add a initial point to temp (15°C) profile at 0 depth (elevation of the well)
-                if wl_obj.red_depth[-1] != wl_obj.elev:
-                    wl_obj.red_depth = np.append(wl_obj.red_depth, wl_obj.elev)
-                    if wl_obj.temp_prof_true[-1] < 10.:
-                        wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, wl_obj.temp_prof_true[-1] - 5.)
-                    else:
-                        wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, 10.0)
-                ## sort depth and temp based on depth (from max to min)
-                wl_obj.red_depth, wl_obj.temp_prof_true = zip(*sorted(zip(wl_obj.red_depth, wl_obj.temp_prof_true), reverse = True))
-                ## resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
-                
-                ## method of interpolation : Cubic spline interpolation 
-                ## inverse order: wl_obj.red_depth start at the higuer value (elev)
-                xi = np.asarray(wl_obj.red_depth)
-                yi = np.asarray(wl_obj.temp_prof_true)
-                N_rs = 500 # number of resample points data
-                xj = np.linspace(xi[0],xi[-1],N_rs)	
-                yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
-                # add attributes
-                wl_obj.red_depth_rs = xj
-                wl_obj.temp_prof_rs = yj
-                
-                ## method of fit: cubic polinomial
-                ## inverse order: wl_obj.red_depth start at the higuer value (elev)
-                xi = np.asarray(wl_obj.red_depth)
-                yi = np.asarray(wl_obj.temp_prof_true)
-                N_rs = 500 # number of resample points data
-                xj = np.linspace(xi[0],xi[-1],N_rs)	
-                yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
-                # add attributes
-                wl_obj.red_depth_rs = xj
-                wl_obj.temp_prof_rs = yj
+				# check if measure points are too close
+				# find indexes of repeat values in red_depth and create vectors with no repetitions (ex. wel WK401)
+				wl_obj.red_depth, rep_idx= np.unique(wl_obj.red_depth, return_index = True)
+				temp_aux = [wl_obj.temp_prof_true[i] for i in rep_idx]
+				wl_obj.temp_prof_true = temp_aux 
+				## add a initial point to temp (15°C) profile at 0 depth (elevation of the well)
+				if wl_obj.red_depth[-1] != wl_obj.elev:
+					wl_obj.red_depth = np.append(wl_obj.red_depth, wl_obj.elev)
+					if wl_obj.temp_prof_true[-1] < 10.:
+						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, wl_obj.temp_prof_true[-1] - 5.)
+					else:
+						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, 10.0)
+				## sort depth and temp based on depth (from max to min)
+				wl_obj.red_depth, wl_obj.temp_prof_true = zip(*sorted(zip(wl_obj.red_depth, wl_obj.temp_prof_true), reverse = True))
+				## resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
+				
+				## method of interpolation : Cubic spline interpolation 
+				## inverse order: wl_obj.red_depth start at the higuer value (elev)
+				xi = np.asarray(wl_obj.red_depth)
+				yi = np.asarray(wl_obj.temp_prof_true)
+				N_rs = 500 # number of resample points data
+				xj = np.linspace(xi[0],xi[-1],N_rs)	
+				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
+				# add attributes
+				wl_obj.red_depth_rs = xj
+				wl_obj.temp_prof_rs = yj
+				
+				## method of fit: cubic polinomial
+				## inverse order: wl_obj.red_depth start at the higuer value (elev)
+				xi = np.asarray(wl_obj.red_depth)
+				yi = np.asarray(wl_obj.temp_prof_true)
+				N_rs = 500 # number of resample points data
+				xj = np.linspace(xi[0],xi[-1],N_rs)	
+				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
+				# add attributes
+				wl_obj.red_depth_rs = xj
+				wl_obj.temp_prof_rs = yj
 
-                ## add well object to directory of well objects
-                wells_objects.append(wl_obj)
-                print(wl_obj.name)
-                count  += 1
-                #if not wl_obj.no_temp:
-                count2 +=1
-        
-        # create well objects of wells with meb data and no temp data
-        for wl in wls_meb_notemp:
-            # create well object
-            wl_obj = Wells(wl, count)
-            # Search for location of the well and add to attributes	
-            for i in range(len(wells_location)): 
-                wl_name = wells_location[i][0]
-                if wl_obj.name == wl_name: 
-                    wl_obj.lat_dec = wells_location[i][2]
-                    wl_obj.lon_dec = wells_location[i][1]
-                    wl_obj.elev = wells_location[i][3]
-            wells_objects.append(wl_obj)
-            count  += 1
+				## add well object to directory of well objects
+				wells_objects.append(wl_obj)
+				count  += 1
+				#if not wl_obj.no_temp:
+				count2 +=1
+		
+		# create well objects of wells with meb data and no temp data
+		for wl in wls_meb_notemp:
+			# create well object
+			wl_obj = Wells(wl, count)
+			# Search for location of the well and add to attributes	
+			for i in range(len(wells_location)): 
+				wl_name = wells_location[i][0]
+				if wl_obj.name == wl_name: 
+					wl_obj.lat_dec = wells_location[i][2]
+					wl_obj.lon_dec = wells_location[i][1]
+					wl_obj.elev = wells_location[i][3]
+			wells_objects.append(wl_obj)
+			count  += 1
 
-        ## Loop wells_objects (list) to assing data attributes from MeB files 
-        # list of wells with MeB (names)
-        wells_meb = []
-        count_meb_wl = 0
-        for wl in wells_objects: 
-            if wl.name in wl_name_meb:
-                idx = wl_name_meb.index(wl.name)
-                wl.meb = True
-                wl.meb_prof = wl_prof_meb[idx]
-                wl.meb_depth = wl_prof_depth_meb[idx]
-                count_meb_wl+=1
-                #wells_meb.append(wl.name)
-        
-        ## create folder structure
-        if True:
-            try: 
-                os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+'00_global')
-            except:
-                pass
-            for wl in wells_objects:
-                try: 
-                    os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+wl.name)
-                except:
-                    pass
+		## Loop wells_objects (list) to assing data attributes from MeB files 
+		# list of wells with MeB (names)
+		wells_meb = []
+		count_meb_wl = 0
+		for wl in wells_objects: 
+			if wl.name in wl_name_meb:
+				idx = wl_name_meb.index(wl.name)
+				wl.meb = True
+				wl.meb_prof = wl_prof_meb[idx]
+				wl.meb_depth = wl_prof_depth_meb[idx]
+				count_meb_wl+=1
+				#wells_meb.append(wl.name)
+		
+		## create folder structure
+		if True:
+			try: 
+				os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+'00_global')
+			except:
+				pass
+			for wl in wells_objects:
+				try: 
+					os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+wl.name)
+				except:
+					pass
 
 	# (1) Run MCMC for MeB priors  
 	if mcmc_meb_inv:
@@ -920,7 +919,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if False:
+	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf
@@ -1000,43 +999,38 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if False:  # histogram of MT inversion parameters for stations inverted
+		if True:  # histogram of MT inversion parameters for stations inverted
+			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
+			histogram_mcmc_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
+
+		if False:   # histogram of MeB inversion parameters for wells 
 			z1_batch = []
 			z2_batch = []
-			r1_batch = []
-			r2_batch = []
-			r3_batch = []
+
 			## load pars
-			for sta in station_objects:
-				aux = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'est_par.dat')
-				sta.z1_pars = [aux[0][1],aux[0][2]]
-				sta.z2_pars = [aux[1][1],aux[1][2]]
-				sta.r1_pars = [aux[2][1],aux[2][2]]
-				sta.r2_pars = [aux[3][1],aux[3][2]]
-				sta.r3_pars = [aux[4][1],aux[4][2]]
-				# add to batch
-				if sta.z2_pars[0] > 50.:
-					z1_batch.append(sta.z1_pars[0])
-					z2_batch.append(sta.z2_pars[0])
-					r1_batch.append(sta.r1_pars[0])
-					r2_batch.append(sta.r2_pars[0])
-					r3_batch.append(sta.r3_pars[0])
+			n_wells = 0
+			for wl in wells_objects:
+				if wl.meb:
+					aux = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'est_par.dat')
+					wl.meb_z1_pars = [aux[0][1],aux[0][2]]
+					wl.meb_z2_pars = [aux[1][1],aux[1][2]]
+					if wl.meb_z1_pars[0] < 1000. and wl.meb_z2_pars[0] < 1000.:
+						z1_batch.append(wl.meb_z1_pars[0])
+						z2_batch.append(wl.meb_z2_pars[0])
+						n_wells+=1
 			# plot histograms 
-			f = plt.figure(figsize=(12, 7))
-			gs = gridspec.GridSpec(nrows=2, ncols=3)
+			f = plt.figure(figsize=(8, 4))
+			gs = gridspec.GridSpec(nrows=1, ncols=2)
 			ax1 = f.add_subplot(gs[0, 0])
 			ax2 = f.add_subplot(gs[0, 1])
-			ax3 = f.add_subplot(gs[1, 0])
-			ax4 = f.add_subplot(gs[1, 1])
-			ax5 = f.add_subplot(gs[1, 2])
-			ax_leg= f.add_subplot(gs[0, 2])
+			#ax_leg= f.add_subplot(gs[0, 2])
 
 			# z1
-			bins = np.linspace(np.min(z1_batch), np.max(z1_batch), int(np.sqrt(len(z1_batch))))
-			h,e = np.histogram(z1_batch, bins)
+			bins = np.linspace(np.min(z1_batch), np.max(z1_batch), 2*int(np.sqrt(len(z1_batch))))
+			h,e = np.histogram(z1_batch, 2*bins)
 			m = 0.5*(e[:-1]+e[1:])
 			ax1.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
-			ax1.set_xlabel('$z_1$ [m]', fontsize=textsize)
+			ax1.set_xlabel('$d_1$ [m]', fontsize=textsize)
 			ax1.set_ylabel('freq.', fontsize=textsize)
 			ax1.grid(True, which='both', linewidth=0.1)
 			# plot normal fit 
@@ -1050,10 +1044,10 @@ if __name__ == "__main__":
 			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
 			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
 			ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax1.plot([med,med],[0,np.max(h)],'r-')
+			ax1.plot([med,med],[0,np.max(h)],'r-',label = r'median of $z_1$')
 
 			# z2
-			bins = np.linspace(np.min(z2_batch), np.max(z2_batch), int(np.sqrt(len(z2_batch))))
+			bins = np.linspace(np.min(z2_batch), np.max(z2_batch), 2*int(np.sqrt(len(z2_batch))))
 			h,e = np.histogram(z2_batch, bins)
 			m = 0.5*(e[:-1]+e[1:])
 			ax2.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
@@ -1071,83 +1065,18 @@ if __name__ == "__main__":
 			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
 			#ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
 			ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax2.plot([med,med],[0,np.max(h)],'b-')
+			ax2.plot([med,med],[0,np.max(h)],'b-',label = r'median of $z_2$')
 
-			# r1
-			bins = np.linspace(np.min(r1_batch), np.max(r1_batch), int(np.sqrt(len(r1_batch))))
-			h,e = np.histogram(r1_batch, bins)
-			m = 0.5*(e[:-1]+e[1:])
-			ax3.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
-			ax3.set_xlabel(r'$\rho_1$ [$\Omega m$]', fontsize=textsize)
-			ax3.set_ylabel('freq.', fontsize=textsize)
-			ax3.grid(True, which='both', linewidth=0.1)
-			# plot normal fit 
-			(mu, sigma) = norm.fit(r1_batch)
-			med = np.median(r1_batch)
-			try:
-				y = mlab.normpdf(bins, mu, sigma)
-			except:
-				#y = stats.norm.pdf(bins, mu, sigma)
-				pass
-			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-			#ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
-			#ax3.set_title('$med$:{:1.1e}, $\mu$:{:1.1e}, $\sigma$: {:1.1e}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax3.set_title('$\mu$:{:1.1e}, $\sigma$: {:1.1e}'.format(mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax3.plot([med,med],[0,np.max(h)],'y-')
+			# plot legend 
+			#x_leg.plot([],[],'r-',label = r'median of $z_1$')
+			#ax_leg.plot([],[],'b-',label = r'median of $z_2$')
+			#ax_leg.legend(loc='center', shadow=False, fontsize=textsize)
+			#ax_leg.axis('off')
+			ax1.legend(loc=None, shadow=False, fontsize=textsize)
+			ax2.legend(loc=None, shadow=False, fontsize=textsize)
 			
-			# r2
-			bins = np.linspace(np.min(r2_batch), np.max(r2_batch), int(np.sqrt(len(r2_batch))))
-			h,e = np.histogram(r2_batch, bins)
-			m = 0.5*(e[:-1]+e[1:])
-			ax4.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
-			ax4.set_xlabel(r'$\rho_2$ [$\Omega m$]', fontsize=textsize)
-			ax4.set_ylabel('freq.', fontsize=textsize)
-			ax4.grid(True, which='both', linewidth=0.1)
-			# plot normal fit 
-			(mu, sigma) = norm.fit(r2_batch)
-			med = np.median(r2_batch)
-			try:
-				y = mlab.normpdf(bins, mu, sigma)
-			except:
-				#y = stats.norm.pdf(bins, mu, sigma)
-				pass
-			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
-			ax4.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax4.plot([med,med],[0,np.max(h)],'g-')
-
-			# r3
-			bins = np.linspace(np.min(r3_batch), np.max(r3_batch), int(np.sqrt(len(r3_batch))))
-			h,e = np.histogram(r3_batch, bins)
-			m = 0.5*(e[:-1]+e[1:])
-			ax5.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
-			ax5.set_xlabel(r'$\rho_3$ [$\Omega m$]', fontsize=textsize)
-			ax5.set_ylabel('freq.', fontsize=textsize)
-			ax5.grid(True, which='both', linewidth=0.1)
-			# plot normal fit 
-			(mu, sigma) = norm.fit(r3_batch)
-			med = np.median(r3_batch)
-			try:
-				y = mlab.normpdf(bins, mu, sigma)
-			except:
-				#y = stats.norm.pdf(bins, mu, sigma)
-				pass
-			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
-			ax5.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax5.plot([med,med],[0,np.max(h)],'m-')
-
-			# plor legend 
-			ax_leg.plot([],[],'r-',label = r'median of $z_1$')
-			ax_leg.plot([],[],'b-',label = r'median of $z_2$')
-			ax_leg.plot([],[],'y-',label = r'median of $\rho_1$')
-			ax_leg.plot([],[],'g-',label = r'median of $\rho_2$')
-			ax_leg.plot([],[],'m-',label = r'median of $\rho_3$')
-			ax_leg.legend(loc='center', shadow=False, fontsize=textsize)
-			ax_leg.axis('off')
-
 			f.tight_layout()
-			plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nsta_'+str(len(station_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+			plt.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nwells_'+str(n_wells)+'.png', dpi=300, facecolor='w', edgecolor='w',
 				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
 		if False:   # .dat of latlon for of wells and MT stations 
@@ -1168,7 +1097,7 @@ if __name__ == "__main__":
 
 		if False:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
 			# mcmc MeB results 
-			if False:
+			if True:
 				wl_meb_results = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wl_meb_results.dat','w')
 				wl_meb_results.write('well_name'+','+'lon_dec'+','+'lat_dec'+','+'z1_mean'+','+'z1_std'+','+'z2_mean'+','+'z2_std'+'\n')
 				for wl in wells_objects:
