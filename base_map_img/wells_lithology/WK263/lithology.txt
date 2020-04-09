@@ -1,6 +1,6 @@
 #depth_from,depth_to,formation
 0,20,NR
-20,180,ORNFN
+20,180,ORNFM
 180,250,HFF
 250,400,RTH_BX
 400,760,WRFM

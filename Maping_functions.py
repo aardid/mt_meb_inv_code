@@ -30,6 +30,8 @@ import matplotlib.image as mpimg
 from scipy.stats import norm
 import matplotlib.mlab as mlab
 import pyproj
+from misc_functios import *
+
 _projections = {}
 textsize = 15.
 
@@ -282,8 +284,8 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
     plt.clf()
 
     
-def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist = None, pref_orient = 'EW', sort = None, \
-    file_name = None, format_fig = None, width_ref = None, prior_meb = None, plot_some_wells = None, xlim = None, ylim = None, \
+def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist = None, pref_orient = None, sort = None, \
+    file_name = None, format_fig = None, width_ref = None, prior_meb = None, wells_objects = None, plot_some_wells = None, xlim = None, ylim = None, \
     center_cero = None, km = None, export_fig = None, no_plot_clay_infered = None, mask_no_cc = None): 
     """
     width_ref: width of percetil of reference as dotted line centered at 50%. ex: '60%'
@@ -315,11 +317,23 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         assert 'invalid width_ref: 30%, 60%, 90%'
     if prior_meb is None:
         prior_meb = False
-    else: 
-        wells_objects = prior_meb
+    #else: 
+    #    wells_objects = prior_meb
+    if plot_some_wells is None: 
+        plot_some_wells = False
+
+    if pref_orient: 
+        pref_orient = pref_orient
+    else:    
+        pref_orient = 'EW'
+
     ## sta_objects: list of station objects
     ## sort list by longitud (min to max - East to West)
-    sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    if pref_orient == 'EW':
+        sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
+    if pref_orient == 'NS':
+        sta_objects.sort(key=lambda x: x.lat_dec, reverse=True)
+
     # vectors to be fill and plot 
     x_axis = np.zeros(len(sta_objects))
     topo = np.zeros(len(sta_objects))
@@ -351,6 +365,13 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                 stns_negli[i] = True
             else:
                 stns_negli[i] = False
+                # criteria for being negligible
+                if abs((sta.z1_pars[0]+sta.z1_pars[1]) - (sta.z1_pars[0]+sta.z2_pars[0]-sta.z2_pars[1])) < mask_no_cc/2: 
+                    stns_negli[i] = True
+                else:
+                    stns_negli[i] = False
+            if sta.name[:-4] in ['WT192a','WT306a']:
+                stns_negli[i] = True
         i+=1
 
     if center_cero: 
@@ -362,6 +383,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[9.5,7.5])
+    if prior_meb:
+       f = plt.figure(figsize=[11.5,9.5]) 
     ax = plt.axes([0.18,0.25,0.70,0.50])
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-', label='Topography')
@@ -428,7 +451,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             ax.text(x_axis[-1],z2_per[-1,12],'80%',size = textsize,color = 'b')
 
     # mask sections were second layer is negligible
-    if mask_no_cc: 
+    if mask_no_cc:
         i = 0
         for k in range(len(sta_objects)):
             if stns_negli[k]:# and stns_negli[k+1]: 
@@ -437,7 +460,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     x_mask = [x_axis[k-1], x_axis[k]]
                     #y_mask = [topo[k]-10, -2000.]
                     y_mask_top = [z1_per[k-1,0]+50,z1_per[k,0]+50]
-                    y_mask_bottom = [z2_per[k-1,-1]-100,z2_per[k,-1]-100]
+                    y_mask_bottom = [z2_per[k-1,-1]-300,z2_per[k,-1]-300]
                     ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=1)
                 ## from the station to the next one
                 if k<len(sta_objects)-1:
@@ -446,24 +469,29 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     y_mask_top = [z1_per[k,0]+50,z1_per[k+1,0]+50]
                     y_mask_bottom = [z2_per[k,-1]-100,z2_per[k+1,-1]-100]
                     ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=1)
-                ax.text(x_axis[i], topo[i]-200., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='white', edgecolor='white', alpha=1.0), zorder=3 , label = 'No conductor') 
-                ax.text(x_axis[i], topo[i]-200., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='grey', edgecolor='grey', alpha=0.1), zorder=4 , label = 'No conductor') 
+                if not prior_meb:
+                    ax.text(x_axis[k], topo[k]-600., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='white', edgecolor='white', alpha=1.0), zorder=3 , label = 'No conductor') 
+                    ax.text(x_axis[k], topo[k]-600., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='grey', edgecolor='grey', alpha=0.1), zorder=4 , label = 'No conductor') 
+                else:
+                    ax.text(x_axis[k], topo[k]-800., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='white', edgecolor='white', alpha=1.0), zorder=3 , label = 'No conductor') 
+                    ax.text(x_axis[k], topo[k]-800., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='grey', edgecolor='grey', alpha=0.1), zorder=4 , label = 'No conductor') 
+                ax.plot([x_axis[k],x_axis[k]], [topo[k]-100,topo[k]-3000],'w-',  linewidth=10, zorder=3, alpha=.9)
+
                 i+=1
         #ax.text(x_axis[i-1], topo[i-1]-200., '  ', rotation=90, size=textsize-2, bbox=dict(facecolor='black', alpha=0.01), label = 'No conductor',  zorder=0 ) 
     # plot station names    
     i = 0
     for sta in sta_objects:
-            ax.text(x_axis[i], topo[i]+500., sta.name[:-4], rotation=90, size=textsize, bbox=dict(facecolor='red', alpha=0.1), ) 
+            ax.text(x_axis[i], topo[i]+100., sta.name[:-4], rotation=90, size=textsize, bbox=dict(facecolor='red', alpha=0.1), ) 
             i+=1  
 
     if prior_meb:
-        if plot_some_wells is None: 
-            plot_some_wells = False
         wl_names = []
         wls_obj = []
         # collect nearest wells names employed in every station for MeB priors
         if plot_some_wells: # for well names given 
-            wl_names = plot_some_wells
+            wl_names = [wl for wl in wells_objects if wl.name in plot_some_wells]
+
         else: # for every well considered in priors
             for sta in sta_objects:
                 aux_names = sta.prior_meb_wl_names
@@ -511,8 +539,12 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             # plot well names and distance to the profile (near station) 
             if wl.name == 'WK267A': 
                 ax.text(x_axis_wl[i]-.2, topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            elif wl.name == 'WK403':
+                ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            elif wl.name == 'WK318':
+                ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
             else:
-                ax.text(x_axis_wl[i], topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                ax.text(x_axis_wl[i], topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
@@ -533,12 +565,14 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     if xlim:
         ax.set_xlim([xlim[0], xlim[1]])
     else:
-        ax.set_xlim([x_axis[0]-2, x_axis[-1]+1])
+        ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
+        if prior_meb:
+            ax.set_xlim([x_axis[0]-2, x_axis[-1]+1])
     if prior_meb:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
         else:
-            ax.set_ylim([-1.5e3, max(topo)+700.])
+            ax.set_ylim([-2.0e3, max(topo)+700.])
     else:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
@@ -2620,24 +2654,4 @@ def base_map_region(path_topo = None , xlim = None, ylim = None,
         plt.plot([], [], '-',color = 'y',linewidth= 1, label = 'Powerlines', zorder = 3)
 
     return fig, ax, topo_cb
-
-def ray_tracing_method(x,y,poly): # Ray tracing function
-    '''
-    Check is x,y are inside area define by polygon (poly)
-    Output: bool (True if its inside)
-    '''
-    n = len(poly)
-    inside = False
-    p1x,p1y = poly[0]
-    for i in range(n+1):
-        p2x,p2y = poly[i % n]
-        if y > min(p1y,p2y):
-            if y <= max(p1y,p2y):
-                if x <= max(p1x,p2x):
-                    if p1y != p2y:
-                        xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                    if p1x == p2x or x <= xints:
-                        inside = not inside
-        p1x,p1y = p2x,p2y
-
-    return inside           
+    

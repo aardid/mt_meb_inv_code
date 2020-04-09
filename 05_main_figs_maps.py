@@ -36,14 +36,15 @@ textsize = 15.
 
 if __name__ == "__main__":
 	##
-	if False: # base map figures
+	if True: # base map figures
 		base_map = True # plot map with wells and stations
 		zones = True # add injection and extraction zones
-		wells_loc = True # add wells
-		stations_loc = True # add mt stations
+		wells_loc = False # add wells
+		stations_loc = False # add mt stations
+		temp_fix_depth = False # temperature at fix depth (def 0 masl)
 		########
 		meb_results = False # add scatter MeB results 
-		mt_results = False # add scatter MT results
+		mt_results = True # add scatter MT results
 		temp_results = False # add scatter Temp results 
 		########
 		# plot map with wells and stations
@@ -88,12 +89,12 @@ if __name__ == "__main__":
 				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
 
 			# West Bore
-			if False:
+			if True:
 				path_otupu = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'WestBoreField_prod.dat'
 				lats, lons = np.genfromtxt(path_otupu, skip_header=1, delimiter=',').T
 				plt.plot(lons, lats, 'r:' ,linewidth= 2, zorder = 7)
 				# print name 
-				txt = plt.text(np.min(lons), np.max(lats), 'West Bore', color='r', size=textsize, zorder = 7)
+				txt = plt.text(np.min(lons)-0.01, np.min(lats)-0.005, 'West Bore', color='r', size=textsize, zorder = 7)
 				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
 			# Karapiti South 
 			if True:
@@ -121,26 +122,48 @@ if __name__ == "__main__":
 			txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
 			txt = plt.text(176.18, -38.645, 'Rotokawa', color='darkorange', size=textsize, zorder = 7)
 			txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
-
+		#################################################
+		######## DATA
 		# add wells
 		if wells_loc:
 			path_wl_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls.dat'
 			lons, lats = np.genfromtxt(path_wl_locs, delimiter=',').T
 			plt.plot(lons, lats, 's' , c = 'gray', zorder = 2, markersize=6)
 			plt.plot([], [], 's' , c = 'gray', zorder = 2, label = 'Well', markersize=8)
-			# meb wells 
-			path_wlmeb_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls_meb.dat'
-			lons, lats = np.genfromtxt(path_wlmeb_locs, delimiter=',').T
-			plt.plot(lons, lats, 's' , c = 'w', zorder = 2, markersize=6)
-			plt.plot(lons, lats, 's' , c = 'gray', zorder = 2, markersize=6, markerfacecolor='none')
-			plt.plot([], [], 's' , c = 'gray', zorder = 2, label = 'Well with MeB data', markersize=8, markerfacecolor='none')
+			if True:
+				# meb wells 
+				path_wlmeb_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls_meb.dat'
+				lons, lats = np.genfromtxt(path_wlmeb_locs, delimiter=',').T
+				plt.plot(lons, lats, 's' , c = 'w', zorder = 2, markersize=6)
+				plt.plot(lons, lats, 's' , c = 'gray', zorder = 2, markersize=6, markerfacecolor='none')
+				plt.plot([], [], 's' , c = 'gray', zorder = 2, label = 'Well with MeB data', markersize=8, markerfacecolor='none')
+				# lito wells
+				path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+'wls_with_litho.txt'
+				names, lons, lats = np.genfromtxt(path, delimiter=',').T
+				plt.plot(lons, lats, 's' , c = 'w', zorder = 2, markersize=6)
+				plt.plot(lons, lats, 's' , c = 'lime', zorder = 2, markersize=6, markerfacecolor='none')
+				plt.plot([], [], 's' , c = 'lime', zorder = 2, label = 'Well with lithology', markersize=8, markerfacecolor='none')
 		# add mt stations
 		if stations_loc:
 			path_mt_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_MT_stations.dat'
 			lons, lats = np.genfromtxt(path_mt_locs, delimiter=',').T
 			plt.plot(lons, lats, 'x' , c = 'm', zorder = 2, markersize=6)
 			plt.plot([], [], 'x' , c = 'm', zorder = 2, label = 'MT station', markersize=8)
-		####################################
+		# add temp. at fix depth
+		if temp_fix_depth: 
+			## countour plot of temp at fix depth
+			#path_temps = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'temps_at_400m_masl.dat'
+			#path_temps = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'temps_at_300m_masl.dat'
+			#path_temps = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'temps_at_200m_masl.dat'
+			#path_temps = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'temps_at_100m_masl.dat'
+			path_temps = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'temps_at_0m_masl.dat'
+			names, lons, lats, temp = np.genfromtxt(path_temps, skip_header=1, delimiter=',').T
+			#plt.plot(lons, lats, '.')
+			levels = [50,100,150,200,250,300]
+			CS = ax.tricontour(lons, lats, temp, levels=levels, linewidths=1.0, colors='m', alpha = 0.8)
+			ax.clabel(CS, CS.levels, inline=True, fontsize=8)			
+		##################################################
+		######## RESULTS 
 		# add scatter MeB results 
 		if meb_results: # 
 			z1_mean = []
@@ -156,16 +179,23 @@ if __name__ == "__main__":
 			lon_stas = meb_result[1]
 			lat_stas = meb_result[2]
 			# array to plot
-			z1_mean = meb_result[3]
-			array = z1_mean
-			name = 'z1_mean'
-			levels = np.arange(200,576,25)  # for mean z1
+			if True: # z1 mean
+				z1_mean = meb_result[3]
+				array = z1_mean
+				name = 'z1_mean'
+				levels = np.arange(150,400,25)#(200,576,25)  # for mean z1
+			if False: # z2 mean
+				z2_mean = meb_result[5]
+				array = z2_mean
+				name = 'z2_mean'
+				levels = np.arange(200,800,50)#(100,2000,25)  # for mean z1
 			# scatter plot
 			size = 200*np.ones(len(array))
 			vmin = min(levels)
 			vmax = max(levels)
 			normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
-			scatter_meb = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', cmap = 'winter', \
+			cmap = 'winter'
+			scatter_meb = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', cmap = cmap, \
 				norm = normalize, zorder = 5)#, label = 'MeB inversion: z1 mean')#alpha = 0.5)
 			ax.scatter([],[], s = size, c = 'b', edgecolors = 'k', \
 				zorder = 5, label = 'MeB inversion: z1 mean')#alpha = 0.5)
@@ -186,10 +216,16 @@ if __name__ == "__main__":
 			lon_stas = mt_result[1]
 			lat_stas = mt_result[2]
 			# array to plot
-			z1_mean = mt_result[3]
-			name = 'z1_mean'
-			array = z1_mean
-			levels = np.arange(200,576,25)  # for mean z1
+			if True: # z1_mean
+				z1_mean = mt_result[3]
+				name = 'z1_mean'
+				array = z1_mean
+				levels = np.arange(200,576,25)  # for mean z1
+			if False: # z2_mean
+				z2_mean = mt_result[5]
+				name = 'z2_mean'
+				array = z2_mean
+				levels = np.arange(400,800,25)  # for mean z1
 			# scatter plot
 			size = 200*np.ones(len(array))
 			vmin = min(levels)
@@ -204,7 +240,19 @@ if __name__ == "__main__":
 				if (z2 < 50.):
 					plt.plot(mt_result[1][i], mt_result[2][i],'w.', markersize=28, zorder = 6) 
 					plt.plot(mt_result[1][i], mt_result[2][i],'bx', markersize=12, zorder = 6)
-			#
+			# plot profiles 
+			if True:
+				path_profs= ['.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'prof_PW_TM_WB_AR_7.txt',
+					'.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'prof_KS_OT_AR_8.txt',
+					'.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'prof_SENW_TH2.txt']
+				names = ['WK_7','WK_8','TH_2']
+				for i,path in enumerate(path_profs):
+					lats, lons = np.genfromtxt(path, skip_header=1, delimiter=',').T
+					plt.plot(lons, lats, 'm--' ,linewidth = 2, zorder = 7)
+					txt = plt.text(lons[0]-0.02, lats[0]-0.001, names[i], color='m', size=textsize, zorder = 7)
+					txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				plt.plot([],[], 'm--' ,linewidth = 2, label = 'MT profile', zorder = 7)
+
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_MT_'+name+'.png'
 		# add scatter Temp results 
 		if temp_results: 
@@ -221,9 +269,14 @@ if __name__ == "__main__":
 			lon_stas = temp_result[1]
 			lat_stas = temp_result[2]
 			# array to plot
-			T2_mean = temp_result[5]
-			array = T2_mean
-			name = 'T2_mean'
+			if False: # T1
+				T1_mean = temp_result[3]
+				array = T1_mean
+				name = 'T1_mean'
+			if True:  # T2
+				T2_mean = temp_result[5]
+				array = T2_mean
+				name = 'T2_mean'
 			# scatter plot
 			size = 200*np.ones(len(array))
 			# levels = np.arange(200,576,25)  # for mean z1
@@ -236,6 +289,7 @@ if __name__ == "__main__":
 				zorder = 5, label = 'Well temperature at: z2 mean')#alpha = 0.5)
 			#
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_temp_'+name+'.png'
+
 		################### colorbar to plot
 		# topo 
 		if base_map: # topo 

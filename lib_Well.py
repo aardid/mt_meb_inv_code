@@ -21,6 +21,7 @@ from Maping_functions import*
 from misc_functios import*
 from scipy.stats import norm
 import matplotlib.mlab as mlab
+#from io import StringIO
 
 # ==============================================================================
 # Wells class
@@ -101,6 +102,8 @@ class Wells(object):
                             a: mean
                             b: standard deviation 
 
+    litho                   Lithology available (boolean)                 False
+
     """
     def __init__(self, name, ref):  						
         self.name = name # name: extracted from the name of the file
@@ -146,6 +149,8 @@ class Wells(object):
         self.z2_pars = None
         self.T1_pars = None
         self.T2_pars = None
+        # lithology 
+        self.litho = None
     # ===================== 
     # Methods               
     # =====================
@@ -972,6 +977,25 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
 
     if slp is None: 
         slp = 4*10.
+    if with_litho: # import formation, color, description -> create dictionary
+        path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+"formation_colors.txt"
+        #depths_from, depths_to, lito  = np.genfromtxt(path, \
+        #    delimiter=',').T
+        form_abr = []
+        form_col = []
+        form_des = []
+
+        with open(path) as p:
+            next(p)
+            for line in p:
+                line = line.strip('\n')
+                currentline = line.split(",")
+                form_abr.append(currentline[0])
+                form_col.append(currentline[1])
+                form_des.append(currentline[2])
+        dict_form = dict([(form_abr[i],(form_col[i],form_des[i])) for i in range(len(form_des))])
+        # x = dict_form["SPAT"][0]
+
     # estimate boundary of the conductor at each well position
     for wl in wells_objects: # use every stations available
         # save names of stations to be used 
@@ -1093,14 +1117,32 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
                     g.close()               
 
             if with_litho:
-                try:   
-                    depths_from, depths_to, lito  = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+wl.name+os.sep+"lithology.txt", \
-                        delimiter=',').T
+                try:
+                    path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+wl.name+os.sep+"lithology.txt"
+                    #depths_from, depths_to, lito  = np.genfromtxt(path, \
+                    #    delimiter=',').T
+                    depths_from = []
+                    depths_to = []
+                    lito = []
+                    with open(path) as p:
+                        next(p)
+                        for line in p:
+                            line = line.strip('\n')
+                            currentline = line.split(",")
+                            depths_from.append(float(currentline[0]))
+                            depths_to.append(float(currentline[1]))
+                            lito.append(currentline[2])
+
                     N = len(depths_to) # number of lithological layers
-                    colors = ['g','r','orange','r','m','g','r','orange','r','m']
+                    colors = [dict_form[lito[i]][0] for i in range(len(lito))]
+                    #colors = ['g','r','orange','r','m','g','r','orange','r','m']
                     #with open(r'data\nzafd.json', 'r') as fp:
                     for i in range(N):
-                        ax1.fill_between([-35,-5],[-depths_from[i], -depths_from[i]], [-depths_to[i], -depths_to[i]], color = colors[i])
+                        ax1.fill_between([-45,-5],[-depths_from[i], -depths_from[i]], [-depths_to[i], -depths_to[i]], color = colors[i])
+                        thick = depths_to[i] - depths_from[i]
+                        if thick > 25:
+                            ax1.text(-25, -depths_from[i] - thick/2, lito[i], fontsize=8,\
+                                horizontalalignment='center', verticalalignment='center')
                 except:
                     pass
 
@@ -1141,23 +1183,42 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
     # sample temp values and calc T1 and T2 
     Ns = 500
     for wl in wells_objects:
-        # array of samples
-        z1_sam = np.random.normal(wl.z1_pars[0], wl.z1_pars[1], Ns)
-        z2_sam = np.random.normal(wl.z2_pars[0], wl.z2_pars[1], Ns)
-        # 
-        T1_sam = z1_sam*0
-        T2_sam = z1_sam*0
-        # 
-        for i in range(len(T1_sam)):
-            # T1
-            val, idx = find_nearest(wl.red_depth_rs,z1_sam[i])
-            T1_sam[i] = wl.temp_prof_rs[idx]
-            # T2
-            val, idx = find_nearest(wl.red_depth_rs,(z1_sam[i] + z2_sam[i]))
-            T2_sam[i] = wl.temp_prof_rs[idx]
-        # Assign attributes TX_pars and save in .txt
-        wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
-        wl.T2_pars = [np.mean(T2_sam),np.std(T2_sam)]
+        try: 
+            d2_c = wl.z1_pars[0] + wl.z2_pars[0] + wl.z2_pars[1] # depth to bottom of conductor (from surface)
+            d2_w = -1*(wl.red_depth_rs[-1]-wl.elev) # max depth at well (from surface)
+            # if depth at the bottom of conductor is deeper than deppest temp value
+            if d2_c < d2_w :
+                # array of samples
+                z1_sam = np.random.normal(wl.z1_pars[0], wl.z1_pars[1], Ns)
+                z2_sam = np.random.normal(wl.z2_pars[0], wl.z2_pars[1], Ns)
+                # 
+                T1_sam = z1_sam*0
+                T2_sam = z1_sam*0
+                # 
+                for i in range(len(T1_sam)):
+                    # T1
+                    val, idx = find_nearest(wl.red_depth_rs, wl.elev - z1_sam[i])
+                    T1_sam[i] = wl.temp_prof_rs[idx]
+                    # T2
+                    d2_c = z1_sam[i] + z2_sam[i] + wl.z2_pars[1]# depth to bottom of conductor (from surface)
+                    d2_w = -1*(wl.red_depth_rs[-1]-wl.elev) # max depth at well (from surface)
+                    if d2_c < d2_w:
+                        val, idx = find_nearest(wl.red_depth_rs, wl.elev - d2_c)
+                        T2_sam[i] = wl.temp_prof_rs[idx]
+                # Assign attributes TX_pars and save in .txt
+                wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
+                wl.T2_pars = [np.mean(T2_sam),np.std(T2_sam)]
+
+                if wl.T1_pars[0] > 1000:
+                    print(wl.name)
+                if wl.T2_pars[0] > 1000:
+                    print(wl.name)
+            else:
+                pass
+        except: # case when well does not have temp data 
+            wl.no_temp = True
+            pass
+
         if hist:
             if hist_filt:
                 if wl.T1_pars[0] > hist_filt[0]:
@@ -1167,12 +1228,18 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
             else:
                 T1_batch.append(wl.T1_pars[0])
                 T2_batch.append(wl.T2_pars[0])
-
-        # save pars in .txt
-        g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
-        g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
-        g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.T1_pars[0], wl.T1_pars[1], wl.T2_pars[0], wl.T2_pars[1]))
-        g.close()
+        
+        if not wl.no_temp:
+    
+            try:
+                # save pars in .txt
+                g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
+                g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
+                g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.T1_pars[0], wl.T1_pars[1], wl.T2_pars[0], wl.T2_pars[1]))
+                g.close()
+            except:
+                #pass
+                os.remove('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
 
     if hist: 
         f = plt.figure(figsize=(10, 5))
@@ -1231,6 +1298,186 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
         else:
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(T1_batch))+'.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = None): 
+    """
+    filt_in_count (or filt_out_count) : file of countour (i.e. WT resisitvity boundary)
+    """
+
+    if filt_in_count:
+        lats, lons = np.genfromtxt(filt_in_count, skip_header=1, delimiter=',').T
+        poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+    if filt_out_count:
+        lats, lons = np.genfromtxt(filt_out_count, skip_header=1, delimiter=',').T
+        poli_out = [[lons[i],lats[i]] for i in range(len(lats))]
+
+    t1_batch = []
+    t2_batch = []
+
+    if filt_in_count:
+        t1_batch_filt_in = []
+        t2_batch_filt_in = []
+
+    if filt_out_count:
+        t1_batch_filt_out = []
+        t2_batch_filt_out = []
+
+    ## load pars
+    for wl in wells_objects:
+        try:
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+            wl.T1_pars = [aux[0],aux[1]]
+            wl.T2_pars = [aux[2],aux[3]]
+
+            t1_batch.append(wl.T1_pars[0])
+            t2_batch.append(wl.T2_pars[0])
+            
+            if filt_in_count:
+                # check if station is inside poligon 
+                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
+                if val:
+                    t1_batch_filt_in.append(wl.T1_pars[0])
+                    t2_batch_filt_in.append(wl.T2_pars[0])
+
+            if filt_out_count:
+                # check if station is inside poligon 
+                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_out)
+                if not val:
+                    t1_batch_filt_out.append(wl.T1_pars[0])
+                    t2_batch_filt_out.append(wl.T2_pars[0])
+        except:
+            pass
+   
+    # plot histograms 
+    f = plt.figure(figsize=(10, 4))
+    gs = gridspec.GridSpec(nrows=1, ncols=3)
+    ax1 = f.add_subplot(gs[0, 0])
+    ax2 = f.add_subplot(gs[0, 1])
+    ax_leg= f.add_subplot(gs[0, 2])
+
+    # t1
+    bins = np.linspace(np.min(t1_batch), np.max(t1_batch), 2*int(np.sqrt(len(t1_batch))))
+    h,e = np.histogram(t1_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax1.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
+    ax1.set_xlabel('$T_1$ [m]', fontsize=textsize)
+    ax1.set_ylabel('freq.', fontsize=textsize)
+    ax1.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(t1_batch)
+    med = np.median(t1_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+    
+    if not filt_in_count:
+        ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3)
+        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # t1
+        bins = np.linspace(np.min(t1_batch_filt_in), np.max(t1_batch_filt_in), 2*int(np.sqrt(len(t1_batch_filt_in))))
+        h,e = np.histogram(t1_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(t1_batch_filt_in)
+        med = np.median(t1_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # t1
+        bins = np.linspace(np.min(t1_batch_filt_out), np.max(t1_batch_filt_out), 2*int(np.sqrt(len(t1_batch_filt_out))))
+        h,e = np.histogram(t1_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+
+    # t2
+    bins = np.linspace(np.min(t2_batch), np.max(t2_batch), 2*int(np.sqrt(len(t2_batch))))
+    h,e = np.histogram(t2_batch, bins)
+    m = 0.5*(e[:-1]+e[1:])
+    ax2.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w', zorder = 1, color = 'lightsteelblue')
+    ax2.set_xlabel('$T_2$ [m]', fontsize=textsize)
+    ax2.set_ylabel('freq.', fontsize=textsize)
+    ax2.grid(True, which='both', linewidth=0.1)
+    # plot normal fit 
+    (mu, sigma) = norm.fit(t2_batch)
+    med = np.median(t2_batch)
+    try:
+        y = mlab.normpdf(bins, mu, sigma)
+    except:
+        #y = stats.norm.pdf(bins, mu, sigma)
+        pass
+    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+    #ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+    #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+    #ax2.plot([med,med],[0,np.max(h)],'b-')
+    
+    if not filt_in_count:
+        ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3)
+        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_in_count:
+        # t2
+        bins = np.linspace(np.min(t2_batch_filt_in), np.max(t2_batch_filt_in), 2*int(np.sqrt(len(t2_batch_filt_in))))
+        h,e = np.histogram(t2_batch_filt_in, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
+        #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+        # 
+        (mu, sigma) = norm.fit(t2_batch_filt_in)
+        med = np.median(t2_batch_filt_in)
+        try:
+            y = mlab.normpdf(bins, mu, sigma)
+        except:
+            #y = stats.norm.pdf(bins, mu, sigma)
+            pass
+        ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3, linewidth=3)
+        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+    if filt_out_count:
+        # t2
+        bins = np.linspace(np.min(t2_batch_filt_out), np.max(t2_batch_filt_out), 2*int(np.sqrt(len(t2_batch_filt_out))))
+        h,e = np.histogram(t2_batch_filt_out, bins)
+        m = 0.5*(e[:-1]+e[1:])
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+        #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+
+    # plor legend 
+    if filt_in_count and filt_out_count:
+        #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
+        # active zone
+        ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Active zone',  alpha =.8)
+        # cooling zone
+        ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
+        # full array
+        ax_leg.plot([],[], c = 'lightsteelblue', linewidth=12,label = r'Full array',  alpha =.6)
+
+    ax_leg.plot([],[],'r-',label = r'median of $T_1$')
+    ax_leg.plot([],[],'b-',label = r'median of $T_2$')
+    ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+    ax_leg.axis('off')
+
+    f.tight_layout()
+
+    if filt_in_count and filt_out_count: 
+        plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'_zones'+'.png', dpi=300, facecolor='w', edgecolor='w', 
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+    else:
+        plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
 
 

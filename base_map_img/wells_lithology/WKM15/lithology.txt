@@ -1,6 +1,6 @@
 #depth_from,depth_to,formation
 0,20,SPFAT
-20,75,ORNFN
+20,75,ORNFM
 75,130,HFFUP
 130,195,HFFMD
 195,225,HFFLW

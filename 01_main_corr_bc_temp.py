@@ -47,7 +47,7 @@ if __name__ == "__main__":
     # Filter has qualitu MT stations
     filter_lowQ_data_MT = True
     ## run with quality filter per well
-    filter_lowQ_data_well = False
+    filter_lowQ_data_well = False  # need to be checked, not working
     ## Sections of the code tu run
     set_up = True 
     calc_cond_bound = True
@@ -272,6 +272,7 @@ if __name__ == "__main__":
                     wl_obj.lat_dec = wells_location[i][2]
                     wl_obj.lon_dec = wells_location[i][1]
                     wl_obj.elev = wells_location[i][3]
+                    wl_obj.no_temp = True
             wells_objects.append(wl_obj)
             count  += 1
 
@@ -318,7 +319,11 @@ if __name__ == "__main__":
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
         # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
-        wl_T1_T2_est(wells_objects, hist = True, hist_filt = [0,0])
+        # wl_T1_T2_est(wells_objects, hist = False, hist_filt = [0,0])
+        wl_T1_T2_est(wells_objects)
+        # histogram filtering by area: inside and outside (reservoir)
+        path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
+        histogram_temp_T1_T2(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
 
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 

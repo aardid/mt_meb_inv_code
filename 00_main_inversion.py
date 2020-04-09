@@ -53,14 +53,17 @@ if __name__ == "__main__":
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
+	prof_WRK_EW_7 = False # PW_TM_AR
+	prof_WRK_SENW_8 = False # KS_OT_AR
 	#
+	prof_TH_SENW_2 = False # KS_OT_AR
 	prof_NEMT2 = False
 	prof_THNW03 = False
 	prof_THNW04 = False
 	prof_THNW05 = False
 	#
 	# Filter has qualitu MT stations
-	filter_lowQ_data_MT = True
+	filter_lowQ_data_MT = False
 	## run with quality filter per well
 	filter_lowQ_data_well = False
 	# Stations not modeled
@@ -115,6 +118,17 @@ if __name__ == "__main__":
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
 
+		if prof_WRK_EW_7:
+			sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a',
+				'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a',
+				'WT179a'] # 'WT505a','WT079a','WT148a'
+		if prof_WRK_SENW_8:
+			sta2work = ['WT225a','WT066a','WT329a','WT078a','WT091a','WT107a','WT117b',
+				'WT122a','WT130a','WT140a','WT152a','WT153b'] # ,'WT150b'
+		if prof_TH_SENW_2:
+			sta2work = ['WT192a','WT306a','WT149a','WT328a','WT323a','WT199a',
+				'WT156a','WT166a','WT168a','WT185a','WT040a','WT313a','WT202a',\
+					'WT197a'] # ,'WT150b', 'WT340a', 'WT307a',
 		#########################################################################################
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
@@ -634,8 +648,19 @@ if __name__ == "__main__":
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
+		prior_meb = True
+		if prior_meb and prof_WRK_EW_7:
+			plot_some_wells = ['WK681','WK682','WK122','WK123','WK315B','WKM15','WK321'] # 'WK314',
+		elif prior_meb and prof_WRK_SENW_8:
+			plot_some_wells = ['WK402','WK404','WK308','WK321','WK315B','WK318','WK403'] 
+			#'WK308','WK304','WK317','WK318'
+		elif prior_meb and prof_TH_SENW_2: 
+			plot_some_wells = ['THM15','THM16','THM14','THM19','TH13','TH18','TH12']
+		else:
+			plot_some_wells = False
 		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, \
-			width_ref = '90%', prior_meb = wells_objects, mask_no_cc = 112.) #, plot_some_wells = ['WK404'])#,'WK401','WK402'])
+			width_ref = '90%', prior_meb = prior_meb, wells_objects = wells_objects , plot_some_wells = plot_some_wells,\
+				 mask_no_cc = 112.)#,'WK401','WK402'])
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
@@ -999,85 +1024,13 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if True:  # histogram of MT inversion parameters for stations inverted
+		if False:  # histogram of MT inversion parameters for stations inverted
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
-			histogram_mcmc_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
+			histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
 
 		if False:   # histogram of MeB inversion parameters for wells 
-			z1_batch = []
-			z2_batch = []
-
-			## load pars
-			n_wells = 0
-			for wl in wells_objects:
-				if wl.meb:
-					aux = np.genfromtxt('.'+os.sep+'mcmc_meb'+os.sep+wl.name+os.sep+'est_par.dat')
-					wl.meb_z1_pars = [aux[0][1],aux[0][2]]
-					wl.meb_z2_pars = [aux[1][1],aux[1][2]]
-					if wl.meb_z1_pars[0] < 1000. and wl.meb_z2_pars[0] < 1000.:
-						z1_batch.append(wl.meb_z1_pars[0])
-						z2_batch.append(wl.meb_z2_pars[0])
-						n_wells+=1
-			# plot histograms 
-			f = plt.figure(figsize=(8, 4))
-			gs = gridspec.GridSpec(nrows=1, ncols=2)
-			ax1 = f.add_subplot(gs[0, 0])
-			ax2 = f.add_subplot(gs[0, 1])
-			#ax_leg= f.add_subplot(gs[0, 2])
-
-			# z1
-			bins = np.linspace(np.min(z1_batch), np.max(z1_batch), 2*int(np.sqrt(len(z1_batch))))
-			h,e = np.histogram(z1_batch, 2*bins)
-			m = 0.5*(e[:-1]+e[1:])
-			ax1.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
-			ax1.set_xlabel('$d_1$ [m]', fontsize=textsize)
-			ax1.set_ylabel('freq.', fontsize=textsize)
-			ax1.grid(True, which='both', linewidth=0.1)
-			# plot normal fit 
-			(mu, sigma) = norm.fit(z1_batch)
-			med = np.median(z1_batch)
-			try:
-				y = mlab.normpdf(bins, mu, sigma)
-			except:
-				#y = stats.norm.pdf(bins, mu, sigma)
-				pass
-			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-			#ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
-			ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax1.plot([med,med],[0,np.max(h)],'r-',label = r'median of $z_1$')
-
-			# z2
-			bins = np.linspace(np.min(z2_batch), np.max(z2_batch), 2*int(np.sqrt(len(z2_batch))))
-			h,e = np.histogram(z2_batch, bins)
-			m = 0.5*(e[:-1]+e[1:])
-			ax2.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
-			ax2.set_xlabel('$z_2$ [m]', fontsize=textsize)
-			ax2.set_ylabel('freq.', fontsize=textsize)
-			ax2.grid(True, which='both', linewidth=0.1)
-			# plot normal fit 
-			(mu, sigma) = norm.fit(z2_batch)
-			med = np.median(z2_batch)
-			try:
-				y = mlab.normpdf(bins, mu, sigma)
-			except:
-				#y = stats.norm.pdf(bins, mu, sigma)
-				pass
-			#ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-			#ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
-			ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-			ax2.plot([med,med],[0,np.max(h)],'b-',label = r'median of $z_2$')
-
-			# plot legend 
-			#x_leg.plot([],[],'r-',label = r'median of $z_1$')
-			#ax_leg.plot([],[],'b-',label = r'median of $z_2$')
-			#ax_leg.legend(loc='center', shadow=False, fontsize=textsize)
-			#ax_leg.axis('off')
-			ax1.legend(loc=None, shadow=False, fontsize=textsize)
-			ax2.legend(loc=None, shadow=False, fontsize=textsize)
-			
-			f.tight_layout()
-			plt.savefig('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nwells_'+str(n_wells)+'.png', dpi=300, facecolor='w', edgecolor='w',
-				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
+			histogram_mcmc_meb_inv_results(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
 
 		if False:   # .dat of latlon for of wells and MT stations 
 			# mt
@@ -1095,11 +1048,14 @@ if __name__ == "__main__":
 			wl_loc.close()
 			wlmeb_loc.close()
 
-		if False:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
+		if True:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
 			# mcmc MeB results 
 			if True:
 				wl_meb_results = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wl_meb_results.dat','w')
 				wl_meb_results.write('well_name'+','+'lon_dec'+','+'lat_dec'+','+'z1_mean'+','+'z1_std'+','+'z2_mean'+','+'z2_std'+'\n')
+				# name lat lon file
+				wls_loc = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wls_meb_loc.txt','w')
+				wls_loc.write('well_name'+','+'lon_dec'+','+'lat_dec'+'\n')	
 				for wl in wells_objects:
 					if wl.meb:
 						# extract meb mcmc results from file 
@@ -1108,9 +1064,11 @@ if __name__ == "__main__":
 						wl.meb_z1_pars = [meb_mcmc_results[0,1], meb_mcmc_results[0,2]] # mean [1] z1 # median [3] z1 
 						wl.meb_z2_pars = [meb_mcmc_results[1,1], meb_mcmc_results[1,2]] # mean [1] z1 # median [3] z1 
 						# write results 
-						wl_meb_results.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','
-							+str(wl.meb_z1_pars[0])+','+str(wl.meb_z1_pars[1])+','+str(wl.meb_z2_pars[0])+','+str(wl.meb_z2_pars[1])+'\n')
+						wl_meb_results.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+str(wl.meb_z1_pars[0])\
+							+','+str(wl.meb_z1_pars[1])+','+str(wl.meb_z2_pars[0])+','+str(wl.meb_z2_pars[1])+'\n')
+						wls_loc.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+'\n')
 				wl_meb_results.close()
+				wls_loc.close()
 			# mcmc MT results 
 			if False:
 				sta_mcmc_results = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'mt_sta_results.dat','w')
@@ -1126,7 +1084,7 @@ if __name__ == "__main__":
 						+str(sta.z1_pars[0])+','+str(sta.z1_pars[1])+','+str(sta.z2_pars[0])+','+str(sta.z2_pars[1])+'\n')
 				sta_mcmc_results.close()
 			# temp at z1 an z2 in wells  
-			if True:
+			if False:
 				wl_temp_z1_z2 = open('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_T1_T2.dat','w')
 				wl_temp_z1_z2.write('wl_name'+','+'lon_dec'+','+'lat_dec'+','+'T1_mean'+','+'T1_std'+','+'T2_mean'+','+'T2_std'+'\n')
 				for wl in wells_objects:
@@ -1142,6 +1100,46 @@ if __name__ == "__main__":
 					except:
 						pass
 				wl_temp_z1_z2.close()
+
+		if False:   # .txt with names, lon, lat of wells with lithology
+			# lito wells
+			path = '.'+os.sep+'wells_info'+os.sep+'well_names_with_litho.txt'
+			wls_lito = []
+			with open(path) as p:
+				next(p)
+				for line in p:
+					line = line.strip('\n')
+					wls_lito.append(line)
+			# file
+			wls_with_litho = open('.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+'wls_with_litho.txt','w')
+			wls_with_litho.write('well_name'+','+'lon_dec'+','+'lat_dec'+'\n')
+			for wl in wells_objects:
+				if wl.name in wls_lito:
+					wl.litho = True
+					# write results 
+					wls_with_litho.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+'\n')
+			wls_with_litho.close()
+			
+		if False: 	# .dat of temp at fix depth in location of every well 
+			#depth = 500. # [m] from surface 
+			masl = 0  
+			temp_at_masl = open('.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'temps_at_'+str(masl)+'m_masl.dat','w')
+			temp_at_masl.write('well_name'+','+'lon_dec'+','+'lat_dec'+','+'tempC'+'\n')
+			i = 0
+			for wl in wells_objects:
+				if not wl.litho:
+					try:
+						depth, idx = find_nearest(wl.red_depth_rs, masl)
+						temp = wl.temp_prof_rs[idx]
+						temp_at_masl.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+str(temp)+'\n')
+					except:
+						i+=1
+						pass
+
+			print('wells not considered: '+str(i)+'/'+str(len(wells_objects)))
+			temp_at_masl.close()
+
+
 
 
 

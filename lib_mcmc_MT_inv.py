@@ -1499,7 +1499,7 @@ def plot_bound_uncert(station_objects, file_name = None):
         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
     plt.close()
     
-def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_count = None): 
+def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_out_count = None): 
     """
     filt_in_count (or filt_out_count) : file of countour (i.e. WT resisitvity boundary)
     """
@@ -1604,7 +1604,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
         bins = np.linspace(np.min(z1_batch_filt_in), np.max(z1_batch_filt_in), int(np.sqrt(len(z1_batch_filt_in))))
         h,e = np.histogram(z1_batch_filt_in, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
         #ax1.legend(loc=None, shadow=False, fontsize=textsize)
         # 
         (mu, sigma) = norm.fit(z1_batch_filt_in)
@@ -1655,7 +1655,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
         bins = np.linspace(np.min(z2_batch_filt_in), np.max(z2_batch_filt_in), int(np.sqrt(len(z2_batch_filt_in))))
         h,e = np.histogram(z2_batch_filt_in, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
         #ax2.legend(loc=None, shadow=False, fontsize=textsize)
         # 
         (mu, sigma) = norm.fit(z2_batch_filt_in)
@@ -1705,7 +1705,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
         bins = np.linspace(np.min(r1_batch_filt_in), np.max(r1_batch_filt_in), int(np.sqrt(len(r1_batch_filt_in))))
         h,e = np.histogram(r1_batch_filt_in, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax3.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        ax3.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
         #ax1.legend(loc=None, shadow=False, fontsize=textsize)
         # 
         (mu, sigma) = norm.fit(r1_batch_filt_in)
@@ -1730,7 +1730,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
     bins = np.linspace(np.min(r2_batch), np.max(r2_batch), int(np.sqrt(len(r2_batch))))
     h,e = np.histogram(r2_batch, bins)
     m = 0.5*(e[:-1]+e[1:])
-    ax4.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
+    #ax4.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
     ax4.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
     ax4.set_xlabel(r'$\rho_2$ [m]', fontsize=textsize)
     ax4.set_ylabel('freq.', fontsize=textsize)
@@ -1755,7 +1755,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
         bins = np.linspace(np.min(r2_batch_filt_in), np.max(r2_batch_filt_in), int(np.sqrt(len(r2_batch_filt_in))))
         h,e = np.histogram(r2_batch_filt_in, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax4.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        ax4.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
         #ax1.legend(loc=None, shadow=False, fontsize=textsize)
         # 
         (mu, sigma) = norm.fit(r2_batch_filt_in)
@@ -1804,7 +1804,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
         bins = np.linspace(np.min(r3_batch_filt_in), np.max(r3_batch_filt_in), int(np.sqrt(len(r3_batch_filt_in))))
         h,e = np.histogram(r3_batch_filt_in, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax5.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'LightSalmon', edgecolor = 'w', zorder = 3)
+        ax5.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
         #ax1.legend(loc=None, shadow=False, fontsize=textsize)
         # 
         (mu, sigma) = norm.fit(r3_batch_filt_in)
@@ -1829,7 +1829,7 @@ def histogram_mcmc_inv_results(station_objects, filt_in_count = None, filt_out_c
     if filt_in_count and filt_out_count:
         #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
         # active zone
-        ax_leg.plot([],[],c = 'LightSalmon', linewidth=10,label = r'Active zone',  alpha =.8)
+        ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Active zone',  alpha =.8)
         # cooling zone
         ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
         # full array
