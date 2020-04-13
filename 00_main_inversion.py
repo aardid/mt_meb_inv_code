@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	prof_THNW05 = False
 	#
 	# Filter has qualitu MT stations
-	filter_lowQ_data_MT = False
+	filter_lowQ_data_MT = True
 	## run with quality filter per well
 	filter_lowQ_data_well = False
 	# Stations not modeled
@@ -117,7 +117,6 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-
 		if prof_WRK_EW_7:
 			sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a',
 				'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a',
@@ -467,7 +466,7 @@ if __name__ == "__main__":
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
 		prior_meb = True  # if false -> None
-		prior_meb_weigth = 1.0
+		prior_meb_weigth = 2.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
 		if True:
@@ -947,7 +946,7 @@ if __name__ == "__main__":
 	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
-			if False: # option 1: print appres fit to pdf
+			if True: # option 1: print appres fit to pdf
 				from PIL import Image
 				imagelist = []
 				for sta_obj in station_objects:
@@ -1026,11 +1025,13 @@ if __name__ == "__main__":
 
 		if False:  # histogram of MT inversion parameters for stations inverted
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
-			histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
+			#histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'overlap')
+			histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
 
-		if False:   # histogram of MeB inversion parameters for wells 
+		if True:   # histogram of MeB inversion parameters for wells 
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
-			histogram_mcmc_meb_inv_results(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
+			#histogram_mcmc_meb_inv_results(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'overlap')
+			histogram_mcmc_meb_inv_results(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
 
 		if False:   # .dat of latlon for of wells and MT stations 
 			# mt
@@ -1048,7 +1049,7 @@ if __name__ == "__main__":
 			wl_loc.close()
 			wlmeb_loc.close()
 
-		if True:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
+		if False:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
 			# mcmc MeB results 
 			if True:
 				wl_meb_results = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wl_meb_results.dat','w')
@@ -1070,7 +1071,7 @@ if __name__ == "__main__":
 				wl_meb_results.close()
 				wls_loc.close()
 			# mcmc MT results 
-			if False:
+			if True:
 				sta_mcmc_results = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'mt_sta_results.dat','w')
 				sta_mcmc_results.write('sta_name'+','+'lon_dec'+','+'lat_dec'+','+'z1_mean'+','+'z1_std'+','+'z2_mean'+','+'z2_std'+'\n')
 				for sta in station_objects:
@@ -1084,7 +1085,7 @@ if __name__ == "__main__":
 						+str(sta.z1_pars[0])+','+str(sta.z1_pars[1])+','+str(sta.z2_pars[0])+','+str(sta.z2_pars[1])+'\n')
 				sta_mcmc_results.close()
 			# temp at z1 an z2 in wells  
-			if False:
+			if True:
 				wl_temp_z1_z2 = open('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_T1_T2.dat','w')
 				wl_temp_z1_z2.write('wl_name'+','+'lon_dec'+','+'lat_dec'+','+'T1_mean'+','+'T1_std'+','+'T2_mean'+','+'T2_std'+'\n')
 				for wl in wells_objects:

@@ -50,8 +50,8 @@ if __name__ == "__main__":
     filter_lowQ_data_well = False  # need to be checked, not working
     ## Sections of the code tu run
     set_up = True 
-    calc_cond_bound = True
-    calc_cond_bound_temps = False
+    calc_cond_bound = False
+    calc_cond_bound_temps = True
     plot_temp_bc = False
 
     # (0) Import data and create objects: wells from spreadsheet files
@@ -318,12 +318,13 @@ if __name__ == "__main__":
 
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
+        print('(2) Calc. T1 and T2 at well positions\n ')
         # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
         # wl_T1_T2_est(wells_objects, hist = False, hist_filt = [0,0])
         wl_T1_T2_est(wells_objects)
         # histogram filtering by area: inside and outside (reservoir)
         path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
-        histogram_temp_T1_T2(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT)
+        histogram_temp_T1_T2(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
 
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 

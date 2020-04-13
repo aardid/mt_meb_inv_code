@@ -44,8 +44,8 @@ if __name__ == "__main__":
 		temp_fix_depth = False # temperature at fix depth (def 0 masl)
 		########
 		meb_results = False # add scatter MeB results 
-		mt_results = True # add scatter MT results
-		temp_results = False # add scatter Temp results 
+		mt_results = False # add scatter MT results
+		temp_results = True # add scatter Temp results 
 		########
 		# plot map with wells and stations
 		if base_map:
@@ -269,7 +269,7 @@ if __name__ == "__main__":
 			lon_stas = temp_result[1]
 			lat_stas = temp_result[2]
 			# array to plot
-			if False: # T1
+			if True: # T1
 				T1_mean = temp_result[3]
 				array = T1_mean
 				name = 'T1_mean'

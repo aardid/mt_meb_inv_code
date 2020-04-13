@@ -1072,16 +1072,39 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
             #ax1.plot([-5.,300.], [-wl.z1_pars[0],-wl.z1_pars[0]],'r-', alpha=0.5, label = 'MT upper bound.')
             #ax1.plot([-5.,300.], [-wl.z1_pars[0] - wl.z1_pars[1],-wl.z1_pars[0] - wl.z1_pars[1]],'r--', alpha=0.3)
             #ax1.plot([-5.,300.], [-wl.z1_pars[0] + wl.z1_pars[1],-wl.z1_pars[0] + wl.z1_pars[1]],'r--', alpha=0.3)
-            ax1.fill_between([55.,105.],[-wl.z1_pars[0] + wl.z1_pars[1], -wl.z1_pars[0] + wl.z1_pars[1]], 
-                [-wl.z1_pars[0] - wl.z1_pars[1], -wl.z1_pars[0] - wl.z1_pars[1]], color = 'r', alpha=0.3, label = 'MT upper bound.')
+            # std 3
+            #ax1.fill_between([55.,105.],[-wl.z1_pars[0] + 3*wl.z1_pars[1], -wl.z1_pars[0] + 3*wl.z1_pars[1]], 
+            #    [-wl.z1_pars[0] - 3*wl.z1_pars[1], -wl.z1_pars[0] - 3*wl.z1_pars[1]], color = 'r', alpha=0.1)
+      
+            # std 2
+            ax1.fill_between([55.,105.],[-wl.z1_pars[0] + 1.5*wl.z1_pars[1], -wl.z1_pars[0] + 1.5*wl.z1_pars[1]], 
+                [-wl.z1_pars[0] - 1.5*wl.z1_pars[1], -wl.z1_pars[0] - 1.5*wl.z1_pars[1]], color = 'r', alpha=0.1)
+      
+            # std 1
+            ax1.fill_between([55.,105.],[-wl.z1_pars[0] + .5*wl.z1_pars[1], -wl.z1_pars[0] + .5*wl.z1_pars[1]], 
+                [-wl.z1_pars[0] - .5*wl.z1_pars[1], -wl.z1_pars[0] - .5*wl.z1_pars[1]], color = 'r', alpha=0.3, label = 'MT upper bound.')
             
+            # mean
+            #ax1.plot([55.,105.],[-wl.z1_pars[0], -wl.z1_pars[0]],'r--',  alpha=0.3)
+ 
             # lower boundary (z2 distribution)
             #ax1.plot([-5.,300.], [-(wl.z1_pars[0] + wl.z2_pars[0]),-(wl.z1_pars[0] + wl.z2_pars[0])],'b-', alpha=0.5, label = 'MT lower bound.')
             #ax1.plot([-5.,300.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1]],'b--', alpha=0.3)
             #ax1.plot([-5.,300.], [-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1]],'b--', alpha=0.3)
-            ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - wl.z2_pars[1]], 
-                [-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + wl.z2_pars[1]], 
+            # sts 3
+            #ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - 3*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - 3*wl.z2_pars[1]], 
+            #    [-(wl.z1_pars[0] + wl.z2_pars[0]) + 3*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + 3*wl.z2_pars[1]], 
+            #    color = 'b', alpha=0.1)
+            # sts 3: 99%
+            ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - 1.5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - 1.5*wl.z2_pars[1]], 
+                [-(wl.z1_pars[0] + wl.z2_pars[0]) + 1.5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + 1.5*wl.z2_pars[1]], 
+                color = 'b', alpha=0.1)
+            # sts 1: 33%
+            ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - .5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - .5*wl.z2_pars[1]], 
+                [-(wl.z1_pars[0] + wl.z2_pars[0]) + .5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + .5*wl.z2_pars[1]], 
                 color = 'b', alpha=0.3, label = 'MT lower bound.')
+            # mean
+            #ax1.plot([55.,105.],[-(wl.z1_pars[0] + wl.z2_pars[0]), -(wl.z1_pars[0] + wl.z2_pars[0])],'b--',  alpha=0.3)
 
             ax1.set_xlabel('Temperature [deg C]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
@@ -1101,15 +1124,37 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
                     #ax1.plot([-5.,300.], [-wl.meb_z1_pars[0],-wl.meb_z1_pars[0]],'c-', alpha=0.5, label = 'MeB upper bound.')
                     #ax1.plot([-5.,300.], [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]],'c--', alpha=0.3)
                     #ax1.plot([-5.,300.], [-wl.meb_z1_pars[0] + wl.meb_z1_pars[1],-wl.meb_z1_pars[0] + wl.meb_z1_pars[1]],'c--', alpha=0.3)
-                    ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1])],
-                        [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]], color = 'c', alpha=0.3, label = 'MeB upper bound.')
+                    # 3 std
+                    #ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + 3*wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + 2*wl.meb_z1_pars[1])],
+                    #    [-wl.meb_z1_pars[0] - 3*wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - 3*wl.meb_z1_pars[1]], color = 'c', alpha=0.1)
+   
+                    # 2 std
+                    ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + 1.5*wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + 1.5*wl.meb_z1_pars[1])],
+                        [-wl.meb_z1_pars[0] - 1.5*wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - 1.5*wl.meb_z1_pars[1]], color = 'c', alpha=0.1)
+                    # 1 std
+                    ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + .5*wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + .5*wl.meb_z1_pars[1])],
+                        [-wl.meb_z1_pars[0] - .5*wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - .5*wl.meb_z1_pars[1]], color = 'c', alpha=0.3)
+                    # mean
+                    #ax1.plot([0.,50.],[min(0.,-wl.meb_z1_pars[0]),min(0.,-wl.meb_z1_pars[0])],'c--')
+                    #ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1])],
+                    #    [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]], color = 'c', alpha=0.1, label = 'MeB upper bound.')
                     
                     # lower boundary (z2 distribution)
                     #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]),-(wl.meb_z2_pars[0])],'m-', alpha=0.5, label = 'MeB lower bound.')
                     #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1]],'m--', alpha=0.3)
                     #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1]],'m--', alpha=0.3)
-                    ax1.fill_between([0.,50.],[-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + wl.meb_z2_pars[1]], 
-                        [-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - wl.meb_z2_pars[1]], color = 'm', alpha=0.3, label = 'MeB lower bound.')
+                    # 3 std
+                    #ax1.fill_between([0.,50.],[-(wl.meb_z2_pars[0]) + 3*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + 3*wl.meb_z2_pars[1]], 
+                    #    [-(wl.meb_z2_pars[0]) - 3*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - 3*wl.meb_z2_pars[1]], color = 'm', alpha=0.1)
+                    # 2 std
+                    ax1.fill_between([0.,50.],[-(wl.meb_z2_pars[0]) + 1.5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + 1.5*wl.meb_z2_pars[1]], 
+                        [-(wl.meb_z2_pars[0]) - 1.5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - 1.5*wl.meb_z2_pars[1]], color = 'm', alpha=0.1)
+                    # 1 std
+                    ax1.fill_between([0.,50.],[-(wl.meb_z2_pars[0]) + .5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + .5*wl.meb_z2_pars[1]], 
+                        [-(wl.meb_z2_pars[0]) - .5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - .5*wl.meb_z2_pars[1]], color = 'm', alpha=0.3, label = 'MeB lower bound.')
+                    # mean
+                    #ax1.plot([0.,50.],[min(0.,-wl.meb_z2_pars[0]),min(0.,-wl.meb_z2_pars[0])],'m--')                    
+                    
                     # save pars in .txt: MeB
                     g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'meb_z1_z2.txt', "w")
                     g.write('# mean_z1(detph to bottom layer 1)\tstd_z1\tmean_z2(depth to bottom layer 2)\tstd_z2\n')
@@ -1299,7 +1344,7 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(T1_batch))+'.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
-def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = None): 
+def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = None, type_hist = None): 
     """
     filt_in_count (or filt_out_count) : file of countour (i.e. WT resisitvity boundary)
     """
@@ -1317,11 +1362,11 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
     if filt_in_count:
         t1_batch_filt_in = []
         t2_batch_filt_in = []
-
     if filt_out_count:
         t1_batch_filt_out = []
         t2_batch_filt_out = []
-
+    if type_hist:
+        type_hist = type_hist
     ## load pars
     for wl in wells_objects:
         try:
@@ -1347,137 +1392,214 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
                     t2_batch_filt_out.append(wl.T2_pars[0])
         except:
             pass
-   
-    # plot histograms 
-    f = plt.figure(figsize=(10, 4))
-    gs = gridspec.GridSpec(nrows=1, ncols=3)
-    ax1 = f.add_subplot(gs[0, 0])
-    ax2 = f.add_subplot(gs[0, 1])
-    ax_leg= f.add_subplot(gs[0, 2])
 
-    # t1
-    bins = np.linspace(np.min(t1_batch), np.max(t1_batch), 2*int(np.sqrt(len(t1_batch))))
-    h,e = np.histogram(t1_batch, bins)
-    m = 0.5*(e[:-1]+e[1:])
-    ax1.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
-    ax1.set_xlabel('$T_1$ [m]', fontsize=textsize)
-    ax1.set_ylabel('freq.', fontsize=textsize)
-    ax1.grid(True, which='both', linewidth=0.1)
-    # plot normal fit 
-    (mu, sigma) = norm.fit(t1_batch)
-    med = np.median(t1_batch)
-    try:
-        y = mlab.normpdf(bins, mu, sigma)
-    except:
-        #y = stats.norm.pdf(bins, mu, sigma)
-        pass
-    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-    #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
-    
-    if not filt_in_count:
-        ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3)
-        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+    if type_hist != 'sidebyside':
+        # plot histograms 
+        f = plt.figure(figsize=(10, 4))
+        gs = gridspec.GridSpec(nrows=1, ncols=3)
+        ax1 = f.add_subplot(gs[0, 0])
+        ax2 = f.add_subplot(gs[0, 1])
+        ax_leg= f.add_subplot(gs[0, 2])
 
-    if filt_in_count:
         # t1
-        bins = np.linspace(np.min(t1_batch_filt_in), np.max(t1_batch_filt_in), 2*int(np.sqrt(len(t1_batch_filt_in))))
-        h,e = np.histogram(t1_batch_filt_in, bins)
+        bins = np.linspace(np.min(t1_batch), np.max(t1_batch), 2*int(np.sqrt(len(t1_batch))))
+        h,e = np.histogram(t1_batch, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
-        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
-        # 
-        (mu, sigma) = norm.fit(t1_batch_filt_in)
-        med = np.median(t1_batch_filt_in)
+        ax1.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
+        ax1.set_xlabel('$T_1$ [m]', fontsize=textsize)
+        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(t1_batch)
+        med = np.median(t1_batch)
         try:
             y = mlab.normpdf(bins, mu, sigma)
         except:
             #y = stats.norm.pdf(bins, mu, sigma)
             pass
-        ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
-        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+        #ax2.legend(loc='upper right', shadow=False, fontsize=textsize)
+        
+        if not filt_in_count:
+            ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3)
+            ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
 
-    if filt_out_count:
-        # t1
-        bins = np.linspace(np.min(t1_batch_filt_out), np.max(t1_batch_filt_out), 2*int(np.sqrt(len(t1_batch_filt_out))))
-        h,e = np.histogram(t1_batch_filt_out, bins)
-        m = 0.5*(e[:-1]+e[1:])
-        ax1.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
-        #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+        if filt_in_count:
+            # t1
+            bins = np.linspace(np.min(t1_batch_filt_in), np.max(t1_batch_filt_in), 2*int(np.sqrt(len(t1_batch_filt_in))))
+            h,e = np.histogram(t1_batch_filt_in, bins)
+            m = 0.5*(e[:-1]+e[1:])
+            ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
+            #ax1.legend(loc=None, shadow=False, fontsize=textsize)
+            # 
+            (mu, sigma) = norm.fit(t1_batch_filt_in)
+            med = np.median(t1_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
 
-    # t2
-    bins = np.linspace(np.min(t2_batch), np.max(t2_batch), 2*int(np.sqrt(len(t2_batch))))
-    h,e = np.histogram(t2_batch, bins)
-    m = 0.5*(e[:-1]+e[1:])
-    ax2.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w', zorder = 1, color = 'lightsteelblue')
-    ax2.set_xlabel('$T_2$ [m]', fontsize=textsize)
-    ax2.set_ylabel('freq.', fontsize=textsize)
-    ax2.grid(True, which='both', linewidth=0.1)
-    # plot normal fit 
-    (mu, sigma) = norm.fit(t2_batch)
-    med = np.median(t2_batch)
-    try:
-        y = mlab.normpdf(bins, mu, sigma)
-    except:
-        #y = stats.norm.pdf(bins, mu, sigma)
-        pass
-    #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
-    #ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
-    #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-    #ax2.plot([med,med],[0,np.max(h)],'b-')
-    
-    if not filt_in_count:
-        ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3)
-        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        if filt_out_count:
+            # t1
+            bins = np.linspace(np.min(t1_batch_filt_out), np.max(t1_batch_filt_out), 2*int(np.sqrt(len(t1_batch_filt_out))))
+            h,e = np.histogram(t1_batch_filt_out, bins)
+            m = 0.5*(e[:-1]+e[1:])
+            ax1.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+            #ax1.legend(loc=None, shadow=False, fontsize=textsize)
 
-    if filt_in_count:
         # t2
-        bins = np.linspace(np.min(t2_batch_filt_in), np.max(t2_batch_filt_in), 2*int(np.sqrt(len(t2_batch_filt_in))))
-        h,e = np.histogram(t2_batch_filt_in, bins)
+        bins = np.linspace(np.min(t2_batch), np.max(t2_batch), 2*int(np.sqrt(len(t2_batch))))
+        h,e = np.histogram(t2_batch, bins)
         m = 0.5*(e[:-1]+e[1:])
-        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
-        #ax2.legend(loc=None, shadow=False, fontsize=textsize)
-        # 
-        (mu, sigma) = norm.fit(t2_batch_filt_in)
-        med = np.median(t2_batch_filt_in)
+        ax2.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w', zorder = 1, color = 'lightsteelblue')
+        ax2.set_xlabel('$T_2$ [m]', fontsize=textsize)
+        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.grid(True, which='both', linewidth=0.1)
+        # plot normal fit 
+        (mu, sigma) = norm.fit(t2_batch)
+        med = np.median(t2_batch)
         try:
             y = mlab.normpdf(bins, mu, sigma)
         except:
             #y = stats.norm.pdf(bins, mu, sigma)
             pass
-        ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3, linewidth=3)
-        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax2.plot(bins, y, 'r--', linewidth=2, label = 'normal fit')
+        #ax3.legend(loc='upper right', shadow=False, fontsize=textsize)
+        #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+        #ax2.plot([med,med],[0,np.max(h)],'b-')
+        
+        if not filt_in_count:
+            ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3)
+            ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
 
-    if filt_out_count:
-        # t2
-        bins = np.linspace(np.min(t2_batch_filt_out), np.max(t2_batch_filt_out), 2*int(np.sqrt(len(t2_batch_filt_out))))
-        h,e = np.histogram(t2_batch_filt_out, bins)
-        m = 0.5*(e[:-1]+e[1:])
-        ax2.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
-        #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+        if filt_in_count:
+            # t2
+            bins = np.linspace(np.min(t2_batch_filt_in), np.max(t2_batch_filt_in), 2*int(np.sqrt(len(t2_batch_filt_in))))
+            h,e = np.histogram(t2_batch_filt_in, bins)
+            m = 0.5*(e[:-1]+e[1:])
+            ax2.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = 'PaleVioletRed', edgecolor = 'w', zorder = 3)
+            #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+            # 
+            (mu, sigma) = norm.fit(t2_batch_filt_in)
+            med = np.median(t2_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            ax2.plot([med,med],[0,np.max(h)],'b-', zorder = 3, linewidth=3)
+            ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
 
-    # plor legend 
-    if filt_in_count and filt_out_count:
+        if filt_out_count:
+            # t2
+            bins = np.linspace(np.min(t2_batch_filt_out), np.max(t2_batch_filt_out), 2*int(np.sqrt(len(t2_batch_filt_out))))
+            h,e = np.histogram(t2_batch_filt_out, bins)
+            m = 0.5*(e[:-1]+e[1:])
+            ax2.bar(e[:-1], h, e[1]-e[0], alpha =.3, edgecolor = None, color = 'cyan', zorder = 2)
+            #ax2.legend(loc=None, shadow=False, fontsize=textsize)
+
+        # plor legend 
+        if filt_in_count and filt_out_count:
+            #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
+            # active zone
+            ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Active zone',  alpha =.8)
+            # cooling zone
+            ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
+            # full array
+            ax_leg.plot([],[], c = 'lightsteelblue', linewidth=12,label = r'Full array',  alpha =.6)
+
+        ax_leg.plot([],[],'r-',label = r'median of $T_1$')
+        ax_leg.plot([],[],'b-',label = r'median of $T_2$')
+        ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+        ax_leg.axis('off')
+
+        f.tight_layout()
+
+        if filt_in_count and filt_out_count: 
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'_zones'+'.png', dpi=300, facecolor='w', edgecolor='w', 
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        else:
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+    if type_hist == 'sidebyside':
+        # plot histograms 
+        f = plt.figure(figsize=(12, 4))
+        gs = gridspec.GridSpec(nrows=1, ncols=3)
+        ax1 = f.add_subplot(gs[0, 0])
+        ax2 = f.add_subplot(gs[0, 1])
+        ax_leg= f.add_subplot(gs[0, 2])
+
+        # T1
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = 15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        x_multi = [t1_batch_filt_in, t1_batch_filt_out]
+        ax1.hist(x_multi, n_bins, histtype='bar', color = colors)
+        ax1.set_xlabel('$T_1$ [°C]', fontsize=textsize)
+        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(t1_batch_filt_in)
+            med = np.median(t1_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+        # T2
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = 15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        x_multi = [t2_batch_filt_in, t2_batch_filt_out]
+        ax2.hist(x_multi, n_bins, histtype='bar', color = colors)
+        ax2.set_xlabel('$T_2$ [°C]', fontsize=textsize)
+        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(t2_batch_filt_in)
+            med = np.median(t2_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
         #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
         # active zone
-        ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Active zone',  alpha =.8)
+        colors = [u'#ff7f0e', u'#1f77b4']
+        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Active zone', alpha =1.)
         # cooling zone
-        ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
-        # full array
-        ax_leg.plot([],[], c = 'lightsteelblue', linewidth=12,label = r'Full array',  alpha =.6)
+        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Cooling zone', alpha =1.)
 
-    ax_leg.plot([],[],'r-',label = r'median of $T_1$')
-    ax_leg.plot([],[],'b-',label = r'median of $T_2$')
-    ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
-    ax_leg.axis('off')
+        ax_leg.plot([],[],' ',label = r'med : median of active zone')
+        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of active zone')
+        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of active zone')
+        #ax_leg.plot([],[],'r--',label = r'median of $z_1$')
+        #ax_leg.plot([],[],'b--',label = r'median of $z_2$')
 
-    f.tight_layout()
+        ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+        ax_leg.axis('off')
+        f.tight_layout()
 
-    if filt_in_count and filt_out_count: 
-        plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'_zones'+'.png', dpi=300, facecolor='w', edgecolor='w', 
-            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
-    else:
-        plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
-            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        if filt_in_count and filt_out_count: 
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'_zones_side_by_side'+'.png', dpi=300, facecolor='w', edgecolor='w', 
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+        else:
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
 
 
