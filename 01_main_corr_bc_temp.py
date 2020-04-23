@@ -35,6 +35,8 @@ from Maping_functions import *
 from misc_functios import *
 from io import StringIO
 from matplotlib.backends.backend_pdf import PdfPages
+
+
 # ==============================================================================
 
 if __name__ == "__main__":
@@ -305,6 +307,24 @@ if __name__ == "__main__":
     if calc_cond_bound:
         print('(1) Calc. z1 and z2 in well positions\n')
         ## Estimate z1 and z2 at wells positions from MT inversion
+        # exception: fill temp profile of two well with litho from nearest temp wells. 
+        for wl1 in wells_objects:
+            if wl1.name == 'WKM14':
+                for wl2 in wells_objects:
+                    if wl2.name == 'WK048':
+                        wl1.red_depth = wl2.red_depth
+                        wl1.red_depth_rs = wl2.red_depth_rs
+                        wl1.temp_prof_true = wl2.temp_prof_true
+                        wl1.temp_prof_rs = wl2.temp_prof_rs
+        for wl1 in wells_objects:
+            if wl1.name == 'WKM15':
+                for wl2 in wells_objects:
+                    if wl2.name == 'WK060':
+                        wl1.red_depth = wl2.red_depth
+                        wl1.red_depth_rs = wl2.red_depth_rs
+                        wl1.temp_prof_true = wl2.temp_prof_true
+                        wl1.temp_prof_rs = wl2.temp_prof_rs
+        #
         wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5., plot_temp_prof = True, 
             with_meb = True, with_litho = True)
         # remove objects from list when BC is deeper than max depth of temp. profiles
@@ -321,10 +341,17 @@ if __name__ == "__main__":
         print('(2) Calc. T1 and T2 at well positions\n ')
         # Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
         # wl_T1_T2_est(wells_objects, hist = False, hist_filt = [0,0])
-        wl_T1_T2_est(wells_objects)
+        wl_T1_T2_est(wells_objects, thermal_grad = True, heat_flux = True)
         # histogram filtering by area: inside and outside (reservoir)
+        # Resistivity Boundary, Risk
         path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
+        # Resistivity Boundary, Mielke
+        path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
+        # histogram of T1 and T2, filtering by resisitivity boundary
         histogram_temp_T1_T2(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
+        # histogram of T1, T2, thermal_grad and heat flux, filtering by bounds of temp and depth
+        bounds = [-700,95.] # [depth, temp]
+        histogram_T1_T2_Tgrad_Hflux(wells_objects, bounds = bounds)
 
     # (2) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 
@@ -363,6 +390,7 @@ if __name__ == "__main__":
             scatter_temp_conductor_bound(wells_objects,  path_output = path_output, alpha_img = 0.6,\
                 path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
 
+####################################################
 
 
      

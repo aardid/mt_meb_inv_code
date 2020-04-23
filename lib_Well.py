@@ -23,6 +23,11 @@ from scipy.stats import norm
 import matplotlib.mlab as mlab
 #from io import StringIO
 
+textsize = 15.
+pale_orange_col = u'#ff7f0e' 
+pale_blue_col = u'#1f77b4' 
+pale_red_col = u'#EE6666'
+
 # ==============================================================================
 # Wells class
 # ==============================================================================
@@ -101,6 +106,10 @@ class Wells(object):
                             (bottom of the conductor) sample from the true temperature profile: [a,b]
                             a: mean
                             b: standard deviation 
+    thermal_grad            Vertical thermal gradient inside the conductor, 
+                            calc as (T2_pars[0]-T1_pars[0])/z2_pars[0] 
+    thermal_cond            Thermal conductivity in the conductor [SI]
+    heat_flux               Vertical heat flux i nside the conductor,base on thermal conductivity (given)
 
     litho                   Lithology available (boolean)                 False
 
@@ -149,6 +158,9 @@ class Wells(object):
         self.z2_pars = None
         self.T1_pars = None
         self.T2_pars = None
+        self.thermal_grad = None
+        self.thermal_cond = None
+        self.heat_flux = None
         # lithology 
         self.litho = None
     # ===================== 
@@ -1193,6 +1205,10 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
 
             ax1.legend(loc='lower left', shadow=False, fontsize=textsize, framealpha=1.0)
             ax1.set_ylim([-1700.,20.])
+            try:
+                ax1.set_ylim([wl.red_depth[-1]-500.,20.])
+            except:
+                pass
             # save image as png
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
@@ -1212,7 +1228,7 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
         pp.close()
         shutil.move('Temp_prof_conductor_bound_est.pdf','.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'Temp_prof_conductor_bound_est.pdf')
 
-def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
+def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None, thermal_grad = None, heat_flux = None):
     '''
     Sample temperatures at z1 and z1 ranges to create T1_pars and T2_pars (distribrutions for temperatures at conductor bound.)
     hist_filt = [50, 100], wells with temp lower than a and b are not considered in the histogram for top bound. and bottom bound. 
@@ -1226,7 +1242,7 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
         T1_batch = []
         T2_batch = []
     # sample temp values and calc T1 and T2 
-    Ns = 500
+    Ns = 1000
     for wl in wells_objects:
         try: 
             d2_c = wl.z1_pars[0] + wl.z2_pars[0] + wl.z2_pars[1] # depth to bottom of conductor (from surface)
@@ -1253,6 +1269,16 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
                 # Assign attributes TX_pars and save in .txt
                 wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
                 wl.T2_pars = [np.mean(T2_sam),np.std(T2_sam)]
+
+                # Calculate thermal gradient inside the conductor 
+                if thermal_grad:
+                    # Assign attributes TX_pars and save in .txt
+                    dT =  wl.T2_pars[0]-wl.T1_pars[0]
+                    dZ = wl.z2_pars[0]
+                    wl.thermal_grad = dT/dZ
+                    if heat_flux:
+                        wl.thermal_cond = 2.5 # this couls be variable
+                        wl.heat_flux = wl.thermal_cond*wl.thermal_grad
 
                 if wl.T1_pars[0] > 1000:
                     print(wl.name)
@@ -1285,6 +1311,15 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None):
             except:
                 #pass
                 os.remove('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+            try:
+                # save pars in .txt
+                g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_TG_TC_HF.txt', "w")
+                g.write('# ThermalGradient[C/m]\tThermalConductivity[W/m*C]\tHeatFlux[W/m2]\n')
+                g.write("{:4.6f}\t{:4.4f}\t{:4.6f}".format(wl.thermal_grad, wl.thermal_cond, wl.heat_flux))
+                g.close()
+            except:
+                #pass
+                os.remove('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_TG_TC_HF.txt')
 
     if hist: 
         f = plt.figure(figsize=(10, 5))
@@ -1382,7 +1417,8 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
                 val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
                 if val:
                     t1_batch_filt_in.append(wl.T1_pars[0])
-                    t2_batch_filt_in.append(wl.T2_pars[0])
+                    if wl.T2_pars[0]>100.:
+                        t2_batch_filt_in.append(wl.T2_pars[0])
 
             if filt_out_count:
                 # check if station is inside poligon 
@@ -1505,9 +1541,9 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         if filt_in_count and filt_out_count:
             #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
             # active zone
-            ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Active zone',  alpha =.8)
+            ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Infield',  alpha =.8)
             # cooling zone
-            ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
+            ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Outfield',  alpha =.3)
             # full array
             ax_leg.plot([],[], c = 'lightsteelblue', linewidth=12,label = r'Full array',  alpha =.6)
 
@@ -1580,13 +1616,13 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
         # active zone
         colors = [u'#ff7f0e', u'#1f77b4']
-        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Active zone', alpha =1.)
+        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Infield', alpha =1.)
         # cooling zone
-        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Cooling zone', alpha =1.)
+        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Outfield', alpha =1.)
 
-        ax_leg.plot([],[],' ',label = r'med : median of active zone')
-        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of active zone')
-        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of active zone')
+        ax_leg.plot([],[],' ',label = r'med : median of infield')
+        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of infield')
+        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of infield')
         #ax_leg.plot([],[],'r--',label = r'median of $z_1$')
         #ax_leg.plot([],[],'b--',label = r'median of $z_2$')
 
@@ -1601,5 +1637,134 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_nwells_'+str(len(wells_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
+def histogram_T1_T2_Tgrad_Hflux(wells_objects, bounds = None):
+    """
+    filt_in_count (or filt_out_count) : file of countour (i.e. WT resisitvity boundary)
+    """
+    t1_batch = []
+    t2_batch = []
+    gt_batch = []
+    hf_batch = []
 
+    ## load pars
+    for wl in wells_objects:
+        try:
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
+            wl.z1_pars = [aux[0],aux[1]]
+            wl.z2_pars = [aux[2],aux[3]]
+
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+            wl.T1_pars = [aux[0],aux[1]]
+            wl.T2_pars = [aux[2],aux[3]]
+
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_TG_TC_HF.txt')
+            wl.thermal_grad = aux[0]
+            wl.thermal_cond = aux[1]
+            wl.heat_flux = aux[2]
+
+            if bounds:
+                #bounds = [-700,95.] # [depth, temp]
+                if (wl.T2_pars[0]>bounds[1] and -1*(wl.z1_pars[0] + wl.z2_pars[0]) > bounds[0]):
+                    t1_batch.append(wl.T1_pars[0])
+                    t2_batch.append(wl.T2_pars[0])
+                    gt_batch.append(wl.thermal_grad)
+                    hf_batch.append(wl.heat_flux)
+            else:
+                t1_batch.append(wl.T1_pars[0])
+                t2_batch.append(wl.T2_pars[0])
+                gt_batch.append(wl.thermal_grad)
+                hf_batch.append(wl.heat_flux)
+        except:
+            pass
+            
+
+    if True:
+        # plot histograms 
+        f = plt.figure(figsize=(8, 8))
+        gs = gridspec.GridSpec(nrows=2, ncols=2)
+        ax1 = f.add_subplot(gs[0, 0])
+        ax2 = f.add_subplot(gs[0, 1])
+        ax3 = f.add_subplot(gs[1, 0])
+        ax4 = f.add_subplot(gs[1, 1])
+        #ax_leg= f.add_subplot(gs[0, 2])
+        # draw solid white grid lines
+        plt.grid(color='w', linestyle='solid')
+
+        # T1
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = 15
+        colors = [u'#ff7f0e', u'#1f77b4']
+        x_multi = [t1_batch]
+        ax1.hist(x_multi, n_bins, histtype='bar', edgecolor='#E6E6E6', color=pale_red_col)
+        ax1.set_xlabel('$T_1$ [°C]', fontsize=textsize)
+        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.grid(True, which='both', linewidth=0.1)
+
+        (mu, sigma) = norm.fit(t1_batch)
+        med = np.median(t1_batch)
+        ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+        # T2
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = 15
+        colors = [u'#ff7f0e', u'#1f77b4']
+        x_multi = [t2_batch]
+        ax2.hist(x_multi, n_bins, histtype='bar', edgecolor='#E6E6E6', color=pale_red_col)
+        ax2.set_xlabel('$T_2$ [°C]', fontsize=textsize)
+        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.grid(True, which='both', linewidth=0.1)
+
+        (mu, sigma) = norm.fit(t2_batch)
+        med = np.median(t2_batch)
+        ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+
+        # TG: thermal gradient
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = 15
+        colors = [u'#ff7f0e', u'#1f77b4']
+        x_multi = [gt_batch]
+        ax3.hist(x_multi, n_bins, histtype='bar', edgecolor='#E6E6E6', color=pale_red_col)
+        ax3.set_xlabel('Thermal Gradient [°C/m]', fontsize=textsize)
+        ax3.set_ylabel('freq.', fontsize=textsize)
+        ax3.grid(True, which='both', linewidth=0.1)
+
+        (mu, sigma) = norm.fit(gt_batch)
+        med = np.median(gt_batch)
+        ax3.set_title('$med$:{:3.3f}, $\mu$:{:3.3f}, $\sigma$: {:2.2f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+        # HF: heat flux
+        # Make a multiple-histogram of data-sets with different length.
+
+        n_bins = 15
+        colors = [u'#ff7f0e', u'#1f77b4']
+        x_multi = [hf_batch]
+        ax4.hist(x_multi, n_bins, histtype='bar', edgecolor='#E6E6E6', color=pale_red_col)
+        ax4.set_xlabel(r'Heat Flux [W/m$^2$]', fontsize=textsize)
+        ax4.set_ylabel('freq.', fontsize=textsize)
+        ax4.grid(True, which='both', linewidth=0.1)
+
+        (mu, sigma) = norm.fit(hf_batch)
+        med = np.median(hf_batch)
+        ax4.set_title('$med$:{:3.3f}, $\mu$:{:3.3f}, $\sigma$: {:2.2f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+
+        # #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
+        # # active zone
+        # colors = [u'#ff7f0e', u'#1f77b4']
+        # ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Infield', alpha =1.)
+        # # cooling zone
+        # ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Outfield', alpha =1.)
+
+        # ax_leg.plot([],[],' ',label = r'med : median of infield')
+        # ax_leg.plot([],[],' ',label = r'$\mu$ : mean of infield')
+        # ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of infield')
+        # #ax_leg.plot([],[],'r--',label = r'median of $z_1$')
+        # #ax_leg.plot([],[],'b--',label = r'median of $z_2$')
+
+        # ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+        # ax_leg.axis('off')
+        f.tight_layout()
+
+        plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_T1_T2_TG_HF_nwells_'+str(len(wells_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
+            orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 

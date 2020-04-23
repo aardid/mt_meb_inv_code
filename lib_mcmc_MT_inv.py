@@ -1354,7 +1354,7 @@ def calc_prior_meb(station_objects, wells_objects, slp = None, quadrant = None):
                 # load pars in well 
                 count+=1
             # calculete z1 normal prior parameters
-            dist_weigth = [1./d for d in dist_wels]
+            dist_weigth = [1./d**2 for d in dist_wels]
             z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
             # std. dev. increases as get farder from the well. It double its values per km.  
             z1_std = np.dot(z1_std_prior_incre,dist_weigth)/np.sum(dist_weigth)
@@ -1381,7 +1381,6 @@ def calc_prior_meb(station_objects, wells_objects, slp = None, quadrant = None):
                     sta_obj.prior_meb_wl_names = near_wls[0:1]#[name_aux_q1, name_aux_q2, name_aux_q3, name_aux_q4]
             sta_obj.prior_meb_wl_names = list(filter(None, sta_obj.prior_meb_wl_names))
             #sta_obj.prior_meb_wl_names = [sta_obj.prior_meb_wl_names[i].name for i in len(range(sta_obj.prior_meb_wl_names))]
-
 
         # assign result to attribute
         sta_obj.prior_meb = [[z1_mean,z1_std],[z2_mean - z1_mean,z2_std]]
@@ -1986,13 +1985,13 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
         # active zone
         colors = [u'#ff7f0e', u'#1f77b4']
-        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Active zone', alpha =1.)
+        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Infield', alpha =1.)
         # cooling zone
-        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Cooling zone', alpha =1.)
+        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Outfield', alpha =1.)
 
-        ax_leg.plot([],[],' ',label = r'med : median of active zone')
-        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of active zone')
-        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of active zone')
+        ax_leg.plot([],[],' ',label = r'med : median of infield zone')
+        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of infield zone')
+        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of infield zone')
         #ax_leg.plot([],[],'r--',label = r'median of $z_1$')
         #ax_leg.plot([],[],'b--',label = r'median of $z_2$')
         #ax_leg.plot([],[],'--', c='gray',label = r'median of $\rho_1$')

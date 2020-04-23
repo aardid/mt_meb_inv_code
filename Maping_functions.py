@@ -31,6 +31,7 @@ from scipy.stats import norm
 import matplotlib.mlab as mlab
 import pyproj
 from misc_functios import *
+import matplotlib.patheffects as PathEffects
 
 _projections = {}
 textsize = 15.
@@ -286,7 +287,9 @@ def plot_2D_uncert_bound_cc(sta_objects, pref_orient = 'EW', file_name = 'z1_z2_
     
 def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist = None, pref_orient = None, sort = None, \
     file_name = None, format_fig = None, width_ref = None, prior_meb = None, wells_objects = None, plot_some_wells = None, xlim = None, ylim = None, \
-    center_cero = None, km = None, export_fig = None, no_plot_clay_infered = None, mask_no_cc = None): 
+    center_cero = None, km = None, export_fig = None, no_plot_clay_infered = None, mask_no_cc = None, \
+    rest_bound_ref = None, plot_litho_wells = None, temp_count_wells = None, temp_iso = None,\
+        position_label = None): 
     """
     width_ref: width of percetil of reference as dotted line centered at 50%. ex: '60%'
     prior_meb: full list of wells objects
@@ -321,6 +324,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     #    wells_objects = prior_meb
     if plot_some_wells is None: 
         plot_some_wells = False
+    if plot_litho_wells is None:
+        plot_litho_wells = []
 
     if pref_orient: 
         pref_orient = pref_orient
@@ -333,7 +338,9 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         sta_objects.sort(key=lambda x: x.lon_dec, reverse=False)
     if pref_orient == 'NS':
         sta_objects.sort(key=lambda x: x.lat_dec, reverse=True)
-
+    #
+    if temp_iso is None:
+        temp_iso = [200.]
     # vectors to be fill and plot 
     x_axis = np.zeros(len(sta_objects))
     topo = np.zeros(len(sta_objects))
@@ -361,15 +368,18 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             z2_per[i][j] = topo[i] - (sta.z1_pars[2] + sta.z2_pars[3][j])
         if mask_no_cc: 
             # criteria for being negligible
-            if abs(sta.z2_pars[0]) < mask_no_cc: 
+            #if abs(sta.z2_pars[0]) < mask_no_cc: 
+            #    stns_negli[i] = True
+            d2 = sta.z2_pars[0]+sta.z1_pars[0]
+            if sta.z2_pars[0] < d2/5.:
                 stns_negli[i] = True
             else:
                 stns_negli[i] = False
                 # criteria for being negligible
-                if abs((sta.z1_pars[0]+sta.z1_pars[1]) - (sta.z1_pars[0]+sta.z2_pars[0]-sta.z2_pars[1])) < mask_no_cc/2: 
-                    stns_negli[i] = True
-                else:
-                    stns_negli[i] = False
+                #if abs((sta.z1_pars[0]+sta.z1_pars[1]) - (sta.z1_pars[0]+sta.z2_pars[0]-sta.z2_pars[1])) < mask_no_cc/2: 
+                #    stns_negli[i] = True
+                #else:
+                #    stns_negli[i] = False
             if sta.name[:-4] in ['WT192a','WT306a']:
                 stns_negli[i] = True
         i+=1
@@ -384,16 +394,29 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[9.5,7.5])
     if prior_meb:
-       f = plt.figure(figsize=[11.5,9.5]) 
-    ax = plt.axes([0.18,0.25,0.70,0.50])
+        f = plt.figure(figsize=[11.5,9.5])
+        ax = plt.axes([0.18,0.25,0.70,0.50]) 
+    if plot_litho_wells:
+        f = plt.figure(figsize=[17.5,9.5])
+        ax = plt.axes([0.1,0.1,0.75,0.75]) # fig.add_axes((left, bottom, width, height))
+
     # plot meadian and topo
     ax.plot(x_axis, topo,'g-', label='Topography')
-    ax.plot(x_axis, z1_med,'r.-', label='$z_1$ estimated MT', zorder = 0)
-    ax.plot(x_axis, z2_med,'b.-', label='$z_2$ estimated MT', zorder = 0)
+    if not plot_litho_wells:
+        ax.plot(x_axis, z1_med,'r.-', label='$z_1$ estimated MT', zorder = 1)
+        ax.plot(x_axis, z2_med,'b.-', label='$z_2$ estimated MT', zorder = 1)
+    else:
+        ax.fill_between([], [],color = u'#ff7f0e', label='MT top of the conductor', zorder = 1)
+        ax.fill_between([], [],color = u'#1f77b4', label='MT bottom of the conductor', zorder = 1)        
+    
     if no_plot_clay_infered:
         pass
     else: # plot orange section between means of z1 and z2 (indicating clay cap)
-        ax.fill_between(x_axis, z2_med, z1_med,  alpha=.3, facecolor='orange', edgecolor='orange', label='Inferred clay')
+        if not plot_litho_wells:
+            ax.fill_between(x_axis, z2_med, z1_med,  alpha=.1, facecolor='orange', edgecolor='orange', label='Inferred clay')
+        else:
+            ax.fill_between(x_axis, z2_med, z1_med,  alpha=.1, facecolor='orange', edgecolor='orange')#, label='Inferred clay')
+
     # plot percentils
     n_env = 9 # len(sta.z1_pars[3])/2 +1
     #for i in range(len(sta_objects)):
@@ -407,8 +430,13 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             z1_inf.append(z1_per[i][-j-1])
             z2_sup.append(z2_per[i][j])
             z2_inf.append(z2_per[i][-j-1])
-        ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), facecolor='r', edgecolor='r')
-        ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), facecolor='b', edgecolor='b')
+        if not plot_litho_wells:    
+            ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), facecolor='r', edgecolor='r', zorder = 2)
+            ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), facecolor='b', edgecolor='b', zorder = 2)
+        else:
+            ax.fill_between(x_axis, z1_sup, z1_inf,  alpha=.05*(j+1), facecolor=u'#ff7f0e', edgecolor=u'#ff7f0e', zorder = 2)
+            ax.fill_between(x_axis, z2_sup, z2_inf,  alpha=.05*(j+1), facecolor=u'#1f77b4', edgecolor=u'#1f77b4', zorder = 2)
+
 
     if width_plot: 
         ## plot 5% and 95% percetils as dotted lines 
@@ -461,14 +489,14 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     #y_mask = [topo[k]-10, -2000.]
                     y_mask_top = [z1_per[k-1,0]+50,z1_per[k,0]+50]
                     y_mask_bottom = [z2_per[k-1,-1]-300,z2_per[k,-1]-300]
-                    ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=1)
+                    ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=2)
                 ## from the station to the next one
                 if k<len(sta_objects)-1:
                     x_mask = [x_axis[k], x_axis[k+1]]
                     #y_mask = [topo[k]-10, -2000.]
                     y_mask_top = [z1_per[k,0]+50,z1_per[k+1,0]+50]
                     y_mask_bottom = [z2_per[k,-1]-100,z2_per[k+1,-1]-100]
-                    ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=1)
+                    ax.fill_between(x_mask, y_mask_top, y_mask_bottom,  alpha=.98, facecolor='w', zorder=2)
                 if not prior_meb:
                     ax.text(x_axis[k], topo[k]-600., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='white', edgecolor='white', alpha=1.0), zorder=3 , label = 'No conductor') 
                     ax.text(x_axis[k], topo[k]-600., 'No conductor', rotation=90, size=textsize, bbox=dict(facecolor='grey', edgecolor='grey', alpha=0.1), zorder=4 , label = 'No conductor') 
@@ -484,7 +512,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     for sta in sta_objects:
             ax.text(x_axis[i], topo[i]+100., sta.name[:-4], rotation=90, size=textsize, bbox=dict(facecolor='red', alpha=0.1), ) 
             i+=1  
-
+    # plot prior meb 
     if prior_meb:
         wl_names = []
         wls_obj = []
@@ -537,14 +565,22 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     dist_wl_prof = dist
 
             # plot well names and distance to the profile (near station) 
-            if wl.name == 'WK267A': 
-                ax.text(x_axis_wl[i]-.2, topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
-            elif wl.name == 'WK403':
-                ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
-            elif wl.name == 'WK318':
-                ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            if plot_litho_wells is False: 
+                if wl.name == 'WK267A': 
+                    ax.text(x_axis_wl[i]-.2, topo_wl[i]-1.0e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                elif wl.name == 'WK403':
+                    ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                elif wl.name == 'WK318':
+                    ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                else: 
+                    ax.text(x_axis_wl[i], topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            elif wl.name not in plot_litho_wells:
+                if wl.name == 'WK318':
+                    ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                else:
+                    ax.text(x_axis_wl[i], topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
             else:
-                ax.text(x_axis_wl[i], topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                pass
             # import and plot MeB mcmc result
             wl.read_meb_mcmc_results()
             ## vectors for plotting 
@@ -553,32 +589,214 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             # plot top bound. C
             y1 = top - wl.meb_z1_pars[0] # [z1_mean_prior, z1_std_prior]
             e1 = wl.meb_z1_pars[1] # [z1_mean_prior, z1_std_prior]
-            ax.errorbar(x, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_')
+            ax.errorbar(x+.25, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_')
             # plot bottom bound. CC
             y2 = top - wl.meb_z2_pars[0] # [z1_mean_prior, z1_std_prior]
             e2 = wl.meb_z2_pars[1] # [z1_mean_prior, z1_std_prior] # 2 time std (66%)
-            ax.errorbar(x, y2, e2, color='m', linestyle='-',zorder=2, marker='_')
+            ax.errorbar(x+.25, y2, e2, color='m', linestyle='-',zorder=2, marker='_')
             i+=1
-        ax.errorbar(x, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_', label = '$z_1$ estimated MeB')
-        ax.errorbar(x, y2, e2, color='m', linestyle='-',zorder=3, marker='_', label = '$z_2$ estimated MeB')
+        ax.errorbar(x+.25, y1, e1, color='cyan',linestyle='-',zorder=3, marker='_', label = '$z_1$ estimated MeB')
+        ax.errorbar(x+.25, y2, e2, color='m', linestyle='-',zorder=3, marker='_', label = '$z_2$ estimated MeB')
 
+    # plot resistivity boundary interception location
+    if rest_bound_ref:
+        # import one or two coord points
+        lats_rb, lons_rb = np.genfromtxt(rest_bound_ref, skip_header=1, delimiter=',').T
+        # resample topo
+        N_rs = 100 # number of resample points data
+        xj = np.linspace(x_axis[0],x_axis[-1],N_rs)	
+        topo_rs = cubic_spline_interpolation(x_axis,topo,xj)
+        for lon,lat in zip(lons_rb, lats_rb):
+            coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+            coord2 = [lon,lat]
+            ## calculate distances from first station to the others, save in array
+            x_aux = dist_two_points(coord1, coord2, type_coord = type_coord)
+            # find index of x_aux in topo resample
+            arr, idx = find_nearest(xj, x_aux)
+            #
+            plt.plot([x_aux,x_aux],[topo_rs[idx] - 300.,topo_rs[idx]], linestyle = '--',color = 'orange' ,alpha = 0.7, linewidth = 3, zorder = 5)
+            plt.plot([x_aux],[topo_rs[idx] - 300.], marker = '_',color = 'orange' ,alpha = 0.7, markersize = 7, zorder = 5)       
+        plt.plot([],[], color = 'orange' ,linewidth = 2, linestyle = '--', alpha = 0.7,label = 'DC resistivity boundary', zorder = 0) 
+
+    # plot litholology from wells in list 'plot_litho_wells'
+    if plot_litho_wells: 
+        wl_names = []
+        wls_obj = []
+        # collect nearest wells names employed in every station for MeB priors
+        wl_names = [wl for wl in wells_objects if wl.name in plot_litho_wells]
+
+        for wl in wells_objects: 
+            for wln in wl_names: 
+                if wl.name == wln.name: 
+                    wls_obj.append(wl)        
+
+        ## wls_obj: list of wells used for MeB prior in profile stations 
+        ## sort list by longitud (min to max - East to West)
+        wls_obj.sort(key=lambda x: x.lon_dec, reverse=False)
+
+        # vectors to be fill and plot 
+        x_axis_wl = np.zeros(len(wls_obj))
+        topo_wl = np.zeros(len(wls_obj))
+        i = 0
+        for wl in wls_obj:
+            coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+            coord2 = [wl.lon_dec, wl.lat_dec]
+            ## calculate distances from first well to the others, save in array
+            x_axis_wl[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+            ## vectors for plotting 
+            topo_wl[i] = wl.elev
+            i+=1
+
+        # import lithology references: dictionary
+        if True: # import formation, color, description -> create dictionary
+            path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+"formation_colors.txt"
+            #depths_from, depths_to, lito  = np.genfromtxt(path, \
+            #    delimiter=',').T
+            form_abr = []
+            form_col = []
+            form_des = []
+
+            with open(path) as p:
+                next(p)
+                for line in p:
+                    line = line.strip('\n')
+                    currentline = line.split(",")
+                    form_abr.append(currentline[0])
+                    form_col.append(currentline[1])
+                    form_des.append(currentline[2])
+            # dictionary. key: abreviation of formation. Values: (color, description)
+            dict_form = dict([(form_abr[i],(form_col[i],form_des[i])) for i in range(len(form_des))])
+            # for legend
+            if True:
+                # forms to not plot in legend
+                not_leg_forms = ['KR2A_RHY', 'RHY_A','RHY_B','RHY_C','HFF','WRFM1','WRFX','WRF3_4']
+                ax.fill_between([],[], color = 'w', alpha = 0.1, label = ' ', zorder = 0)
+                ax.fill_between([],[], color = 'w', alpha = 0.1,  label = 'LITHOLOGY:', zorder = 0)
+                for k in dict_form.keys():
+                    if k in not_leg_forms:
+                        pass
+                    else:
+                        ax.fill_between([],[], color = dict_form[k][0], alpha = 0.8, label = '   '+k, zorder = 0)
+
+        i = 0
+        for i, wl in enumerate(wls_obj):
+            # near distance from well to stations in the profile
+            dist_wl_prof = []
+            for sta in sta_objects: 
+                # distance between station and well
+                dist = dist_two_points([wl.lon_dec, wl.lat_dec], [sta.lon_dec, sta.lat_dec], type_coord = 'decimal')
+                if not dist_wl_prof:
+                    dist_wl_prof = dist
+                # check if distance is longer than the previous wel 
+                if dist <= dist_wl_prof: 
+                    dist_wl_prof = dist
+            if True:#try:
+                path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+wl.name+os.sep+"lithology.txt"
+                #depths_from, depths_to, lito  = np.genfromtxt(path, \
+                #    delimiter=',').T
+                depths_from = []
+                depths_to = []
+                lito = []
+                with open(path) as p:
+                    next(p)
+                    for line in p:
+                        line = line.strip('\n')
+                        currentline = line.split(",")
+                        depths_from.append(float(currentline[0]))
+                        depths_to.append(float(currentline[1]))
+                        lito.append(currentline[2])
+
+                N = len(depths_to) # number of lithological layers
+                colors = [dict_form[lito[k]][0] for k in range(len(lito))]
+                #colors = ['g','r','orange','r','m','g','r','orange','r','m']
+                #with open(r'data\nzafd.json', 'r') as fp:
+                for j in range(N):
+                    ax.fill_between([x_axis_wl[i]-.1,x_axis_wl[i]+.1],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                        color = colors[j], alpha = 0.8, zorder = 5)
+                    #thick = depths_to[j] - depths_from[j]
+                    #if thick > 25:
+                    #    ax.text(x_axis_wl[i], wl.elev - (depths_from[j] - thick/2), lito[j], fontsize=6,\
+                    #        horizontalalignment='center', verticalalignment='center', zorder = 5)
+            #except:
+            #    pass
+            ax.text(x_axis_wl[i], topo_wl[i]-depths_to[-1]-.6e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+
+    if temp_count_wells:
+        wl_names = []
+        wls_obj = []
+        # collect nearest wells names employed in every station for MeB priors
+        wl_names = [wl for wl in wells_objects if wl.name in temp_count_wells]
+
+        for wl in wells_objects: 
+            for wln in wl_names: 
+                if wl.name == wln.name: 
+                    wls_obj.append(wl)        
+
+        ## wls_obj: list of wells used for MeB prior in profile stations 
+        ## sort list by longitud (min to max - East to West)
+        wls_obj.sort(key=lambda x: x.lon_dec, reverse=False)
+
+        # vectors to be fill and plot 
+        x_axis_wl = np.zeros(len(wls_obj))
+        topo_wl = np.zeros(len(wls_obj))
+        i = 0
+        for wl in wls_obj:
+            coord1 = [sta_objects[0].lon_dec, sta_objects[0].lat_dec]
+            coord2 = [wl.lon_dec, wl.lat_dec]
+            ## calculate distances from first well to the others, save in array
+            x_axis_wl[i] = dist_two_points(coord1, coord2, type_coord = 'decimal')
+            ## vectors for plotting 
+            topo_wl[i] = wl.elev
+            i+=1
+
+        # vectors for cubic spline interpolation. cubic_spline_interpolation(xi,yi,xj, rev = None): 
+        xi = x_axis_wl
+        xi = []
+        #xj = np.linspace(xi[0],xi[-1],100)
+        for iso in temp_iso:# loop over isotherms
+            yi = [] # vector to be filled with depths od fix temps.
+            xi = [] # vector to be filled with x_axis_wl locations
+            for i, wl in enumerate(wls_obj): # loop over well for CSI
+                val, idx = find_nearest(wl.temp_prof_rs, iso)
+                if abs(val - iso) < 10.:
+                    yi.append(wl.red_depth_rs[idx])
+                    xi.append(x_axis_wl[i])
+                    #ax.text(xi[-1],yi[-1],wl.name)
+            xj = np.linspace(xi[0],xi[-1],100)
+            yj = cubic_spline_interpolation(xi,yi,xj, rev = None)
+            # plot
+            ax.plot(xj,yj, linestyle = '-', c = 'grey', alpha = .3)
+            #ax.plot(xi,yi, marker = '*', c = 'orange', alpha = .5)
+            if position_label is 'mid':
+                txt = ax.text(xi[int(len(xi)/2)-1] - .1, yi[int(len(xi)/2)-1] - 50., str(int(iso))+'°C', color='grey', size=textsize, alpha = .3, zorder = 7)
+            else:
+                txt = ax.text(xi[0]-.6, yi[0], str(int(iso))+'°C', color='grey', size=textsize, alpha = .3, zorder = 7)
+            txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+    
     if xlim:
         ax.set_xlim([xlim[0], xlim[1]])
     else:
         ax.set_xlim([x_axis[0]-1, x_axis[-1]+1])
         if prior_meb:
             ax.set_xlim([x_axis[0]-2, x_axis[-1]+1])
+        if plot_litho_wells: 
+            ax.set_xlim([x_axis[0]-3.5, x_axis[-1]+1])
+    # ylim
     if prior_meb:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
         else:
             ax.set_ylim([-2.0e3, max(topo)+700.])
+            if plot_litho_wells: 
+                ax.set_ylim([-1.7e3, max(topo)+400.])
     else:
         if ylim:
             ax.set_ylim([ylim[0], ylim[1]])
         else:
             ax.set_ylim([-1.0e3, max(topo)+600.])
-
+            if plot_litho_wells: 
+                ax.set_ylim([-1.7e3, max(topo)+400.])
+    
     #plt.xticks(np.linspace(0,10,10))
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('z [m]', size = textsize)
@@ -594,7 +812,11 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     if export_fig:
         return f, ax
 
-    ax.legend(loc=3, prop={'size': textsize})	
+    if plot_litho_wells:
+        ax.legend(loc=6, prop={'size': textsize})
+    else:
+        ax.legend(loc=3, prop={'size': textsize})
+
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)
     plt.savefig(file_name+'.'+format_fig, dpi=300, facecolor='w', edgecolor='w',
@@ -2562,12 +2784,14 @@ def plot_surface_cc_count(station_objects, wells_objects, bound2plot = None, typ
 
 def base_map_region(path_topo = None , xlim = None, ylim = None,
     path_rest_bound = None, path_lake_shoreline = None, 
-	path_faults = None, path_powerlines = None): 
+	path_faults = None, path_powerlines = None, two_cbar = None): 
     '''
     Create base map with topography and return figure. 
     '''
     # figure
     fig, ax = plt.subplots(figsize=(13,10))
+    if two_cbar:
+        fig, ax = plt.subplots(figsize=(16,10))
     ax.set_xlabel('Latitude [°]', size = textsize)
     ax.set_ylabel('Longitude [°]', size = textsize)
     if xlim is None:

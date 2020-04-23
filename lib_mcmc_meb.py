@@ -975,9 +975,9 @@ def histogram_mcmc_meb_inv_results(wells_objects, filt_in_count = None, filt_out
         if filt_in_count and filt_out_count:
             #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
             # active zone
-            ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Active zone',  alpha =.8)
+            ax_leg.plot([],[],c = 'PaleVioletRed', linewidth=10,label = r'Infield',  alpha =.8)
             # cooling zone
-            ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Cooling zone',  alpha =.3)
+            ax_leg.plot([],[],c = 'cyan', linewidth=10,label = r'Outfield',  alpha =.3)
             # full array
             ax_leg.plot([],[], c = 'lightsteelblue', linewidth=12,label = r'Full array',  alpha =.6)
 
@@ -1053,13 +1053,13 @@ def histogram_mcmc_meb_inv_results(wells_objects, filt_in_count = None, filt_out
         #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
         # active zone
         colors = [u'#ff7f0e', u'#1f77b4']
-        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Active zone', alpha =1.)
+        ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Infield', alpha =1.)
         # cooling zone
-        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Cooling zone', alpha =1.)
+        ax_leg.plot([],[], c = colors[1], linewidth=7, label = r'Outfield', alpha =1.)
 
-        ax_leg.plot([],[],' ',label = r'med : median of active zone')
-        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of active zone')
-        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of active zone')
+        ax_leg.plot([],[],' ',label = r'med : median of infield')
+        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of infield')
+        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of infield')
         #ax_leg.plot([],[],'r--',label = r'median of $z_1$')
         #ax_leg.plot([],[],'b--',label = r'median of $z_2$')
 

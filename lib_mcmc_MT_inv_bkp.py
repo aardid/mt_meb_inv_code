@@ -874,6 +874,8 @@ def calc_prior_meb_quadrant(station_objects, wells_objects):
             
             count+=1
 
+        if sta_obj.name == 'WT082a.edi':
+            asdf
         # calculete z1 normal prior parameters
         dist_weigth = [1./d**3 for d in sta_obj.prior_meb_wl_dist]
         z1_mean = np.dot(z1_mean_prior,dist_weigth)/np.sum(dist_weigth)
