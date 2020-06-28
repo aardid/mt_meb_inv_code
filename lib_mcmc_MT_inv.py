@@ -844,7 +844,7 @@ class mcmc_inv(object):
                 m = 0.5*(e[:-1]+e[1:])
                 ax1.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax1.set_xlabel('$z_1$ [m]', size = texts)
-                ax1.set_ylabel('freq.', size = texts)
+                ax1.set_ylabel('frequency', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(z1)
@@ -863,7 +863,7 @@ class mcmc_inv(object):
                 m = 0.5*(e[:-1]+e[1:])
                 ax2.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax2.set_xlabel('$z_2$ [m]', size = texts)
-                ax2.set_ylabel('freq.', size = texts)
+                ax2.set_ylabel('frequency', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu2, sigma) = norm.fit(z2)
@@ -884,7 +884,7 @@ class mcmc_inv(object):
                 m = 0.5*(e[:-1]+e[1:])
                 ax3.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax3.set_xlabel(r'$\rho_1$ [$\Omega$ m]', size = texts)
-                ax3.set_ylabel('freq.', size = texts)
+                ax3.set_ylabel('frequency', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r1)
@@ -903,7 +903,7 @@ class mcmc_inv(object):
                 m = 0.5*(e[:-1]+e[1:])
                 ax4.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax4.set_xlabel(r'$\rho_2$ [$\Omega$ m]', size = texts)
-                ax4.set_ylabel('freq.', size = texts)
+                ax4.set_ylabel('frequency', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r2)
@@ -922,7 +922,7 @@ class mcmc_inv(object):
                 m = 0.5*(e[:-1]+e[1:])
                 ax5.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
                 ax5.set_xlabel(r'$\rho_3$ [$\Omega$ m]', size = texts)
-                ax5.set_ylabel('freq.', size = texts)
+                ax5.set_ylabel('frequency', size = texts)
                 #ax1.grid(True, which='both', linewidth=0.1)
                 # plot normal fit 
                 (mu, sigma) = norm.fit(r3)
@@ -1591,7 +1591,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         m = 0.5*(e[:-1]+e[1:])
         ax1.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
         ax1.set_xlabel('$z_1$ [m]', fontsize=textsize)
-        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.set_ylabel('frequency', fontsize=textsize)
         ax1.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(z1_batch)
@@ -1640,7 +1640,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         m = 0.5*(e[:-1]+e[1:])
         ax2.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w', zorder = 1, color = 'lightsteelblue')
         ax2.set_xlabel('$z_2$ [m]', fontsize=textsize)
-        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.set_ylabel('frequency', fontsize=textsize)
         ax2.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(z2_batch)
@@ -1692,7 +1692,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         m = 0.5*(e[:-1]+e[1:])
         ax3.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
         ax3.set_xlabel(r'$\rho_1$ [m]', fontsize=textsize)
-        ax3.set_ylabel('freq.', fontsize=textsize)
+        ax3.set_ylabel('frequency', fontsize=textsize)
         ax3.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(z1_batch)
@@ -1742,7 +1742,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         #ax4.bar(e[:-1], h, e[1]-e[0], alpha = .8, edgecolor = 'w')#, label = 'histogram')
         ax4.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
         ax4.set_xlabel(r'$\rho_2$ [m]', fontsize=textsize)
-        ax4.set_ylabel('freq.', fontsize=textsize)
+        ax4.set_ylabel('frequency', fontsize=textsize)
         ax4.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(z1_batch)
@@ -1791,7 +1791,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         m = 0.5*(e[:-1]+e[1:])
         ax5.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
         ax5.set_xlabel(r'$\rho_3$ [m]', fontsize=textsize)
-        ax5.set_ylabel('freq.', fontsize=textsize)
+        ax5.set_ylabel('frequency', fontsize=textsize)
         ax5.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(z1_batch)
@@ -1879,7 +1879,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         x_multi = [z1_batch_filt_in, z1_batch_filt_out]
         ax1.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax1.set_xlabel('$z_1$ [m]', fontsize=textsize)
-        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.set_ylabel('frequency', fontsize=textsize)
         ax1.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1901,7 +1901,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         x_multi = [z2_batch_filt_in, z2_batch_filt_out]
         ax2.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax2.set_xlabel('$z_2$ [m]', fontsize=textsize)
-        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.set_ylabel('frequency', fontsize=textsize)
         ax2.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1923,7 +1923,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         x_multi = [r1_batch_filt_in, r1_batch_filt_out]
         ax3.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax3.set_xlabel(r'$\rho_1$ [m]', fontsize=textsize)
-        ax3.set_ylabel('freq.', fontsize=textsize)
+        ax3.set_ylabel('frequency', fontsize=textsize)
         ax3.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1945,7 +1945,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         x_multi = [r2_batch_filt_in, r2_batch_filt_out]
         ax4.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax4.set_xlabel(r'$\rho_2$ [m]', fontsize=textsize)
-        ax4.set_ylabel('freq.', fontsize=textsize)
+        ax4.set_ylabel('frequency', fontsize=textsize)
         ax4.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1967,7 +1967,7 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         x_multi = [r3_batch_filt_in, r3_batch_filt_out]
         ax5.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax5.set_xlabel(r'$\rho_3$ [m]', fontsize=textsize)
-        ax5.set_ylabel('freq.', fontsize=textsize)
+        ax5.set_ylabel('frequency', fontsize=textsize)
         ax5.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:

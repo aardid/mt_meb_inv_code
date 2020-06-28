@@ -289,7 +289,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     file_name = None, format_fig = None, width_ref = None, prior_meb = None, wells_objects = None, plot_some_wells = None, xlim = None, ylim = None, \
     center_cero = None, km = None, export_fig = None, no_plot_clay_infered = None, mask_no_cc = None, \
     rest_bound_ref = None, plot_litho_wells = None, temp_count_wells = None, temp_iso = None,\
-        position_label = None): 
+        position_label = None, title = None): 
     """
     width_ref: width of percetil of reference as dotted line centered at 50%. ex: '60%'
     prior_meb: full list of wells objects
@@ -397,7 +397,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         f = plt.figure(figsize=[11.5,9.5])
         ax = plt.axes([0.18,0.25,0.70,0.50]) 
     if plot_litho_wells:
-        f = plt.figure(figsize=[17.5,9.5])
+        f = plt.figure(figsize=[18.5,9.5])
         ax = plt.axes([0.1,0.1,0.75,0.75]) # fig.add_axes((left, bottom, width, height))
 
     # plot meadian and topo
@@ -576,7 +576,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     ax.text(x_axis_wl[i], topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
             elif wl.name not in plot_litho_wells:
                 if wl.name == 'WK318':
-                    ax.text(x_axis_wl[i]+.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+                    ax.text(x_axis_wl[i]-.2, topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
                 else:
                     ax.text(x_axis_wl[i], topo_wl[i]-(wl.meb_z2_pars[0]+2*wl.meb_z2_pars[1])-.9e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
             else:
@@ -676,7 +676,10 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                     if k in not_leg_forms:
                         pass
                     else:
-                        ax.fill_between([],[], color = dict_form[k][0], alpha = 0.8, label = '   '+k, zorder = 0)
+                        # abreviation 
+                        #ax.fill_between([],[], color = dict_form[k][0], alpha = 0.8, label = '   '+k, zorder = 0)
+                        # description 
+                        ax.fill_between([],[], color = dict_form[k][0], alpha = 0.8, label = ' '+dict_form[k][1], zorder = 0)
 
         i = 0
         for i, wl in enumerate(wls_obj):
@@ -711,15 +714,31 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                 #colors = ['g','r','orange','r','m','g','r','orange','r','m']
                 #with open(r'data\nzafd.json', 'r') as fp:
                 for j in range(N):
-                    ax.fill_between([x_axis_wl[i]-.1,x_axis_wl[i]+.1],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
-                        color = colors[j], alpha = 0.8, zorder = 5)
+                    if wl.name == 'WK317':
+                        ax.fill_between([x_axis_wl[i]+.1,x_axis_wl[i]+.3],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                            color = colors[j], alpha = 0.8, zorder = 5)
+                    elif wl.name == 'WK318':
+                        ax.fill_between([x_axis_wl[i]+.0,x_axis_wl[i]+.2],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                            color = colors[j], alpha = 0.8, zorder = 5)
+                        #ax.fill_between([x_axis_wl[i]-.3,x_axis_wl[i]-.1],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                        #    color = colors[j], alpha = 0.8, zorder = 5)
+                    else:
+                        ax.fill_between([x_axis_wl[i]-.1,x_axis_wl[i]+.1],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                            color = colors[j], alpha = 0.8, zorder = 5)
                     #thick = depths_to[j] - depths_from[j]
                     #if thick > 25:
                     #    ax.text(x_axis_wl[i], wl.elev - (depths_from[j] - thick/2), lito[j], fontsize=6,\
                     #        horizontalalignment='center', verticalalignment='center', zorder = 5)
             #except:
             #    pass
-            ax.text(x_axis_wl[i], topo_wl[i]-depths_to[-1]-.6e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            if wl.name == 'WK124A':
+                ax.text(x_axis_wl[i]-.25, topo_wl[i]-depths_to[-1]-.6e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            elif wl.name == 'WK317':
+                ax.text(x_axis_wl[i]+.20, topo_wl[i]-depths_to[-1]-.6e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            elif wl.name == 'WK318':
+                ax.text(x_axis_wl[i]+.10, topo_wl[i]-depths_to[-1]-.6e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
+            else:
+                ax.text(x_axis_wl[i], topo_wl[i]-depths_to[-1]-.6e3, wl.name+': '+str(round(dist_wl_prof,1))+' km', rotation=90, size=textsize, bbox=dict(facecolor='blue', alpha=0.1)) 
 
     if temp_count_wells:
         wl_names = []
@@ -780,7 +799,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         if prior_meb:
             ax.set_xlim([x_axis[0]-2, x_axis[-1]+1])
         if plot_litho_wells: 
-            ax.set_xlim([x_axis[0]-3.5, x_axis[-1]+1])
+            ax.set_xlim([x_axis[0]-4.0, x_axis[-1]+1])
     # ylim
     if prior_meb:
         if ylim:
@@ -797,10 +816,13 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             if plot_litho_wells: 
                 ax.set_ylim([-1.7e3, max(topo)+400.])
     
+    
+    
     #plt.xticks(np.linspace(0,10,10))
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('z [m]', size = textsize)
-    ax.set_title('LRA UNCERTAIN BOUNDARIES', size = textsize)
+    if title:
+        ax.set_title(title, size = textsize)
 
     #ax.grid(True)
     #(color='r', linestyle='-', linewidth=2)
@@ -816,6 +838,9 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         ax.legend(loc=6, prop={'size': textsize})
     else:
         ax.legend(loc=3, prop={'size': textsize})
+
+    #ax.set_ylim([-1.0e3, max(topo)+400.])
+    #ax.legend('off')
 
     #plt.savefig('z1_z2_uncert.pdf', dpi=300, facecolor='w', edgecolor='w',
     #    orientation='portrait', format='pdf',transparent=True, bbox_inches=None, pad_inches=.1)

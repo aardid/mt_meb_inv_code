@@ -40,7 +40,7 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 ##################### BASEMAP PLOTS
-	if True: # base map figures
+	if False: # base map figures
 		base_map = True # plot map with wells and stations # modify .png ouput
 		##
 		zones = True # add injection and extraction zones
@@ -52,10 +52,11 @@ if __name__ == "__main__":
 		meb_results = False # add scatter MeB results # modify .png ouput
 		mt_results = False # add scatter MT results # modify .png ouput
 		temp_results = False # add scatter Temp results  # modify .png ouput
-		temp_grad = False # add scatter temperature gradient # modify .png ouput
-		temp_hflux = True # add scatter heatflux  # modify .png ouput
+		temp_grad = False # add scatter temperature gradient inside the conductor # modify .png ouput
+		temp_hflux = False # add scatter heatflux  # modify .png ouput
 		z1_vs_temp_z1_basemap = False # z1 from MT vs temp at z1  # modify .png ouput
 		d2_vs_temp_d2_basemap = False # d2 (z1+z2) from MT vs temp at d2  # modify .png ouput
+		temp_grad_HF_basemap = True # temperature gradient and heat flux # modify .png ouput
 
 		########
 		# plot map with wells and stations
@@ -74,74 +75,93 @@ if __name__ == "__main__":
 			#
 			x_lim = [175.95,176.23]#[175.98,176.22] 
 			y_lim = [-38.79,-38.57]
-			if z1_vs_temp_z1_basemap or d2_vs_temp_d2_basemap:
+			if z1_vs_temp_z1_basemap or d2_vs_temp_d2_basemap or temp_grad_HF_basemap:
 				two_cbar = True
 			else:
 				two_cbar = False
 			# base figure
 			f, ax, topo_cb = base_map_region(path_topo = path_topo,  xlim = x_lim, ylim = y_lim,path_rest_bound = path_rest_bound,
-				path_lake_shoreline = path_lake_shoreline, path_faults = path_faults, path_powerlines = path_powerlines, two_cbar = two_cbar)
+				path_lake_shoreline = path_lake_shoreline, path_faults = False, path_powerlines = False, two_cbar = two_cbar)
 		# add injection and extraction zones
 		if zones:
 			# Otupu
 			if True:
 				path_otupu = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Otupu_inj.dat'
 				lats, lons = np.genfromtxt(path_otupu, skip_header=1, delimiter=',').T
-				plt.plot(lons, lats, 'b:' ,linewidth= 2, zorder = 7)
+				plt.plot(lons, lats, 'b:' ,linewidth= 3, zorder = 7)
 				# print name 
 				txt = plt.text(np.min(lons)+0.01, np.min(lats)-0.005, 'Otupu', color='b', size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 			# Pohipi west
 			if True:
 				path_otupu = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'pohipi_west_inj.dat'
 				lats, lons = np.genfromtxt(path_otupu, skip_header=1, delimiter=',').T
-				plt.plot(lons, lats, 'b:' ,linewidth= 2, zorder = 7)
+				plt.plot(lons, lats, 'b:' ,linewidth= 3, zorder = 7)
 				# print name 
 				txt = plt.text(np.min(lons)-0.005, np.min(lats)-0.005, 'Pohipi west', color='b', size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 			# Te Mihi
 			if True:
 				path_otupu = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'TeMihi2_prod.dat'
 				lats, lons = np.genfromtxt(path_otupu, skip_header=1, delimiter=',').T
-				plt.plot(lons, lats, 'r:' ,linewidth= 2, zorder = 7)
+				plt.plot(lons, lats, 'r:' ,linewidth= 3, zorder = 7)
 				# print name 
 				txt = plt.text(np.max(lons), np.max(lats)-0.001, 'Te Mihi', color='r', size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 
 			# West Bore
 			if True:
 				path_otupu = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'WestBoreField_prod.dat'
 				lats, lons = np.genfromtxt(path_otupu, skip_header=1, delimiter=',').T
-				plt.plot(lons, lats, 'r:' ,linewidth= 2, zorder = 7)
+				plt.plot(lons, lats, 'r:' ,linewidth= 3, zorder = 7)
 				# print name 
 				txt = plt.text(np.min(lons)-0.01, np.min(lats)-0.005, 'West Bore', color='r', size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 			# Karapiti South 
 			if True:
 				path_karapiti_s = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'karapiti_south_inj.dat'
 				lats, lons = np.genfromtxt(path_karapiti_s, skip_header=1, delimiter=',').T
-				plt.plot(lons, lats, 'r:' ,linewidth= 2, zorder = 7)
+				plt.plot(lons, lats, 'r:' ,linewidth= 3, zorder = 7)
 				# print name 
 				txt = plt.text(np.min(lons)-0.005, np.min(lats)-0.005, 'Karapiti South', color='r', size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 			# Aratiatia flats 
 			if True:
 				path_aratiatia = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Aratiatia_flats_inj_d.dat'
 				lats, lons = np.genfromtxt(path_aratiatia, skip_header=1, delimiter=',').T
-				plt.plot(lons, lats, 'g:' ,linewidth= 2, zorder = 7)
+				plt.plot(lons, lats, 'g:' ,linewidth= 3, zorder = 7)
 				# print name 
 				txt = plt.text(np.min(lons)+0.005, np.max(lats)+0.005, 'Aratiatia Flats', color='g', size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
-
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
+			# Te Huka  
+			if True:
+				path_aratiatia = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Te_Huka_prod.dat'
+				lats, lons = np.genfromtxt(path_aratiatia, skip_header=1, delimiter=',').T
+				plt.plot(lons, lats, 'r:' ,linewidth= 3, zorder = 7)
+				# print name 
+				txt = plt.text(np.min(lons)+0.000, np.min(lats)-0.005, 'Te Huka', color='r', size=textsize, zorder = 7)
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
+			# Mount Tauhara  
+			if False:
+				path_aratiatia = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'mount_tauhara.dat'
+				lats, lons = np.genfromtxt(path_aratiatia, skip_header=1, delimiter=',').T
+				plt.plot(lons, lats, 'g:' ,linewidth= 3, zorder = 7)
+				# print name 
+				txt = plt.text(np.min(lons)+0.005, np.min(lats)+0.005, 'Mount Tauhara', color='b', size=textsize, zorder = 7)
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 			# for legend 
-			plt.plot([],[], 'b:' ,linewidth= 2, label = 'Injection zone', zorder = 7)
-			plt.plot([],[], 'r:' ,linewidth= 2, label = 'Production zone', zorder = 7)
-			plt.plot([],[], 'g:' ,linewidth= 2, label = 'Decommissioned zone', zorder = 7)
+			plt.plot([],[], 'b:' ,linewidth= 3, label = 'Injection zone', zorder = 7)
+			plt.plot([],[], 'r:' ,linewidth= 3, label = 'Production zone', zorder = 7)
+			plt.plot([],[], 'g:' ,linewidth= 3, label = 'Decommissioned zone', zorder = 7)
 			# add labels for reservoirs
 			txt = plt.text(176.13, -38.732, 'Wairakei-Tauhara', color='darkorange', size=textsize, zorder = 7)
-			txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+			txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 			txt = plt.text(176.18, -38.645, 'Rotokawa', color='darkorange', size=textsize, zorder = 7)
-			txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+			txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
+			# add label for Mount Tauhara
+			txt = plt.text(176.15-0.01, -38.70, 'Mount\n Tauhara', color='b', size=textsize, zorder = 7)
+			txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
+
 		######## DATA
 		# add wells
 		if wells_loc:
@@ -177,11 +197,11 @@ if __name__ == "__main__":
 			colors = [u'#1f77b4', u'#ff7f0e']#, u'#2ca02c']
 			for i, path in enumerate(path_MT_profiles_coords): 
 				lats, lons = np.genfromtxt(path, delimiter=',').T
-				plt.plot(lons, lats, '--' , c = colors[i], zorder = 7,linewidth = 3)
+				plt.plot(lons, lats, '-' , c = colors[i], zorder = 7,linewidth = 2)
 				#plt.plot([], [], '--' , c = colors[i], zorder = 0, label = names[i])
 				# print name 
 				txt = plt.text(lons[1]-0.01, lats[1]-0.005, names[i], color=colors[i], size=textsize, zorder = 7)
-				txt.set_path_effects([PathEffects.withStroke(linewidth=1, foreground='w')])
+				txt.set_path_effects([PathEffects.withStroke(linewidth=2, foreground='w')])
 		# add temp. at fix depth
 		if temp_fix_depth: 
 			## countour plot of temp at fix depth
@@ -267,17 +287,27 @@ if __name__ == "__main__":
 				name = 'z1_mean'
 				array = z1_mean
 				levels = np.arange(50,450,25)  # for mean z1
+				title = 'Depth to the Top of the Conductor'
 			if False: # z2_mean
 				z2_mean = mt_result[5]
 				name = 'z2_mean'
 				array = z2_mean
 				levels = np.arange(200,650,25)  # for mean z10
+				title = 'Conductor Thickness'
+			if False: # z2_std
+				z2_std = mt_result[6]
+				name = 'z2_std'
+				array = z2_std
+				array = 3*z2_std # 3*sigma contains ~99% of probability
+				levels = np.arange(50,500,25)  # for mean z10
+				title = 'Uncertainty in the Bottom of the Conductor depth'
 			if False: # d2_mean
 				z1_mean = mt_result[3]
 				z2_mean = mt_result[5]
 				name = 'd2_mean'
 				array = z1_mean + z2_mean
 				levels = np.arange(200,1000,25)  # for mean z1
+				title = 'Depth to the Bottom of the Conductor'
 			# scatter plot
 			size = 200*np.ones(len(array))
 			vmin = min(levels)
@@ -285,8 +315,16 @@ if __name__ == "__main__":
 			normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
 			scatter_MT = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', cmap = 'winter', \
 				norm = normalize, zorder = 5)#, label = 'MT inversion: z1 mean')#alpha = 0.5)
-			ax.scatter([],[], s = size, c = 'b', edgecolors = 'k', \
-				zorder = 5, label = 'MT inversion: z1 mean')#alpha = 0.5)
+			# ax.scatter([],[], s = size, c = 'b', edgecolors = 'k', \
+			# 	zorder = 5, label = 'MT inversion: '+name+', '+r'$\mu$: '+str(np.median(array))+', '+r'$\sigma$: '+str(np.round(np.std(array),1)))#alpha = 0.5)
+			if name == 'z1_mean':
+				ax.scatter([],[], s = size, c = 'b', edgecolors = 'k', \
+					zorder = 5, label = 'Depth to the top of the Conductor at MT station')
+			if name == 'z2_mean':
+				ax.scatter([],[], s = size, c = 'b', edgecolors = 'k', \
+					zorder = 5, label = 'Thickness of the Conductor at MT station')
+			if True:
+				ax.set_title(title, size = textsize)
 			# absence of CC (no_cc)
 			#for i, z2 in enumerate(mt_result[5]):
 			#	if (z2 < 75.):
@@ -297,6 +335,9 @@ if __name__ == "__main__":
 				if (z2 < d2/5):
 					plt.plot(mt_result[1][i], mt_result[2][i],'w.', markersize=28, zorder = 6) 
 					plt.plot(mt_result[1][i], mt_result[2][i],'bx', markersize=12, zorder = 6)
+			# label for infered absence of clay cap
+			ax.plot([],[],'bx',markersize=12, \
+				zorder = 6, label = 'Absence of conductor inferred at MT station')#alpha = 0.5)
 			# plot profiles 
 			if False:
 				path_profs= ['.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'prof_PW_TM_WB_AR_7.txt',
@@ -346,6 +387,34 @@ if __name__ == "__main__":
 				zorder = 5, label = 'Well temperature at: z2 mean')#alpha = 0.5)
 			#
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_temp_'+name+'.png'
+		# add scatter geothermal gradient 
+		if temp_grad:
+			gg_mean = []
+			lon_stas = []
+			lat_stas = []
+			count = 0
+			# import results 
+			gg_result = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+			# columns: well_name[0],lon_dec[1],lat_dec[2],T1_mean[3],T1_std[4],T2_mean[5],T2_std[6]
+			lon_stas = gg_result[1]
+			lat_stas = gg_result[2]
+			array = gg_result[3] # array to plot: geothermal gradient 
+			array = 1.e3*array # from m to km
+			# array to plot
+			name = 'geothermal_gradient'
+			# scatter plot
+			size = 200*np.ones(len(array))
+			# levels = np.arange(200,576,25)  # for mean z1
+			## vmin = min(levels)
+			# vmax = max(levels)
+			#normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+			scatter_temp = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', 
+				cmap = 'spring_r', zorder = 5)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
+			ax.scatter([],[], s = size, c = 'pink', edgecolors = 'k', \
+				zorder = 5, label = 'Temperature gradient at Well location')#alpha = 0.5)
+			# Need to
+			ax.set_title('Geothermal gradient inside the conductor', size = textsize)
+			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'
 		# add scatter Heat Flux 
 		if temp_hflux:
 			scatter_p = False # scatter plot in well locations. Total power calc as mean * area 
@@ -491,7 +560,7 @@ if __name__ == "__main__":
 									for wl in pm2]
 								dist_wls = list(filter(None, dist_wls))
 								#
-								dist_weigth = [1./d**3 for d in dist_wls]
+								dist_weigth = [1./d**2 for d in dist_wls]
 								pm2_grid[j][i] = np.dot(pm2_aux,dist_weigth)/np.sum(dist_weigth)
 								pm2_grid_list.append([lon,lat,pm2_grid[j][i]])
 					# filter points inside rest bound
@@ -502,7 +571,7 @@ if __name__ == "__main__":
 					for wl in pm2_grid_list:
 						# check if station is inside poligon
 						val = ray_tracing_method(wl[0], wl[1], poli_in)
-						if val:
+						if val: #val:
 							# for grid plot
 							pm2_grid_filt_rb.append(wl)
 							# for means
@@ -544,8 +613,8 @@ if __name__ == "__main__":
 					file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'				
 				if True: # plot integral as scatter 
 					# scatter plot
-					vmin = 0. # bound_pw2
-					vmax = max(pm2_filt_rb)-.2
+					vmin = None#0. # bound_pw2
+					vmax = None#max(pm2_filt_rb)-.2
 					size = (frac_grid/3)*np.ones(len(pm2_filt_rb))
 					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, edgecolors = None, \
 						vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#
@@ -713,19 +782,177 @@ if __name__ == "__main__":
 				#		################### colorbar to plot
 					#
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'base_map_'+'d2_mt_vs_T2'+'.png'		
+		# add scatter of geogradient and background of heat flux
+		if temp_grad_HF_basemap:
+			name = 'gg_hf'
+			cmap_hf = 'GnBu'	
+			# geothermal gradient 
+			gg_mean = []
+			lon_stas = []
+			lat_stas = []
+			count = 0
+			# import results 
+			gg_result = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+			# columns: well_name[0],lon_dec[1],lat_dec[2],T1_mean[3],T1_std[4],T2_mean[5],T2_std[6]
+			lon_stas = gg_result[1]
+			lat_stas = gg_result[2]
+			array = gg_result[3] # array to plot: geothermal gradient 
+			array = 1.e3*array # from m to km
+			# array to plot
+			# scatter plot
+			size = 200*np.ones(len(array))
+			# levels = np.arange(200,576,25)  # for mean z1
+			## vmin = min(levels)
+			# vmax = max(levels)
+			#normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+			scatter_temp = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', 
+				cmap = 'spring_r', zorder = 5)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
+			ax.scatter([],[], s = size, c = 'pink', edgecolors = 'k', \
+				zorder = 5, label = 'Temperature gradient at Well location')#alpha = 0.5)
+			# Need to
+			ax.set_title('Geothermal gradient inside the conductor', size = textsize)
+
+			############
+			# add in the background heat flux extrapolation 
+
+			HF_mean = []
+			# import results 
+			wl_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+			# columns: well_name[0],lon_dec[1],lat_dec[2],T1_mean[3],T1_std[4],T2_mean[5],T2_std[6]
+			
+			lon_wls = wl_lon_lat_TG_TC_HF[1]
+			lat_wls = wl_lon_lat_TG_TC_HF[2]
+			# resistivity boundary
+			path_area = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
+			# Wairakei boundary 
+			#path_area = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Wairakei_countour_path.txt'
+			# Tauhara boundary 
+			#path_area = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Tauhara_countour_path.txt'
+			#
+			lats_rb, lons_rb  = np.genfromtxt(path_area, skip_header=1, delimiter=',').T
+			poli_in = [[lons_rb[i],lats_rb[i]] for i in range(len(lats_rb))]
+
+			if True: # distribution from constant boundaries HF. distance weigth. 
+				#### tune pars
+				frac_grid = 100 # distance in meters per point in the grid 
+				# array of fix pm2 values at resistivity boundary locations 
+				frac = 20 # fraction of points from rb to be taken
+				bound_pw2 =0.5
+				####
+				pm2_rb = [[lons_rb[i*frac], lats_rb[i*frac], bound_pw2] for i in range(int(len(lons_rb)/frac))]
+				# 0.64 is HF at a well located in the boundary WK650
+				# array of pm2 at well locatins
+				pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+				# array of both
+				pm2 = pm2_wls.copy()
+				pm2 = pm2 + pm2_rb
+				# grid surface
+				n_points_x = int(111000*(max(lons_rb) - min(lons_rb)))
+				n_points_x = int(n_points_x/frac_grid)
+				n_points_y = int(111000*(max(lats_rb) - min(lats_rb)))
+				n_points_y = int(n_points_y/frac_grid)
+				#
+				x = np.linspace(min(lons_rb), max(lons_rb), n_points_x) # long
+				y = np.linspace(min(lats_rb), max(lats_rb), n_points_y) # lat
+				X, Y = np.meshgrid(x, y)
+				pm2_grid = X.copy()*0.
+				pm2_aux = [pm2_wl[2] for pm2_wl in pm2]
+				pm2_grid_list = []
+				# calculate pm2 at grid location
+				for j,lat in enumerate(y):
+					for i,lon in enumerate(x):
+						if True: #for wl in pm2_wls:  # pm2_wls : [[lon, lat, HF], [...], ...]
+							# distances between point in grid and points
+							dist_wls = [dist_two_points([wl[0], wl[1]], [lon, lat], type_coord = 'decimal')\
+								for wl in pm2]
+							dist_wls = list(filter(None, dist_wls))
+							#
+							dist_weigth = [1./d**2 for d in dist_wls]
+							pm2_grid[j][i] = np.dot(pm2_aux,dist_weigth)/np.sum(dist_weigth)
+							pm2_grid_list.append([lon,lat,pm2_grid[j][i]])
+				# filter points inside rest bound
+				lat_filt = []
+				lon_filt = []
+				pm2_filt_rb = []
+				pm2_grid_filt_rb = []
+				for wl in pm2_grid_list:
+					# check if station is inside poligon
+					val = ray_tracing_method(wl[0], wl[1], poli_in)
+					if val: #val:
+						# for grid plot
+						pm2_grid_filt_rb.append(wl)
+						# for means
+						pm2_filt_rb.append(wl[2])
+						# for scatter plot 
+						lon_filt.append(wl[0])
+						lat_filt.append(wl[1])
+
+				# Calculate mean power (per m2) inside the field
+				#aux = np.mean(pm2_grid_filt_rb, axis=0)
+				hf_mean_m2 = np.mean(pm2_filt_rb)
+				# Calculate power for the whole field 
+				hf_full = sum(pm2_filt_rb*(frac_grid**2))
+				# print power for the whole field
+				try: # add error base on senstivity to HF at bound 
+					resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
+					d_power = abs(power[-1] - power[0])/2
+					print('Wairakei-Tauhara estimated POWER: '+str(round(hf_full/1.e6,2))+' ± '+str(round(d_power,2))+' [MW]')#, size = textsize)
+				except:
+					print('Wairakei-Tauhara estimated POWER: '+str(round(hf_full/1.e6,2))+' [MW]')#, size = textsize)
+
+			# plottoing the grid
+			
+			if True: # plot integral as scatter 
+				# scatter plot
+				vmin = None#0. # bound_pw2
+				vmax = None#max(pm2_filt_rb)-.2
+				size = (frac_grid/3)*np.ones(len(pm2_filt_rb))
+				cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, edgecolors = None, \
+					vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#
+				try: # add error base on senstivity to HF at bound 
+					resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
+					d_power = abs(power[-1] - power[0])/2
+					ax.set_title('Heat flux through the clay cap: '+str(round(hf_full/1.e6,1))+' ± '+str(round(d_power,1))+' [MW]', size = textsize)
+				except:
+					ax.set_title('Heat flux through the clay cap: '+str(int(hf_full/1.e6))+' [MW]', size = textsize)
+
+				# plot resistivity boundary on top the scatter plot
+				plt.plot(lons_rb, lats_rb, color = 'orange' ,linewidth = 2, zorder = 4)
+
+				if True: # plot scatter of HF in wells 
+					HF_mean = wl_lon_lat_TG_TC_HF[5]
+					array = HF_mean
+					# scatter plot
+					size = 100*np.ones(len(array))
+					# levels = np.arange(200,576,25)  # for mean z1
+					## vmin = min(levels)
+					# vmax = max(levels)
+					#normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+					#cmap = 'GnBu'
+					
+					scatter_hf = ax.scatter(lon_wls,lat_wls, s = size, c = array, edgecolors = 'gray', 
+						vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
+					#ax.scatter([],[], s = size, c = 'white', edgecolors = 'gray', \
+					#	zorder = 0, label = 'Heat Flux at well locations')#alpha = 0.5)
+
+			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'
+						#
 		####################################################
 		## add colorbar 
 		if base_map: # topo 
 			if not (meb_results or mt_results or temp_results \
-					or z1_vs_temp_z1_basemap or d2_vs_temp_d2_basemap or temp_hflux):
+					or z1_vs_temp_z1_basemap or d2_vs_temp_d2_basemap \
+						or temp_hflux or temp_grad or temp_grad_HF_basemap):
 				f.colorbar(topo_cb, ax=ax, label ='Elevation [m] (m.a.s.l.)')
 				file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_topo.png'
 		if meb_results: # meb
 			f.colorbar(scatter_meb, ax=ax, label ='Depth [m]')
 		if mt_results: # MT
-			f.colorbar(scatter_MT, ax=ax, label ='Depth [m]')			
+			f.colorbar(scatter_MT, ax=ax, label ='[m]')			
 		if temp_results: # Temp
 			f.colorbar(scatter_temp, ax=ax, label ='Temperature [°C]')
+		if temp_grad: # Temp
+			f.colorbar(scatter_temp, ax=ax, label ='Temperature gradient [°C/km]')
 		if temp_hflux: # Temp
 			if scatter_p:
 				f.colorbar(scatter_hf, ax=ax, label ='Heat Flux [W/m2]')
@@ -737,8 +964,11 @@ if __name__ == "__main__":
 		if d2_vs_temp_d2_basemap:
 			f.colorbar(scatter_MT, ax=ax, label ='Depth [m]')
 			f.colorbar(scatter_temp, ax=ax, label ='Temperature [°C]')
+		if temp_grad_HF_basemap:
+			f.colorbar(scatter_temp, ax=ax, label ='Temperature gradient [°C/km]')
+			f.colorbar(scatter_hf, ax=ax, label =r'Heat flux [W/m$^2$]')
 		#
-		ax.legend(loc=3, prop={'size': textsize})
+		ax.legend(loc=3, prop={'size': textsize}, fancybox=True, framealpha=0.5)
 		f.tight_layout()
 		# save figure
 		#plt.show()
@@ -746,13 +976,14 @@ if __name__ == "__main__":
 			orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
 #################### SCATTER VERSUS PLOT
-	if False: # 
+	if True: # 
 		### SCATTER PLOTS
 		d12_vs_temp_d12_scatter = True
+		d12_vs_hf_scatter = False
 		###
 		if d12_vs_temp_d12_scatter:
 			# D1 vs T1: Depth vs Temperature
-			if True:
+			if False:
 				f1 = plt.figure(figsize=[9.5,11.5])
 				ax1 = plt.axes([0.18,0.25,0.70,0.50]) 
 				# plot tempT2 vs depthD2(at well location)
@@ -782,7 +1013,7 @@ if __name__ == "__main__":
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
 			# D2 vs T2: Depth vs Temperature
-			if True:
+			if False:
 				interpretation = True
 				if interpretation:
 					bounds = [-600,50.] # [depth, temp]
@@ -841,9 +1072,9 @@ if __name__ == "__main__":
 				f1.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
-
 			# D1,2 vs T1,2: Depth vs Temperature
 			if True:
+
 				if False: # Points
 					f2 = plt.figure(figsize=[9.5,11.5])
 					ax2 = plt.axes([0.18,0.25,0.70,0.50]) 
@@ -880,46 +1111,171 @@ if __name__ == "__main__":
 					f2.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
 						orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
-				if True: # Gradients
-					f2 = plt.figure(figsize=[9.5,11.5])
-					ax2 = plt.axes([0.18,0.25,0.70,0.50]) 
-					bounds = [-700,95.] # [depth, temp]
-					# plot tempT2 vs depthD2(at well location)
-					# import 
-					name_D1_D2_T1_T2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_D1_D2_T1_T2.dat', delimiter = ',', skip_header=1).T
-					#ax2.plot(name_D1_D2_T1_T2[5],-1*name_D1_D2_T1_T2[3], marker = 'o', c = u'#1f77b4', label = 'Top' ,zorder = 3)
-					#ax2.plot(name_D1_D2_T1_T2[6],-1*name_D1_D2_T1_T2[4], marker = 'o', c = u'#ff7f0e', label = 'Bottom',zorder = 3)
-					inf_grad = []
-					for i in range(len(name_D1_D2_T1_T2[3])):
-						if -name_D1_D2_T1_T2[4][i] > bounds[0] and name_D1_D2_T1_T2[6][i] > bounds[1]: # infiel, condition on depth and temp
-							ax2.plot([name_D1_D2_T1_T2[5][i], name_D1_D2_T1_T2[6][i]],[-1*name_D1_D2_T1_T2[3][i], -1*name_D1_D2_T1_T2[4][i]],
-								c = pale_orange_col ,alpha = 0.5,zorder = 2)
-							inf_grad.append([(name_D1_D2_T1_T2[6][i]-name_D1_D2_T1_T2[5][i])/(name_D1_D2_T1_T2[4][i]-name_D1_D2_T1_T2[3][i])])
+				if True: # Geothermal gradient 
+					# filter by depth and temp bounds = [-700,95.]
+					if False: 
+						f2 = plt.figure(figsize=[13,10])
+						ax2 = plt.axes([0.1,0.15,0.75,0.75]) 
+						bounds = [-700,95.] # [depth, temp]
+						# plot tempT2 vs depthD2(at well location)
+						# import 
+						name_D1_D2_T1_T2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_D1_D2_T1_T2.dat', delimiter = ',', skip_header=1).T
+						#ax2.plot(name_D1_D2_T1_T2[5],-1*name_D1_D2_T1_T2[3], marker = 'o', c = u'#1f77b4', label = 'Top' ,zorder = 3)
+						#ax2.plot(name_D1_D2_T1_T2[6],-1*name_D1_D2_T1_T2[4], marker = 'o', c = u'#ff7f0e', label = 'Bottom',zorder = 3)
+						inf_grad = []
+						for i in range(len(name_D1_D2_T1_T2[3])):
+							if -name_D1_D2_T1_T2[4][i] > bounds[0] and name_D1_D2_T1_T2[6][i] > bounds[1]: # infiel, condition on depth and temp
+								ax2.plot([name_D1_D2_T1_T2[5][i], name_D1_D2_T1_T2[6][i]],[-1*name_D1_D2_T1_T2[3][i], -1*name_D1_D2_T1_T2[4][i]],
+									c = pale_orange_col ,alpha = 0.5,zorder = 2)
+								inf_grad.append([(name_D1_D2_T1_T2[6][i]-name_D1_D2_T1_T2[5][i])/(name_D1_D2_T1_T2[4][i]-name_D1_D2_T1_T2[3][i])])
+							else:
+								ax2.plot([name_D1_D2_T1_T2[5][i], name_D1_D2_T1_T2[6][i]],[-1*name_D1_D2_T1_T2[3][i], -1*name_D1_D2_T1_T2[4][i]],
+									c = pale_blue_col ,alpha = 0.5,zorder = 2)
+							
+							ax2.plot(name_D1_D2_T1_T2[6][i],-1*name_D1_D2_T1_T2[4][i],'o', c='b', markersize = 5, zorder = 3)
+							ax2.plot(name_D1_D2_T1_T2[5][i],-1*name_D1_D2_T1_T2[3][i],'o', c='r', markersize = 5, zorder = 3)
+
+						# for legend 
+						ax2.plot([],[],c = pale_orange_col , label = r'Infield gradient: '+str(round(np.mean(inf_grad)*1e3,1))+' ± '+str(round(np.std(inf_grad)*1e3,1))+' [°C/km]' ,zorder = 3)
+						ax2.plot([],[],c = pale_blue_col , label = 'Outfield gradient' ,zorder = 3)
+						ax2.plot([],[],'*', c='r', markersize = 8, label = 'Top Boundary',zorder = 3)
+						ax2.plot([],[],'*', c='b', markersize = 8, label = 'Bottom Boundary', zorder = 3)
+						# reference lines
+						#ax2.plot([0,max(name_D1_D2_T1_T2[6])],[bounds[0],bounds[0]],'c--', alpha = 0.5, linewidth=2.0, zorder = 1)
+						#ax2.plot([bounds[1],bounds[1]],[0.,min(-1*name_D1_D2_T1_T2[4])],'c--', alpha = 0.5, linewidth=2.0, zorder = 1)
+
+						ax2.set_ylim([-1300,50])
+						ax2.set_xlim([0,280])
+
+						ax2.legend(loc = 4)
+						ax2.set_xlabel('Temperature [°C]', size = textsize)
+						ax2.set_ylabel('Depth [m]', size = textsize)
+						ax2.set_title('Geothermal gradient inside the Conductor', size = textsize)
+						ax2.grid(linestyle='-', linewidth=.1, zorder=0)
+						ax2.tick_params(labelsize=textsize)
+						file_name_aux = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'gradient_d12_vs_T12'+'.png'
+						f2.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
+							orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+					
+					if True: # filter by resisitvity boundary
+						with_hist = True
+						if with_hist:
+							# plot histograms 
+							f2 = plt.figure(figsize=(15, 7))
+							gs = gridspec.GridSpec(nrows=1, ncols=2)
+							ax2 = f2.add_subplot(gs[0, 0])
+							ax1 = f2.add_subplot(gs[0, 1])
+							#ax_leg= f.add_subplot(gs[0, 2])
 						else:
-							ax2.plot([name_D1_D2_T1_T2[5][i], name_D1_D2_T1_T2[6][i]],[-1*name_D1_D2_T1_T2[3][i], -1*name_D1_D2_T1_T2[4][i]],
-								c = pale_blue_col ,alpha = 0.5,zorder = 2)
+							f2 = plt.figure(figsize=[11,11])
+							ax2 = plt.axes([0.1,0.15,0.75,0.75]) 
+						# plot tempT2 vs depthD2(at well location)
+						# import 
+						name_D1_D2_T1_T2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_D1_D2_T1_T2.dat', delimiter = ',', skip_header=1).T
+						## Resistivity Boundary, Mielke
+						path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_IN_Mielke.txt'
+        				# Wairakei boundary 
+						#path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Wairakei_countour_path.txt'
+						# Tauhara boundary 
+						#path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'Tauhara_countour_path.txt'
+						#
+						lats, lons = np.genfromtxt(path_rest_bound_WT, skip_header=1, delimiter=',').T
+						poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+						inf_grad = []
+						for i in range(len(name_D1_D2_T1_T2[3])):
+							# check if station is inside poligon 
+							val = ray_tracing_method(name_D1_D2_T1_T2[1][i], name_D1_D2_T1_T2[2][i], poli_in)
+							if val:
+								ax2.plot([name_D1_D2_T1_T2[5][i], name_D1_D2_T1_T2[6][i]],[-1*name_D1_D2_T1_T2[3][i], -1*name_D1_D2_T1_T2[4][i]],
+									c = pale_orange_col ,alpha = 0.5,zorder = 2)
+								ax2.plot(name_D1_D2_T1_T2[6][i],-1*name_D1_D2_T1_T2[4][i],'o', c='b', markersize = 5, zorder = 3)
+								ax2.plot(name_D1_D2_T1_T2[5][i],-1*name_D1_D2_T1_T2[3][i],'o', c='r', markersize = 5, zorder = 3)
+								inf_grad.append([(name_D1_D2_T1_T2[6][i]-name_D1_D2_T1_T2[5][i])/(name_D1_D2_T1_T2[4][i]-name_D1_D2_T1_T2[3][i])])
+								#if (name_D1_D2_T1_T2[6][i]-name_D1_D2_T1_T2[5][i])/(name_D1_D2_T1_T2[4][i]-name_D1_D2_T1_T2[3][i]) < 0.100:
+								#	print(i)
+								#	print(name_D1_D2_T1_T2[6][i])
+							else:
+								pass
+								#ax2.plot([name_D1_D2_T1_T2[5][i], name_D1_D2_T1_T2[6][i]],[-1*name_D1_D2_T1_T2[3][i], -1*name_D1_D2_T1_T2[4][i]],
+								#	c = pale_blue_col ,alpha = 0.5,zorder = 2)
+							
+							#ax2.plot(name_D1_D2_T1_T2[6][i],-1*name_D1_D2_T1_T2[4][i],'o', c='b', markersize = 5, zorder = 3)
+							#ax2.plot(name_D1_D2_T1_T2[5][i],-1*name_D1_D2_T1_T2[3][i],'o', c='r', markersize = 5, zorder = 3)
+
+						# for legend 
+						if not with_hist:
+							ax2.plot([],[],c = pale_orange_col , label = r'Infield gradient: '+str(round(np.median(inf_grad)*1e3,1))+' ± '+str(round(np.std(inf_grad)*1e3,1))+' [°C/km]' ,zorder = 3)
+						if with_hist:
+							ax2.plot([],[],c = pale_orange_col , label = r'Infield gradient' , zorder = 3)
+
+						#ax2.plot([],[],c = pale_blue_col , label = 'Outfield gradient' ,zorder = 3)
+						ax2.plot([],[],'*', c='r', markersize = 8, label = 'Top Boundary',zorder = 3)
+						ax2.plot([],[],'*', c='b', markersize = 8, label = 'Bottom Boundary', zorder = 3)
+						# reference lines
+						#ax2.plot([0,max(name_D1_D2_T1_T2[6])],[bounds[0],bounds[0]],'c--', alpha = 0.5, linewidth=2.0, zorder = 1)
+						#ax2.plot([bounds[1],bounds[1]],[0.,min(-1*name_D1_D2_T1_T2[4])],'c--', alpha = 0.5, linewidth=2.0, zorder = 1)
+
+						ax2.set_ylim([-1200,50])
+						ax2.set_xlim([0,280])
+
+						ax2.legend(loc = 4)
+						ax2.set_xlabel('Temperature [°C]', size = textsize)
+						ax2.set_ylabel('Depth [m]', size = textsize)
+						ax2.set_title('Temperature gradient inside the Conductor', size = textsize)
+						ax2.grid(linestyle='-', linewidth=.1, zorder=0)
+						ax2.tick_params(labelsize=textsize)
+						file_name_aux = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'gradient_d12_vs_T12_infield'+'.png'
+
+						# histogram of geothermal gradient
+
+						if with_hist:
+							# histogram for geothermal gradient
+							inf_grad = np.asarray(inf_grad)*1.e3 # from meters to km
+							bins = np.linspace(np.min(inf_grad), np.max(inf_grad), 2*int(np.sqrt(len(inf_grad))))
+							h,e = np.histogram(inf_grad, bins)
+							m = 0.5*(e[:-1]+e[1:])
+							ax1.bar(e[:-1], h, e[1]-e[0], alpha =.8, color = pale_orange_col, edgecolor = 'w', zorder = 3)
+							#ax1.legend(loc=None, shadow=False, fontsize=textsize)
+							# 
+							(mu, sigma) = norm.fit(inf_grad)
+							med = np.median(inf_grad)
+							try:
+								y = mlab.normpdf(bins, mu, sigma)
+							except:
+								#y = stats.norm.pdf(bins, mu, sigma)
+								pass
+							ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+							ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+							ax1.set_xlabel('Temperature gradient [°C/km]', fontsize=textsize)
+							ax1.set_ylabel('freq.', fontsize=textsize)
+							ax1.grid(True, which='both', linewidth=0.1)
+							file_name_aux = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'gradient_d12_vs_T12_histogram_infield'+'.png'
 						
-						ax2.plot(name_D1_D2_T1_T2[6][i],-1*name_D1_D2_T1_T2[4][i],'o', c='b', markersize = 5, zorder = 3)
-						ax2.plot(name_D1_D2_T1_T2[5][i],-1*name_D1_D2_T1_T2[3][i],'o', c='r', markersize = 5, zorder = 3)
+						f2.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
+							orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
-					# for legend 
-					ax2.plot([],[],c = pale_orange_col , label = r'Infield gradient: '+str(round(np.mean(inf_grad)*1e3,1))+' ± '+str(round(np.std(inf_grad)*1e3,1))+' [°C/km]' ,zorder = 3)
-					ax2.plot([],[],c = pale_blue_col , label = 'Outfield gradient' ,zorder = 3)
-					ax2.plot([],[],'*', c='r', markersize = 8, label = 'Top Boundary',zorder = 3)
-					ax2.plot([],[],'*', c='b', markersize = 8, label = 'Bottom Boundary', zorder = 3)
-					# reference lines
-					#ax2.plot([0,max(name_D1_D2_T1_T2[6])],[bounds[0],bounds[0]],'c--', alpha = 0.5, linewidth=2.0, zorder = 1)
-					#ax2.plot([bounds[1],bounds[1]],[0.,min(-1*name_D1_D2_T1_T2[4])],'c--', alpha = 0.5, linewidth=2.0, zorder = 1)
 
-					ax1.set_ylim([-1200,0])
-					ax1.set_xlim([0,300])
+		if d12_vs_hf_scatter:
 
-					ax2.legend(loc = 4)
-					ax2.set_xlabel('Temperature [°C]', size = textsize)
-					ax2.set_ylabel('Depth [m]', size = textsize)
-					ax2.set_title('Geothermal gradient inside the Conductor', size = textsize)
-					ax2.grid(linestyle='-', linewidth=.1, zorder=0)
-					ax2.tick_params(labelsize=textsize)
-					file_name_aux = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'gradient_d12_vs_T12'+'.png'
-					f2.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
-						orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+			f1 = plt.figure(figsize=[9.5,7.5])
+			ax1 = plt.axes([0.15,0.15,0.75,0.75]) 
+			### import 
+			name_lon_lat_D1_D2_T1_T2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_D1_D2_T1_T2.dat', delimiter = ',', skip_header=1).T
+			name_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+
+			ax1.plot(name_lon_lat_D1_D2_T1_T2[3],name_lon_lat_TG_TC_HF[5],'r*',markersize = 8, zorder = 3, label = 'top of the conductor')
+			ax1.plot(name_lon_lat_D1_D2_T1_T2[4],name_lon_lat_TG_TC_HF[5],'b*',markersize = 8, zorder = 3, label = 'bottom of the conductor')
+
+
+			#ax1.set_ylim([-1200,0])
+			#ax1.set_xlim([0,300])
+			ax1.legend(loc=1, prop={'size': textsize})
+			ax1.set_xlabel('Depth [m]', size = textsize)
+			ax1.set_ylabel('Heat Flux [W/m2]', size = textsize)
+			ax1.set_title('Depth vs. Heat Flux', size = textsize)
+			ax1.grid(linestyle='-', linewidth=.1, zorder=0)
+			ax1.tick_params(labelsize=textsize)
+			file_name_aux = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'scatter_d12_vs_HF'+'.png'
+			f1.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
+				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+			plt.close(f1)

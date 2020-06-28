@@ -977,18 +977,20 @@ def T_beta_est(Tw, z, Zmin, Zmax):
 # ==============================================================================
 
 def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, masl = None, \
-    plot_temp_prof = None, with_meb = None, with_litho = None): 
+    plot_temp_prof = None, with_meb = None, with_litho = None, fix_axes = None, litho_abre = None): 
     '''
     Fn. to calculate boundaries of the conductor in wells position based on interpolation
     of MT inversion results. z1 (mean and std) and z2 (mean and std) are calculated and
     assigned to the well object.   
-    Figures generate:
+    Figures generated:
     - Temp profile with estimate z1 and z2 from MT, save in well folder.  
     - plain_view of temperature at BC, save in global folder.
     '''
 
     if slp is None: 
         slp = 4*10.
+    if fix_axes is None:
+        fix_axes =  False
     if with_litho: # import formation, color, description -> create dictionary
         path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+"formation_colors.txt"
         #depths_from, depths_to, lito  = np.genfromtxt(path, \
@@ -1065,9 +1067,11 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
 
     if plot_temp_prof:
         pp = PdfPages('Temp_prof_conductor_bound_est.pdf') # pdf to plot the meb profiles
+        if with_litho:
+            pp_litho = PdfPages('Temp_litho_prof_conductor_bound_est.pdf') # pdf to plot litho
         for wl in wells_objects:
             f,(ax1) = plt.subplots(1,1)
-            f.set_size_inches(6,8)
+            f.set_size_inches(5,7)
             ax1.set_xscale("linear")
             ax1.set_yscale("linear") 
             try: 
@@ -1090,11 +1094,11 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
       
             # std 2
             ax1.fill_between([55.,105.],[-wl.z1_pars[0] + 1.5*wl.z1_pars[1], -wl.z1_pars[0] + 1.5*wl.z1_pars[1]], 
-                [-wl.z1_pars[0] - 1.5*wl.z1_pars[1], -wl.z1_pars[0] - 1.5*wl.z1_pars[1]], color = 'r', alpha=0.1)
+                [-wl.z1_pars[0] - 1.5*wl.z1_pars[1], -wl.z1_pars[0] - 1.5*wl.z1_pars[1]], color = pale_orange_col, alpha=0.3)
       
             # std 1
             ax1.fill_between([55.,105.],[-wl.z1_pars[0] + .5*wl.z1_pars[1], -wl.z1_pars[0] + .5*wl.z1_pars[1]], 
-                [-wl.z1_pars[0] - .5*wl.z1_pars[1], -wl.z1_pars[0] - .5*wl.z1_pars[1]], color = 'r', alpha=0.3, label = 'MT upper bound.')
+                [-wl.z1_pars[0] - .5*wl.z1_pars[1], -wl.z1_pars[0] - .5*wl.z1_pars[1]], color = pale_orange_col, alpha=0.5, label = 'MT upper boundary')
             
             # mean
             #ax1.plot([55.,105.],[-wl.z1_pars[0], -wl.z1_pars[0]],'r--',  alpha=0.3)
@@ -1110,19 +1114,19 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
             # sts 3: 99%
             ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - 1.5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - 1.5*wl.z2_pars[1]], 
                 [-(wl.z1_pars[0] + wl.z2_pars[0]) + 1.5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + 1.5*wl.z2_pars[1]], 
-                color = 'b', alpha=0.1)
+                color = pale_blue_col, alpha=0.3)
             # sts 1: 33%
             ax1.fill_between([55.,105.], [-(wl.z1_pars[0] + wl.z2_pars[0]) - .5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) - .5*wl.z2_pars[1]], 
                 [-(wl.z1_pars[0] + wl.z2_pars[0]) + .5*wl.z2_pars[1],-(wl.z1_pars[0] + wl.z2_pars[0]) + .5*wl.z2_pars[1]], 
-                color = 'b', alpha=0.3, label = 'MT lower bound.')
+                color = pale_blue_col, alpha=0.5, label = 'MT lower boundary')
             # mean
             #ax1.plot([55.,105.],[-(wl.z1_pars[0] + wl.z2_pars[0]), -(wl.z1_pars[0] + wl.z2_pars[0])],'b--',  alpha=0.3)
 
-            ax1.set_xlabel('Temperature [deg C]', fontsize=18)
-            ax1.set_ylabel('Depth [m]', fontsize=18)
+            ax1.set_xlabel('Temperature [deg C]', fontsize=textsize)
+            ax1.set_ylabel('Depth [m]', fontsize=textsize)
             ax1.grid(True, which='both', linewidth=0.4)
             #ax1.invert_yaxis()
-            plt.title(wl.name, fontsize=22,)
+            plt.title(wl.name, fontsize=textsize,)
             # plot MeB inversion
             if wl.meb:
                 if with_meb:
@@ -1145,11 +1149,11 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
                         [-wl.meb_z1_pars[0] - 1.5*wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - 1.5*wl.meb_z1_pars[1]], color = 'c', alpha=0.1)
                     # 1 std
                     ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + .5*wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + .5*wl.meb_z1_pars[1])],
-                        [-wl.meb_z1_pars[0] - .5*wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - .5*wl.meb_z1_pars[1]], color = 'c', alpha=0.3)
+                        [-wl.meb_z1_pars[0] - .5*wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - .5*wl.meb_z1_pars[1]], color = 'c', alpha=0.3, label = 'MeB upper boundary')
                     # mean
                     #ax1.plot([0.,50.],[min(0.,-wl.meb_z1_pars[0]),min(0.,-wl.meb_z1_pars[0])],'c--')
                     #ax1.fill_between([0.,50.],[min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1]),min(0.,-wl.meb_z1_pars[0] + wl.meb_z1_pars[1])],
-                    #    [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]], color = 'c', alpha=0.1, label = 'MeB upper bound.')
+                    #    [-wl.meb_z1_pars[0] - wl.meb_z1_pars[1],-wl.meb_z1_pars[0] - wl.meb_z1_pars[1]], color = 'c', alpha=0.3, label = 'MeB upper boundary')
                     
                     # lower boundary (z2 distribution)
                     #ax1.plot([-5.,300.], [-(wl.meb_z2_pars[0]),-(wl.meb_z2_pars[0])],'m-', alpha=0.5, label = 'MeB lower bound.')
@@ -1163,7 +1167,7 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
                         [-(wl.meb_z2_pars[0]) - 1.5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - 1.5*wl.meb_z2_pars[1]], color = 'm', alpha=0.1)
                     # 1 std
                     ax1.fill_between([0.,50.],[-(wl.meb_z2_pars[0]) + .5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) + .5*wl.meb_z2_pars[1]], 
-                        [-(wl.meb_z2_pars[0]) - .5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - .5*wl.meb_z2_pars[1]], color = 'm', alpha=0.3, label = 'MeB lower bound.')
+                        [-(wl.meb_z2_pars[0]) - .5*wl.meb_z2_pars[1],-(wl.meb_z2_pars[0]) - .5*wl.meb_z2_pars[1]], color = 'm', alpha=0.3, label = 'MeB lower boundary')
                     # mean
                     #ax1.plot([0.,50.],[min(0.,-wl.meb_z2_pars[0]),min(0.,-wl.meb_z2_pars[0])],'m--')                    
                     
@@ -1195,27 +1199,45 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
                     #colors = ['g','r','orange','r','m','g','r','orange','r','m']
                     #with open(r'data\nzafd.json', 'r') as fp:
                     for i in range(N):
-                        ax1.fill_between([-45,-5],[-depths_from[i], -depths_from[i]], [-depths_to[i], -depths_to[i]], color = colors[i])
+                        ax1.fill_between([-45,-10],[-depths_from[i], -depths_from[i]], [-depths_to[i], -depths_to[i]], color = colors[i])
                         thick = depths_to[i] - depths_from[i]
                         if thick > 25:
-                            ax1.text(-25, -depths_from[i] - thick/2, lito[i], fontsize=8,\
-                                horizontalalignment='center', verticalalignment='center')
+                            if litho_abre:
+                                ax1.text(-30, -depths_from[i] - thick/2, lito[i], fontsize=8,\
+                                    horizontalalignment='center', verticalalignment='center')
+                
+                    if not litho_abre: # black line in yaxis 0
+                        ax1.plot([0,0],[-depths_to[-1], 20], 'k--', linewidth = 1)
+                        ax1.text(-25, -depths_to[-1] - 150, 'lithology', fontsize=textsize, rotation = 90,\
+                            horizontalalignment='center', verticalalignment='center')
                 except:
                     pass
 
+
             ax1.legend(loc='lower left', shadow=False, fontsize=textsize, framealpha=1.0)
-            ax1.set_ylim([-1700.,20.])
-            try:
-                ax1.set_ylim([wl.red_depth[-1]-500.,20.])
-            except:
-                pass
+            # axes lims
+            if fix_axes:
+                ax1.set_xlim(fix_axes[0])
+                ax1.set_ylim(fix_axes[1])
+            else:
+                ax1.set_ylim([-1700.,20.])
+                try:
+                    ax1.set_ylim([wl.red_depth[-1]-750.,20.])
+                    if wl.name == 'WK317':
+                        ax1.set_ylim([-1500.,20.])
+
+                except:
+                    pass
             # save image as png
+            plt.tight_layout()
+
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
             if with_litho:
                 try:
                     sh.copyfile('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png',
                         '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+wl.name+os.sep+'Temp_prof_conductor_bound_est.png')
+                    pp_litho.savefig(f)
                 except:
                     pass
             pp.savefig(f)
@@ -1227,6 +1249,9 @@ def wl_z1_z2_est_mt(wells_objects, station_objects, slp = None, plot = None, mas
             g.close()
         pp.close()
         shutil.move('Temp_prof_conductor_bound_est.pdf','.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'Temp_prof_conductor_bound_est.pdf')
+        if with_litho:
+            pp_litho.close()
+            shutil.move('Temp_litho_prof_conductor_bound_est.pdf','.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'Temp_litho_prof_conductor_bound_est.pdf')
 
 def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None, thermal_grad = None, heat_flux = None):
     '''
@@ -1244,6 +1269,7 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None, thermal_grad = No
     # sample temp values and calc T1 and T2 
     Ns = 1000
     for wl in wells_objects:
+            
         try: 
             d2_c = wl.z1_pars[0] + wl.z2_pars[0] + wl.z2_pars[1] # depth to bottom of conductor (from surface)
             d2_w = -1*(wl.red_depth_rs[-1]-wl.elev) # max depth at well (from surface)
@@ -1263,9 +1289,10 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None, thermal_grad = No
                     # T2
                     d2_c = z1_sam[i] + z2_sam[i] + wl.z2_pars[1]# depth to bottom of conductor (from surface)
                     d2_w = -1*(wl.red_depth_rs[-1]-wl.elev) # max depth at well (from surface)
-                    if d2_c < d2_w:
-                        val, idx = find_nearest(wl.red_depth_rs, wl.elev - d2_c)
-                        T2_sam[i] = wl.temp_prof_rs[idx]
+                    #if d2_c < d2_w:
+                    val, idx = find_nearest(wl.red_depth_rs, wl.elev - d2_c)
+                    T2_sam[i] = wl.temp_prof_rs[idx]
+
                 # Assign attributes TX_pars and save in .txt
                 wl.T1_pars = [np.mean(T1_sam),np.std(T1_sam)]
                 wl.T2_pars = [np.mean(T2_sam),np.std(T2_sam)]
@@ -1284,6 +1311,7 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None, thermal_grad = No
                     print(wl.name)
                 if wl.T2_pars[0] > 1000:
                     print(wl.name)
+
             else:
                 pass
         except: # case when well does not have temp data 
@@ -1301,13 +1329,14 @@ def wl_T1_T2_est(wells_objects, hist = None, hist_filt = None, thermal_grad = No
                 T2_batch.append(wl.T2_pars[0])
         
         if not wl.no_temp:
-    
+
             try:
                 # save pars in .txt
                 g = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt', "w")
                 g.write('# mean_T1(temp at z1)\tstd_T1\tmean_T2(temp at z2)\tstd_T2\n')
                 g.write("{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(wl.T1_pars[0], wl.T1_pars[1], wl.T2_pars[0], wl.T2_pars[1]))
                 g.close()
+
             except:
                 #pass
                 os.remove('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
@@ -1402,30 +1431,33 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         t2_batch_filt_out = []
     if type_hist:
         type_hist = type_hist
+    else:
+        type_hist = None
     ## load pars
     for wl in wells_objects:
         try:
-            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
-            wl.T1_pars = [aux[0],aux[1]]
-            wl.T2_pars = [aux[2],aux[3]]
+            if not wl.no_temp:
+                aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+                wl.T1_pars = [aux[0],aux[1]]
+                wl.T2_pars = [aux[2],aux[3]]
 
-            t1_batch.append(wl.T1_pars[0])
-            t2_batch.append(wl.T2_pars[0])
-            
-            if filt_in_count:
-                # check if station is inside poligon 
-                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
-                if val:
-                    t1_batch_filt_in.append(wl.T1_pars[0])
-                    if wl.T2_pars[0]>100.:
-                        t2_batch_filt_in.append(wl.T2_pars[0])
+                t1_batch.append(wl.T1_pars[0])
+                t2_batch.append(wl.T2_pars[0])
+                
+                if filt_in_count:
+                    # check if station is inside poligon 
+                    val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
+                    if val:
+                        t1_batch_filt_in.append(wl.T1_pars[0])
+                        if wl.T2_pars[0]>100.:
+                            t2_batch_filt_in.append(wl.T2_pars[0])
 
-            if filt_out_count:
-                # check if station is inside poligon 
-                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_out)
-                if not val:
-                    t1_batch_filt_out.append(wl.T1_pars[0])
-                    t2_batch_filt_out.append(wl.T2_pars[0])
+                if filt_out_count:
+                    # check if station is inside poligon 
+                    val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_out)
+                    if not val:
+                        t1_batch_filt_out.append(wl.T1_pars[0])
+                        t2_batch_filt_out.append(wl.T2_pars[0])
         except:
             pass
 
@@ -1443,7 +1475,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         m = 0.5*(e[:-1]+e[1:])
         ax1.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w',  zorder = 1, color = 'lightsteelblue')
         ax1.set_xlabel('$T_1$ [m]', fontsize=textsize)
-        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.set_ylabel('frequency', fontsize=textsize)
         ax1.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(t1_batch)
@@ -1492,7 +1524,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         m = 0.5*(e[:-1]+e[1:])
         ax2.bar(e[:-1], h, e[1]-e[0], alpha = .6, edgecolor = 'w', zorder = 1, color = 'lightsteelblue')
         ax2.set_xlabel('$T_2$ [m]', fontsize=textsize)
-        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.set_ylabel('frequency', fontsize=textsize)
         ax2.grid(True, which='both', linewidth=0.1)
         # plot normal fit 
         (mu, sigma) = norm.fit(t2_batch)
@@ -1577,7 +1609,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         x_multi = [t1_batch_filt_in, t1_batch_filt_out]
         ax1.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax1.set_xlabel('$T_1$ [°C]', fontsize=textsize)
-        ax1.set_ylabel('freq.', fontsize=textsize)
+        ax1.set_ylabel('frequency', fontsize=textsize)
         ax1.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1599,7 +1631,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         x_multi = [t2_batch_filt_in, t2_batch_filt_out]
         ax2.hist(x_multi, n_bins, histtype='bar', color = colors)
         ax2.set_xlabel('$T_2$ [°C]', fontsize=textsize)
-        ax2.set_ylabel('freq.', fontsize=textsize)
+        ax2.set_ylabel('frequency', fontsize=textsize)
         ax2.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1649,31 +1681,32 @@ def histogram_T1_T2_Tgrad_Hflux(wells_objects, bounds = None):
     ## load pars
     for wl in wells_objects:
         try:
-            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
-            wl.z1_pars = [aux[0],aux[1]]
-            wl.z2_pars = [aux[2],aux[3]]
+            if not wl.no_temp:
+                aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
+                wl.z1_pars = [aux[0],aux[1]]
+                wl.z2_pars = [aux[2],aux[3]]
 
-            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
-            wl.T1_pars = [aux[0],aux[1]]
-            wl.T2_pars = [aux[2],aux[3]]
+                aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+                wl.T1_pars = [aux[0],aux[1]]
+                wl.T2_pars = [aux[2],aux[3]]
 
-            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_TG_TC_HF.txt')
-            wl.thermal_grad = aux[0]
-            wl.thermal_cond = aux[1]
-            wl.heat_flux = aux[2]
+                aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_TG_TC_HF.txt')
+                wl.thermal_grad = aux[0]
+                wl.thermal_cond = aux[1]
+                wl.heat_flux = aux[2]
 
-            if bounds:
-                #bounds = [-700,95.] # [depth, temp]
-                if (wl.T2_pars[0]>bounds[1] and -1*(wl.z1_pars[0] + wl.z2_pars[0]) > bounds[0]):
+                if bounds:
+                    #bounds = [-700,95.] # [depth, temp]
+                    if (wl.T2_pars[0]>bounds[1] and -1*(wl.z1_pars[0] + wl.z2_pars[0]) > bounds[0]):
+                        t1_batch.append(wl.T1_pars[0])
+                        t2_batch.append(wl.T2_pars[0])
+                        gt_batch.append(wl.thermal_grad)
+                        hf_batch.append(wl.heat_flux)
+                else:
                     t1_batch.append(wl.T1_pars[0])
                     t2_batch.append(wl.T2_pars[0])
                     gt_batch.append(wl.thermal_grad)
                     hf_batch.append(wl.heat_flux)
-            else:
-                t1_batch.append(wl.T1_pars[0])
-                t2_batch.append(wl.T2_pars[0])
-                gt_batch.append(wl.thermal_grad)
-                hf_batch.append(wl.heat_flux)
         except:
             pass
             

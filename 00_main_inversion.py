@@ -53,8 +53,9 @@ if __name__ == "__main__":
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
-	prof_WRK_EW_7 = False # PW_TM_AR
+	prof_WRK_EW_7 = True # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
+	prof_WT_NS_1 = False # KS_OT_AR
 	#
 	prof_TH_SENW_2 = False # KS_OT_AR
 	prof_NEMT2 = False
@@ -67,16 +68,18 @@ if __name__ == "__main__":
 	# Filter MeB wells with useless info (for prior)
 	filter_useless_MeB_well = True
 	## run with quality filter per well
-	filter_lowQ_data_well = False
+	filter_lowQ_data_well = True  # need to be checked, not working: changing the orther of well obj list
+	## re model temp profiles from wells with lateral inflows ()
+	temp_prof_remodel_wells = True # re model base on '.'+os.sep+'corr_temp_bc'+os.sep+'RM_temp_prof.txt'
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
+	prior_MT_meb_read = True
 	mcmc_MT_inv = False
-	plot_2D_MT = False
+	plot_2D_MT = True
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -92,7 +95,8 @@ if __name__ == "__main__":
 			####### Temperature in wells data
 			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
 			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt"
-			path_wells_temp_date = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp_date.txt" 
+            #path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
+			path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date_3_new_wells.txt'
 			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
 			####### MeB data in wells 
 			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
@@ -106,7 +110,9 @@ if __name__ == "__main__":
 			####### Temperature in wells data
 			path_wells_loc = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_location_latlon.txt'
 			path_wells_temp = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_fixTH12_rmTHM24_fixWK404.txt'
-			path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
+			#path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
+			path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date_3_new_wells.txt'
+
 			####### MeB data in wells 
 			path_wells_meb = 		os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'MeB_wells'+os.sep+'MeB_data.txt'
 
@@ -140,6 +146,10 @@ if __name__ == "__main__":
 		if prof_WRK_SENW_8:
 			sta2work = ['WT225a','WT066a','WT329a','WT078a','WT091a','WT107a','WT117b',
 				'WT122a','WT130a','WT140a','WT152a','WT153b'] # ,'WT150b'
+		if prof_WT_NS_1:
+			sta2work = ['WT061a','WT063a','WT069b','WT513a','WT082a','WT098a','WT096a', \
+				'WT099a','WT119a','WT125a','WT128a','WT036a','WT308a','WT156a','WT028a',\
+					'WT086a','WT055a','WT300a'] # 'WT117b' 
 		if prof_TH_SENW_2:
 			sta2work = ['WT192a','WT306a','WT149a','WT328a','WT323a','WT199a',
 				'WT156a','WT166a','WT168a','WT185a','WT040a','WT313a','WT202a',\
@@ -183,6 +193,10 @@ if __name__ == "__main__":
 		# # Note: wells_location = [[wl_name1,lat1,lon1,elev1],...] list of arrays
 		# ## Recover MeB data for wells from path_wells_meb
 		wl_name_meb, wl_prof_depth_meb, wl_prof_meb = read_well_meb(path_wells_meb)
+        # name exepctions: 
+		for i, wl_meb in enumerate(wl_name_meb):
+			if wl_meb in ['WK409','WK123','WK124']: # wells with an A in temp profiles but not A in MeB profiles
+				wl_name_meb[i] = wl_meb+'A'
 		#########################################################################################
 		## Create wells objects
 		# Defined lists of wells
@@ -194,15 +208,11 @@ if __name__ == "__main__":
 				if wl_meb not in wl_name:
 					#wl2work.append(wl_meb)
 					wls_meb_notemp.append(wl_meb)
-			#
-			#wl_name = wl_name_meb # just for inverting meb data with no temp data
-			#wl2work = ['WK317']
-
-		# remove bad quality wells from list 'wl2work' (based on Q_temp_prof.txt)
-		if filter_lowQ_data_well: 
+			# list of wells with bad quality temperature, wells with bas quality temp data 
+			wls_BQ_temp = []
 			name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
-			BQ_sta = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
-			wl2work = [x for x in wl2work if not x in BQ_sta]
+			BQ_wls = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+			[wls_BQ_temp.append(wl_bq) for wl_bq in BQ_wls] 
 
 		#########################################################################################
 		# ## Loop over the wells to create objects and assing data attributes 
@@ -275,7 +285,7 @@ if __name__ == "__main__":
 				temp_aux = [wl_obj.temp_prof_true[i] for i in rep_idx]
 				wl_obj.temp_prof_true = temp_aux 
 				## add a initial point to temp (15°C) profile at 0 depth (elevation of the well)
-				if wl_obj.red_depth[-1] != wl_obj.elev:
+				if abs(wl_obj.red_depth[-1] - wl_obj.elev) > 10.: #[m]
 					wl_obj.red_depth = np.append(wl_obj.red_depth, wl_obj.elev)
 					if wl_obj.temp_prof_true[-1] < 10.:
 						wl_obj.temp_prof_true = np.append(wl_obj.temp_prof_true, wl_obj.temp_prof_true[-1] - 5.)
@@ -284,7 +294,7 @@ if __name__ == "__main__":
 				## sort depth and temp based on depth (from max to min)
 				wl_obj.red_depth, wl_obj.temp_prof_true = zip(*sorted(zip(wl_obj.red_depth, wl_obj.temp_prof_true), reverse = True))
 				## resample .temp_prof_true and add to attribute prof_NEMT2 .temp_prof_rs
-				
+
 				## method of interpolation : Cubic spline interpolation 
 				## inverse order: wl_obj.red_depth start at the higuer value (elev)
 				xi = np.asarray(wl_obj.red_depth)
@@ -295,24 +305,56 @@ if __name__ == "__main__":
 				# add attributes
 				wl_obj.red_depth_rs = xj
 				wl_obj.temp_prof_rs = yj
-				
-				## method of fit: cubic polinomial
-				## inverse order: wl_obj.red_depth start at the higuer value (elev)
-				xi = np.asarray(wl_obj.red_depth)
-				yi = np.asarray(wl_obj.temp_prof_true)
-				N_rs = 500 # number of resample points data
-				xj = np.linspace(xi[0],xi[-1],N_rs)	
-				yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
-				# add attributes
-				wl_obj.red_depth_rs = xj
-				wl_obj.temp_prof_rs = yj
+				# check if remodel is need fro temperature profile in the well
+				# it removes some points defore the cubic spline interpolation (-> resample profile)
+				if temp_prof_remodel_wells:
+					# read list_rm = RM_temp_prof.txt and make a copy of red_depth and temp_prof_true
+					with open('.'+os.sep+'corr_temp_bc'+os.sep+'RM_temp_prof.txt') as p:
+						next(p) # skip header
+						for line in p:
+							line = line.strip('\n')
+							currentline = line.split('\t')
+							# check is the wl match with any of the wells in list_rm[0]
+							if currentline[0] == wl:
+								# if it match -> remove data points from red_depth2 and temp_prof_true2 between list_rm[1] and list_rm[2]
+								# depth_from
+								val, idx_from = find_nearest(wl_obj.elev - np.asarray(wl_obj.red_depth), float(currentline[1]))
+								# depth_to
+								val, idx_to = find_nearest(wl_obj.elev - np.asarray(wl_obj.red_depth), float(currentline[2]))
+								# aux list red_depth2
+								red_depth2 = wl_obj.red_depth[:idx_from] + wl_obj.red_depth[idx_to:] 
+								temp_prof_true2 = wl_obj.temp_prof_true[:idx_from] + wl_obj.temp_prof_true[idx_to:] 
+								# perform the SCI on red_depth2 and temp_prof_true2
+								xi = np.asarray(red_depth2)
+								yi = np.asarray(temp_prof_true2)
+								N_rs = 500 # number of resample points data
+								xj = np.linspace(xi[0],xi[-1],N_rs)	
+								yj = cubic_spline_interpolation(xi,yi,xj, rev = True)
+								# add attributes
+								wl_obj.red_depth_rs = xj
+								wl_obj.temp_prof_rs = yj
+								# save wl_obj.red_depth_rs and wl_obj.temp_prof_rs
+							else:
+								pass
 
+				# if wl == 'TH20':
+				#     f1 = plt.figure(figsize=[9.5,7.5])
+				#     ax1 = plt.axes([0.15,0.15,0.75,0.75]) 
+				#     ax1.plot(wl_obj.temp_prof_rs,-1*(wl_obj.elev - wl_obj.red_depth_rs), 'r-')
+
+				#     ax1.plot(wl_obj.temp_prof_true,-1*(wl_obj.elev - np.asarray(wl_obj.red_depth)),'b*')
+				#     plt.grid()
+				#     plt.show()
+
+				if filter_lowQ_data_well: 
+					if wl_obj.name in wls_BQ_temp:
+						wl_obj.no_temp = True
 				## add well object to directory of well objects
 				wells_objects.append(wl_obj)
 				count  += 1
 				#if not wl_obj.no_temp:
 				count2 +=1
-		
+
 		# create well objects of wells with meb data and no temp data
 		for wl in wls_meb_notemp:
 			# create well object
@@ -326,6 +368,12 @@ if __name__ == "__main__":
 					wl_obj.elev = wells_location[i][3]
 			wells_objects.append(wl_obj)
 			count  += 1
+
+		# #if filter_lowQ_data_well: 
+		# if True: 
+		# 	name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
+		# 	BQ_wls = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
+		# 	wl2work = [x for x in wl2work if not x in BQ_wls]
 
 		## Loop wells_objects (list) to assing data attributes from MeB files 
 		# list of wells with MeB (names)
@@ -700,6 +748,8 @@ if __name__ == "__main__":
 				#'WK308','WK304','WK317','WK318'
 			elif prof_TH_SENW_2: 
 				plot_some_wells = ['THM15','THM16','THM14','THM19','TH13','TH18','TH12']
+			elif prof_WT_NS_1:
+				plot_some_wells = ['THM15','THM21','THM16','THM14','THM17','THM13','WK123','WKM14','WK124','WK122']
 			else:
 				plot_some_wells = False
 		else:
@@ -709,13 +759,15 @@ if __name__ == "__main__":
 		if litho_plot:
 			if prof_WRK_EW_7:
 				plot_litho_wells = ['WK315B','WKM14','WKM15','WK681'] # 'WK315b','WKM14','WKM15','WK681'
+				plot_litho_wells = ['WK315B','WKM14','WKM15','WK681','WK263','WK124A','WK317'] # 'WK315b','WKM14','WKM15','WK681','WK318'
 			elif prof_WRK_SENW_8:
 				plot_litho_wells = ['WK402','WK404','WK317','WK315B'] # 'WK403'
+				plot_litho_wells = ['WK402','WK404','WK317','WK315B','WK318'] # 'WK403'
 			else: 
 				plot_litho_wells = False
 		else: 
 			plot_litho_wells = False
-		if True: # plot resisitvity boundary reference
+		if False: # plot resisitvity boundary reference
 			if prof_WRK_EW_7:
 				# risk, 1984
 				path_rest_bound_inter = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'rb_1980_coord_for_WK7.txt' 
@@ -747,13 +799,22 @@ if __name__ == "__main__":
 			else:
 				temp_count_wells = False
 				temp_iso = False
+				position_label = None
 		## thickness of second layer to be considerer 'no conductor'
 		mask_no_cc = 80.#112.
 		##
-		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = 'EW', file_name = file_name, \
+		pref_orient = 'EW'
+		if prof_WT_NS_1:
+			pref_orient = 'NS'
+		if prof_WRK_EW_7:
+			title = 'Uncertain conductor boundaries: profile WK7'
+		else:
+			title = False
+		
+		plot_2D_uncert_bound_cc_mult_env(station_objects, pref_orient = pref_orient, file_name = file_name, \
 			width_ref = '90%', prior_meb = prior_meb, wells_objects = wells_objects , plot_some_wells = plot_some_wells,\
 				 mask_no_cc = mask_no_cc, rest_bound_ref = path_rest_bound_inter, plot_litho_wells = plot_litho_wells,\
-					 temp_count_wells = temp_count_wells, temp_iso = temp_iso, position_label = position_label)
+					 temp_count_wells = temp_count_wells, temp_iso = temp_iso, position_label = position_label, title = title)
 		shutil.move(file_name+'.png','.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+file_name+'.png')
 
 		# plot autocorrelation time and acceptance factor 
@@ -1037,7 +1098,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if True:
+	if False:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf
@@ -1117,7 +1178,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if False:  # histogram of MT inversion parameters for stations inverted
+		if True:  # histogram of MT inversion parameters for stations inverted
 			# Resistivity Boundary, Risk
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
 			# Resistivity Boundary, Mielke, OUT
@@ -1188,13 +1249,14 @@ if __name__ == "__main__":
 				for wl in wells_objects:
 					# extract meb mcmc results from file 
 					try:
-						wl_temp_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_T1_T2.txt")
-						# values for mean a std for normal distribution representing the prior
-						wl.T1_pars = [wl_temp_results[0], wl_temp_results[1]] # mean [1] z1 # median [3] z1 
-						wl.T2_pars = [wl_temp_results[2], wl_temp_results[3]] # mean [1] z1 # median [3] z1 
-						# write results 
-						wl_temp_z1_z2.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','
-							+str(wl.T1_pars[0])+','+str(wl.T1_pars[1])+','+str(wl.T2_pars[0])+','+str(wl.T2_pars[1])+'\n')
+						if not wl.no_temp:
+							wl_temp_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_T1_T2.txt")
+							# values for mean a std for normal distribution representing the prior
+							wl.T1_pars = [wl_temp_results[0], wl_temp_results[1]] # mean [1] z1 # median [3] z1 
+							wl.T2_pars = [wl_temp_results[2], wl_temp_results[3]] # mean [1] z1 # median [3] z1 
+							# write results 
+							wl_temp_z1_z2.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','
+								+str(wl.T1_pars[0])+','+str(wl.T1_pars[1])+','+str(wl.T2_pars[0])+','+str(wl.T2_pars[1])+'\n')
 					except:
 						pass
 				wl_temp_z1_z2.close()
@@ -1222,17 +1284,18 @@ if __name__ == "__main__":
 				for wl in wells_objects:
 					# extract z1 and z2 results from file 
 					try:
-						wl_z1_z2_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_z1_z2.txt", skip_header=1)
-						wl_temp_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_T1_T2.txt")
-						# values for mean a std for normal distribution representing the prior
-						wl.z1_pars = [wl_z1_z2_results[0], wl_z1_z2_results[1]] # mean [1] z1 # median [3] z1 
-						wl.z2_pars = [wl_z1_z2_results[2], wl_z1_z2_results[3]] # mean [1] z1 # median [3] z1 
-						wl.T1_pars = [wl_temp_results[0], wl_temp_results[1]] # mean [1] z1 # median [3] z1 
-						wl.T2_pars = [wl_temp_results[2], wl_temp_results[3]] # mean [1] z1 # median [3] z1 
-						# write results 
-						wl_d1_d2_T1_T2.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+
-							str(wl.z1_pars[0])+','+str(wl.z1_pars[0] + wl.z2_pars[0])+','+
-							str(wl.T1_pars[0])+','+str(wl.T2_pars[0])+'\n')
+						if not wl.no_temp:
+							wl_z1_z2_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_z1_z2.txt", skip_header=1)
+							wl_temp_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_T1_T2.txt")
+							# values for mean a std for normal distribution representing the prior
+							wl.z1_pars = [wl_z1_z2_results[0], wl_z1_z2_results[1]] # mean [1] z1 # median [3] z1 
+							wl.z2_pars = [wl_z1_z2_results[2], wl_z1_z2_results[3]] # mean [1] z1 # median [3] z1 
+							wl.T1_pars = [wl_temp_results[0], wl_temp_results[1]] # mean [1] z1 # median [3] z1 
+							wl.T2_pars = [wl_temp_results[2], wl_temp_results[3]] # mean [1] z1 # median [3] z1 
+							# write results 
+							wl_d1_d2_T1_T2.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+
+								str(wl.z1_pars[0])+','+str(wl.z1_pars[0] + wl.z2_pars[0])+','+
+								str(wl.T1_pars[0])+','+str(wl.T2_pars[0])+'\n')
 					except:
 						pass
 				wl_d1_d2_T1_T2.close()
@@ -1243,21 +1306,22 @@ if __name__ == "__main__":
 				for wl in wells_objects:
 					# extract z1 and z2 results from file 
 					try:
-						wl_TG_TC_HF_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_TG_TC_HF.txt", skip_header=1)
-						# values for mean a std for normal distribution representing the prior
-						wl.thermal_grad = wl_TG_TC_HF_results[0]
-						wl.thermal_cond = wl_TG_TC_HF_results[1]
-						wl.heat_flux = wl_TG_TC_HF_results[2]
-						# write results 
-						wl_TG_TC_HF.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+
-							str(wl.thermal_grad)+','+str(wl.thermal_cond)+','+str(wl.heat_flux)+'\n')
+						if not wl.no_temp:
+							wl_TG_TC_HF_results = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+str(wl.name)+os.sep+"conductor_TG_TC_HF.txt", skip_header=1)
+							# values for mean a std for normal distribution representing the prior
+							wl.thermal_grad = wl_TG_TC_HF_results[0]
+							wl.thermal_cond = wl_TG_TC_HF_results[1]
+							wl.heat_flux = wl_TG_TC_HF_results[2]
+							# write results 
+							wl_TG_TC_HF.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+
+								str(wl.thermal_grad)+','+str(wl.thermal_cond)+','+str(wl.heat_flux)+'\n')
 					except:
 						pass
 				wl_TG_TC_HF.close()
 
 		if False:   # .txt with names, lon, lat of wells with lithology
 			# lito wells
-			path = '.'+os.sep+'wells_info'+os.sep+'well_names_with_litho.txt'
+			path = '.'+os.sep+'wells_info'+os.sep+'well_names_with_litho.txt' # this is filled manually
 			wls_lito = []
 			with open(path) as p:
 				next(p)
