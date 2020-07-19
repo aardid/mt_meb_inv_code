@@ -125,12 +125,10 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-
-				
 			if prof_WRKNW5:
 				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
 					'WT068a','WT070b','WT223a','WT107a','WT111a']			
-				#sta2work = ['WT107a']
+				#sta2work = ['WT071a']
 			if prof_WRK_EW_7:
 				sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
 					'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
@@ -577,52 +575,6 @@ if __name__ == "__main__":
 						# fitting mode xy or yx: 
 						fit_max_mode = False
 
-					# inversion pars. per station (manual)
-					if True:
-						if sta_obj.name[:-4] == 'WT024a': # station with static shift
-							error_max_per = [5.,2.5]
-							range_p = [0,100.] # range of periods
-						if sta_obj.name[:-4] == 'WT030a': # station with static shift
-							range_p = [0,10.] # range of periods
-						if sta_obj.name[:-4] == 'WT039a': # station with static shift
-							range_p = [0,10.] # range of periods
-							error_max_per = [5.,2.5]
-						if sta_obj.name[:-4] == 'WT060a': # station with static shift
-							range_p = [0.,1.] # range of periods
-							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-							#error_max_per = [20.,10.]
-						if sta_obj.name[:-4] == 'WT068a': # station with static shift
-							range_p = [0,5.] # range of periods
-							error_max_per = [20.,10.]
-							#inv_dat = [1,1,0,1]
-						if sta_obj.name[:-4] == 'WT070b': # station with static shift
-							range_p = [0,5.] # range of periods
-						if sta_obj.name[:-4] == 'WT071a': # station with static shift
-							range_p = [0,5.] # range of periods
-							range_p = [0,10.] # range of periods
-							error_max_per = [5.,2.5]
-						if sta_obj.name[:-4] == 'WT107a': # station with static shift
-							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-							range_p = [0.001,5.] # range of periods
-							error_max_per = [5.,2.5]
-						if sta_obj.name[:-4] == 'WT111a': # station with static shift
-							range_p = [0,5.] # range of periods
-						if sta_obj.name[:-4] == 'WT223a': # station with static shift
-							range_p = [0,10.] # range of periods
-							error_max_per = [20.,5.]
-						if sta_obj.name[:-4] == 'WT501a': # station with static shift
-							range_p = [0,5.] # range of periods
-						if sta_obj.name[:-4] == 'WT502a': # station with static shift
-							#range_p = [0,5.] # range of periods
-							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-						if sta_obj.name[:-4] == 'WT003a': # station with static shift
-							error_max_per = [20.,10.]	
-							#inv_dat = [1,0,1,0]
-					## print relevant information
-					if verbose:
-						print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
-						print('inverted data: '+str(inv_dat))
-					## plot noise
 					try:
 						path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
 						sta_obj.plot_noise(path_img = path_img)
@@ -635,8 +587,8 @@ if __name__ == "__main__":
 					if error_mean:
 						error_max_per = [1.,1.]
 					# set number of walkers and walker jumps
-					nwalkers = 36
-					walk_jump = 2000
+					nwalkers = 40
+					walk_jump = 3000
 					####### condition for MeB prior
 					# if prior_meb:
 					# 	if all([sta_obj.rho_app[1][i] > 10. for i in range(len(sta_obj.rho_app[1])-10)]):
@@ -644,7 +596,60 @@ if __name__ == "__main__":
 					# 	if all([sta_obj.rho_app[2][i] > 10. for i in range(len(sta_obj.rho_app[2])-10)]):
 					# 		prior_meb = False
 
-					# run inversion
+					# inversion pars. per station (manual)
+					if True:
+						if sta_obj.name[:-4] == 'WT024a': # station with static shift
+							error_max_per = [5.,2.5]
+							range_p = [0.005,100.] # range of periods
+							prior_meb = True
+							# for two layers: 
+							#par_range = [[.01*1e2,2.*1e3],[0.*1e1,1.*1e0],[1.*1e1,1.*1e5],[.50*1e1,.51*1e1],[.5*1e1,1.*1e3]]
+						if sta_obj.name[:-4] == 'WT039a': # station with static shift
+							range_p = [0.001,100.] # range of periods
+							error_max_per = [5.,2.5]
+							inv_dat = [0,0,1,1]
+						if sta_obj.name[:-4] == 'WT030a': # station with static shift
+							range_p = [0,10.] # range of periods
+						if sta_obj.name[:-4] == 'WT060a': # station with static shift
+							range_p = [0.005,1.] # range of periods
+							inv_dat = [1,1,0,0]
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							#error_max_per = [20.,10.]
+						if sta_obj.name[:-4] == 'WT068a': # station with static shift
+							range_p = [0,5.] # range of periods
+							error_max_per = [20.,10.]
+							#inv_dat = [1,1,0,1]
+						if sta_obj.name[:-4] == 'WT070b': # station with static shift
+							range_p = [0,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT071a': # station with static shift
+							range_p = [0,5.] # range of periods
+							range_p = [0.005,3.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT107a': # station with static shift
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							range_p = [0.001,5.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT111a': # station with static shift
+							range_p = [0,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT223a': # station with static shift
+							range_p = [0,10.] # range of periods
+							error_max_per = [20.,5.]
+						if sta_obj.name[:-4] == 'WT501a': # station with static shift
+							range_p = [0.005,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT502a': # station with static shift
+							#range_p = [0,5.] # range of periods
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							range_p = [0.005,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT003a': # station with static shift
+							error_max_per = [20.,10.]	
+							#inv_dat = [1,0,1,0]
+
+					###### run inversion
+					## print relevant information
+					if verbose:
+						print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+						print('inverted data: '+str(inv_dat))
+					## plot noise
 					try: 
 						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
 							walk_jump = walk_jump, nwalkers = nwalkers, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\

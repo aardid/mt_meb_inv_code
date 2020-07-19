@@ -997,9 +997,18 @@ class mcmc_inv(object):
                     # vector in the proper range 
                     aux, from_p = find_nearest(self.T_obs,self.range_p[0])
                     aux, to_p = find_nearest(self.T_obs,self.range_p[1])
-                    y_est = np.concatenate((app_res_vec_aux[from_p:to_p+1], app_res_vec_aux[from_p:to_p+1]))
-                    y_obs = np.concatenate((self.rho_app_obs[1][from_p:to_p+1], self.rho_app_obs[2][from_p:to_p+1])) 
-                    error = np.concatenate((self.rho_app_obs_er[1][from_p:to_p+1], self.rho_app_obs_er[2][from_p:to_p+1])) 
+                    if self.inv_dat[0:4] == [1,1,1,1]:
+                        y_est = np.concatenate((app_res_vec_aux[from_p:to_p+1], app_res_vec_aux[from_p:to_p+1]))
+                        y_obs = np.concatenate((self.rho_app_obs[1][from_p:to_p+1], self.rho_app_obs[2][from_p:to_p+1])) 
+                        error = np.concatenate((self.rho_app_obs_er[1][from_p:to_p+1], self.rho_app_obs_er[2][from_p:to_p+1])) 
+                    if self.inv_dat[0:4] == [1,1,0,0]:
+                        y_est = app_res_vec_aux[from_p:to_p+1]
+                        y_obs = self.rho_app_obs[1][from_p:to_p+1]
+                        error = self.rho_app_obs_er[1][from_p:to_p+1]
+                    if self.inv_dat[0:4] == [0,0,1,1]:
+                        y_est = app_res_vec_aux[from_p:to_p+1]
+                        y_obs = self.rho_app_obs[2][from_p:to_p+1]
+                        error = self.rho_app_obs_er[2][from_p:to_p+1]
                     n = len(y_est) # number of inverted data points
                     # chi-square misfit (Pearson, 1900)
                     misfit = ((y_est- y_obs)/error)**2
