@@ -56,9 +56,12 @@ if __name__ == "__main__":
     temp_prof_remodel_wells = True # re model base on '.'+os.sep+'corr_temp_bc'+os.sep+'RM_temp_prof.txt'
     ## Sections of the code tu run
     set_up = True 
-    calc_cond_bound = True
+    calc_cond_bound = False
     calc_cond_bound_temps = False
     plot_temp_bc = False
+    #
+    HF_by_beta = True
+    stat_HF_by_beta = True
 
     # (0) Import data and create objects: MT from edi files and wells from spreadsheet files
     if set_up:
@@ -369,9 +372,17 @@ if __name__ == "__main__":
     if calc_cond_bound:
         print('(1) Calc. z1 and z2 in well positions\n')
         ## Estimate z1 and z2 at wells positions from MT inversion
+        # folder estructure
+        if os.path.isdir('.'+os.sep+'wells_info'+os.sep+'estimated'):
+            pass
+        else:
+            os.mkdir('.'+os.sep+'wells_info'+os.sep+'estimated')
+        # txt to save z1 and z2 in well positions
+        file_name = '.'+os.sep+'wells_info'+os.sep+'estimated'+os.sep+'z1_z2_at_wells_location.txt'
+        #
         fix_axes = [[-60,300],[-1700,40]] # axes for [temp_min,temp_ax][depth_min (eg: -800), depth_max (eg: -100)]
         wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5., plot_temp_prof = True, 
-            with_meb = True, with_litho = True, fix_axes = False, litho_abre = True)
+            with_meb = True, with_litho = True, fix_axes = False, litho_abre = True, save_txt_z1_z2 = file_name)
 
     # (2) Calc. T1 and T2 at well positions 
     if calc_cond_bound_temps: 
@@ -395,7 +406,6 @@ if __name__ == "__main__":
         # remove objects from list when BC is deeper than max depth of temp. profiles
         if True: # if true, turn calc_cond_bound to True
             idx2rmv = [] 
-
             for i, wl in enumerate(wells_objects):
                 # load z1 and z2 pars
                 #wl.z1_pars[0], wl.z1_pars[1], wl.z2_pars[0], wl.z2_pars[1] = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
@@ -405,12 +415,15 @@ if __name__ == "__main__":
             wells_objects = wells_objects_aux
 
         # histogram of T1 and T2, filtering by resisitivity boundary
-        histogram_temp_T1_T2(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
+        Ns = 50 # number of samples per well (if None, one sample per well)
+        type_hist = 'infield'#'sidebyside'# None
+        histogram_temp_T1_T2(wells_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, 
+            type_hist = type_hist, multi_samples = Ns)
         # histogram of T1, T2, thermal_grad and heat flux, filtering by bounds of temp and depth
         bounds = [-700,95.] # [depth, temp]
         histogram_T1_T2_Tgrad_Hflux(wells_objects, bounds = bounds)
 
-    # (2) grid surface and plot temperature at conductor boundaries
+    # (3) grid surface and plot temperature at conductor boundaries
     if plot_temp_bc: 
         ## load z1 and z2 pars
         for wl in wells_objects:
@@ -447,7 +460,346 @@ if __name__ == "__main__":
             scatter_temp_conductor_bound(wells_objects,  path_output = path_output, alpha_img = 0.6,\
                 path_base_image = path_base_image, ext_img = ext_file, xlim = x_lim, ylim = y_lim)
 
-####################################################
+    ####################################################
+    # Estimate heat flux through the clay cap (by beta method)
+    # (1) Sample the posterior to obtained boundaries for top and bottom of conductor at the location of a well.
+    # (2) Interpolate temperatures boundary locations.
+    # (3) Construct best fit exponential heat transfer model (from Bredeheoft and Papadopoulos) inside this layer and obtain the beta parameter.
+    # (4) Computer average proportion of the conductive heat flux across the layer per my derivation in the attached. When this number is close to 1, it justifies an assertion that heat transport is dominantly conductive (but does give a nice breakdown of the split).
+    # (5) Compute the average conductive heat flux across the layer as int_0^L(K*dT/dz)dz / L, where T is a known analytical function (I can derive this expression for you if you like).
+    # (6) Resample the posterior multiple times for each well.
+    # (7) Conduct for all wells. 
+    
+    adv_all_negative = True # np.abs(beta) : advection possitve or negative
+    if HF_by_beta:
+        #
+        wl_TG_TC_HFC_HFT = open('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HFC_HFT.dat','w')
+        wl_TG_TC_HFC_HFT.write('wl_name'+','+'lon_dec'+','+'lat_dec'+','+'TG(Thermal Gradient)[C/m]'
+            +','+'TC(Thermal Conductivity)[W/mC]'+','+'Cond. HF(Heat Flux)[W/m2]'+'Tot. HF(Heat Flux)[W/m2]'+'\n')
+        #
+        pdf_temp_samlples = False # when sampling well temp profiles (by beta), save all temp profiles in pdf
+        # check if directory to save temp samples exist
+        if os.path.isdir('.'+os.sep+'corr_temp_bc'+os.sep+'temp_prof_samples'):
+            pass
+        else:
+            os.mkdir('.'+os.sep+'corr_temp_bc'+os.sep+'temp_prof_samples')
 
+        if pdf_temp_samlples: # 
+            pp = PdfPages('.'+os.sep+'corr_temp_bc'+os.sep+'temp'+os.sep+'temp_prof_samples.pdf')
+        ## load pars
+        for i, wl in enumerate(wells_objects):
+            # (1) Sample the posterior to obtained boundaries for top and bottom of conductor at the location of a well.
+            # wl_z1_z2_est_mt(wells_objects, station_objects, slp = 5.)
+            aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_z1_z2.txt')
+            wl.z1_pars = [aux[0],aux[1]]
+            wl.z2_pars = [aux[2],aux[3]]
 
-     
+            # (2) Interpolate temperatures boundary locations.
+            try: # some wells don'r have temp values at z2
+                if not wl.no_temp:
+                    aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'conductor_T1_T2.txt')
+                    wl.T1_pars = [aux[0],aux[1]]
+                    wl.T2_pars = [aux[2],aux[3]]
+            except:
+                wl.T1_pars = [False,False]
+                wl.T2_pars = [False,False]
+            
+            # (3) Construct best fit exponential heat transfer model (from Bredeheoft and Papadopoulos) inside this layer and obtain the beta parameter.
+            # calculate Test and beta values 
+            #if wl.T2_pars[0]: # if T2 has value
+            if True: # time consuming, run once. sample beta values are save in path_files_out
+                try:
+                    print('sampling betas in well: '+wl.name+' '+str(i+1)+'/'+str(len(wells_objects)))
+                    path_files_out = '.'+os.sep+'corr_temp_bc'+os.sep+wl.name
+                    # this function calc beta reference positive up (+ up)
+                    wl.temp_prof_est(plot_samples = True, ret_fig = None, 
+                        path_files_out = path_files_out, Ns = 50) # method of well object
+                    if pdf_temp_samlples:
+                        g = wl.temp_prof_est(plot_samples = True, ret_fig = None, 
+                            path_files_out = path_files_out, Ns = 50) # method of well object
+                        pp.savefig(g)
+                        g.close()
+                    else: 
+                        # save temp profile png in well folder 
+                        gen_temp_sample = True
+                        wl.temp_prof_est(plot_samples = gen_temp_sample, ret_fig = None, 
+                            path_files_out = path_files_out, Ns = 50) # method of well object
+                        if gen_temp_sample: # save in folder
+                            file_name = '.'+os.sep+'corr_temp_bc'+os.sep+'temp_prof_samples'+os.sep+wl.name+'_temp_sample.png'
+                            # copy from well folder to temp_prof_samples folder 
+                            shutil.copy('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Test_samples.png'\
+                                , file_name)
+                except:
+                    pass
+            # (4) Compute average proportion of the conductive heat flux across the layer per my derivation in the attached. 
+            #     When this number is close to 1, it justifies an assertion that heat transport is dominantly conductive 
+            #     (but does give a nice breakdown of the split).
+            #     * reference system positive looking down (same as Bredehoeft, J. D., and I. S. Papadopulos (1965))
+            try:
+                if not wl.no_temp:
+                    # import samples of z1, z2, t1, t2 and beta
+                    dsam_z1, dsam_z2, dsam_botl3 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Zmax.txt').T
+                    tsam_z1, tsam_z2, tsam_botl3 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'Tmax.txt').T
+                    bsam_l1, bsam_l2, bsam_l3 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'betas.txt').T
+                    # calc average proportion of  conductive heat flux across layer 2 (clay cap)
+                    ave_prop_list = []
+                    tg_list = [] # thermal gradient 
+                    hf_list = [] # conductive heatflux 
+                    hf_tot_list = [] # total heatflux  
+                    for z1,z2,t1,t2,beta in zip(dsam_z1,dsam_z2,tsam_z1,tsam_z2,bsam_l2): 
+                        #### reference system: positive down 
+                        beta = -1*beta # change to ref. positive down (+ down)
+                        ####
+                        # average proportion
+                        #if adv_all_negative: # np.abs(beta) : advection possitve or negative 
+                        #    ave_prop = -1.*(t2-t1)/(-1.*(np.abs(beta))*t1-(t2-t1))
+                        #else:
+                        #    ave_prop = -1.*(t2-t1)/(beta*t1-(t2-t1))
+                        #
+                        if abs(beta) > .001:
+                            ave_prop = (1/beta)*-1*(t2-t1)/(t1-(t2-t1)/(np.exp(beta)-1))   
+                        else:
+                            ave_prop = -1.*(t2-t1)/(beta*t1-(t2-t1))   
+                        ave_prop_list.append(ave_prop)
+                        
+                        k = 2.5 # thermal conductivity [W/mC]
+                        L = abs(z2-z1) # thickness
+                        dT = t2-t1 
+                        dz = z2-z1 # this is negative 
+                        # (5.A) Compute heat flux (conductive) using beta 
+                        # HFs_l2 = -k * dT / dz   #
+                        HFs_l2 = k * dT / L   #
+                        # (5.B) Compute total heat flux (conductive + advective) using beta
+                        #if beta < 0.:
+                        #    beta = 0. 
+                        #dT = t2 - t1
+                        #L = abs(L)
+                        #if beta > .2:
+                        #    HFs_tot_l2 = -k*beta/L * (dT/(np.exp(beta)-1) - t1)   ### need to be checked
+                        #else:
+                        #    HFs_tot_l2 = -k*beta/L * (dT/(beta) - t1)   ### need to be checked
+                        if abs(beta) > .001:
+                            HFs_tot_l2 = k*(beta/L * (dT/(np.exp(beta)-1) - t1))   
+                        else:
+                            HFs_tot_l2 = k*(dT/L - beta*t1/L)  
+                        # add to lists
+                        tg_list.append(dT/L)
+                        hf_list.append(HFs_l2)
+                        hf_tot_list.append(HFs_tot_l2)
+                    #print(np.mean(hf_list), np.median(hf_list), np.std(hf_list)) 
+                    # save samples average prop. in txt    
+                    ave_prop = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'prop_cond_adv_cc_samples.txt', 'w')
+                    ave_prop.write('# samples of ratio (proportion) of conduction / (conduction + advection) heat transport in the second layer (clay cap)\n')
+                    for item in ave_prop_list:
+                        ave_prop.write('{}\n'.format(item))
+                    ave_prop.close()
+                    # save samples heat flux (conductive) in txt    
+                    hf_samp = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hf_samples.txt', 'w')
+                    hf_samp.write('# samples of total heat flux [W/m2] (conduction) heat transport in the second layer (clay cap)\n')
+                    for item in hf_list:
+                        hf_samp.write('{}\n'.format(item))
+                    hf_samp.close()
+                    # save samples heat flux (conductive + advective) in txt   
+                    hf_tot_samp = open('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hf_tot_samples.txt', 'w')
+                    hf_tot_samp.write('# samples of total heat flux [W/m2] (conduction + advection) heat transport in the second layer (clay cap)\n')
+                    for item in hf_tot_list:
+                        hf_tot_samp.write('{}\n'.format(item))
+                    hf_tot_samp.close()
+                
+                    # Save to file with mean values to plot with latlon
+                    wl.thermal_grad = [np.mean(tg_list),np.std(tg_list)]
+                    wl.thermal_cond = k
+                    wl.heat_flux_cond = [np.mean(hf_list),np.std(hf_list)]
+                    wl.heat_flux_tot = [np.mean(hf_tot_list),np.std(hf_tot_list)]
+                    # write results 
+                    #if wl.name == 'TH06':
+                    #    print('hola')
+                    if wl.heat_flux_tot[0] > wl.heat_flux_cond[0]: # if adventive heatflux is positive (ok)
+                        wl_TG_TC_HFC_HFT.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+',' \
+                            +str(round(wl.thermal_grad[0],2))+','+str(round(wl.thermal_cond,2))+',' \
+                                +str(round(wl.heat_flux_cond[0],2))+','+str(round(wl.heat_flux_tot[0],2))+'\n')
+                    else: # if adventive heatflux is negative, 
+                            # replave total heat flux with conducitve heatflux 
+                        wl_TG_TC_HFC_HFT.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+',' \
+                            +str(round(wl.thermal_grad[0],2))+','+str(round(wl.thermal_cond,2))+',' \
+                                +str(round(wl.heat_flux_cond[0],2))+','+str(round(wl.heat_flux_cond[0],2))+'\n')
+            except:
+                pass
+        if pdf_temp_samlples:
+            pp.close()
+        wl_TG_TC_HFC_HFT.close()
+
+    if stat_HF_by_beta: 
+        if True: # histogram of betas and average prop across the clay cap
+            betas_total = []
+            ave_prop_total = []
+            count_wells = 0
+            for i, wl in enumerate(wells_objects):
+                # check if well is infield
+                # Resistivity Boundary, Mielke
+                path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
+                lats, lons = np.genfromtxt(path_rest_bound_WT, skip_header=1, delimiter=',').T
+                poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+                # check if well is infield (bool)
+                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
+                if val:
+                    try:
+                        # import betas and add to list
+                        bl1,bl2,bl3 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'betas.txt').T
+                        #[betas_total.append(item) for item in bl2] # positive up
+                        [betas_total.append(-1*item) for item in bl2] # positive down
+                        # import ave_prop and add to list
+                        aux = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'prop_cond_adv_cc_samples.txt').T
+                        #[ave_prop_total.append(item) for item in aux if np.abs(item)<=10.]
+                        [ave_prop_total.append(item) for item in aux if (np.abs(item)<=1. and item>=0.)]
+                        #[ave_prop_total.append(item) for item in aux if (item>=0.)]
+                        del(aux,bl1,bl2,bl3)
+                        count_wells+=1
+                    except:
+                        pass
+            # plot histograms
+            f = plt.figure(figsize=(15, 7))
+            gs = gridspec.GridSpec(nrows=1, ncols=2)
+            ax1 = f.add_subplot(gs[0, 0])
+            ax2 = f.add_subplot(gs[0, 1])
+            #ax_leg= f.add_subplot(gs[0, 2])
+            colors = ['orange','blue']
+            colors = [u'#ff7f0e', u'#1f77b4']
+            
+            ## betas
+            #x_multi = [betas_total, t1_batch_filt_out]
+            n_bins = int(2*np.sqrt(len(betas_total)))#15
+            ax1.hist(betas_total, n_bins, histtype='bar', color = colors[0],edgecolor='#E6E6E6')
+            ax1.set_xlabel(r'$\beta$', fontsize=textsize)
+            ax1.set_ylabel('frequency', fontsize=textsize)
+            ax1.set_xlim([-3,3])
+            ax1.grid(True, which='both', linewidth=0.1)
+            (mu, sigma) = norm.fit(betas_total)
+            med = np.median(betas_total)
+            ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            
+            ## average proportion
+            #x_multi = [betas_total, t1_batch_filt_out]
+            n_bins = int(2*np.sqrt(len(betas_total)))#15
+            n_bins = 36
+            ax2.hist(ave_prop_total, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+            ax2.set_xlabel(r'$\gamma$', fontsize=textsize)
+            ax2.set_ylabel('frequency', fontsize=textsize)
+            #if adv_all_negative:
+            #    pass
+                # ax2.set_xlim([0,1])
+            #else:
+            #    ax2.set_xlim([-1,3])
+            #ax2.set_xlim([-.1,1.1])
+            ax2.grid(True, which='both', linewidth=0.1)
+            (mu, sigma) = norm.fit(ave_prop_total)
+            med = np.median(ave_prop_total)
+            ax2.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax2.set_title(r'$med$:{:3.1f}, $per. 50$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(ave_prop_total, 50, axis=0),
+            #    np.percentile(ave_prop_total, 90, axis=0)), fontsize = textsize, color='gray')#, y=0.8)
+            # legend
+            #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+            #ax_leg.axis('off')
+            f.tight_layout()
+            # save PNG
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'betas_ave_prop_nwells_'+str(count_wells)+'.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)  
+        
+        if True: # histogram of total heat flux (conduction + advection) through the clay cap  
+            
+            ###########################
+            # conductive heat flux
+            hf_total_cond = []
+            count_wells = 0
+            for i, wl in enumerate(wells_objects):
+                # check if well is infield
+                # Resistivity Boundary, Mielke
+                path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
+                lats, lons = np.genfromtxt(path_rest_bound_WT, skip_header=1, delimiter=',').T
+                poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+                # check if well is infield (bool)
+                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
+                if val:
+                    try:
+                        # import betas and add to list
+                        hf_l2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hf_samples.txt').T
+                        [hf_total_cond.append(item) for item in hf_l2 if item>0.]
+                        del(hf_l2)
+                        count_wells+=1
+                    except:
+                        pass
+            # plot histograms
+            f = plt.figure(figsize=(8, 7)) # 15, 7
+            gs = gridspec.GridSpec(nrows=1, ncols=1)
+            ax1 = f.add_subplot(gs[0, 0])
+            #ax2 = f.add_subplot(gs[0, 1])
+            #ax_leg= f.add_subplot(gs[0, 2])
+            colors = ['orange','blue']
+            colors = [u'#ff7f0e', u'#1f77b4']
+            #x_multi = [betas_total, t1_batch_filt_out]
+            n_bins = int(1.5*np.sqrt(len(hf_total_cond)))#15
+            ax1.hist(hf_total_cond, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+            ax1.set_xlabel(r'Heat flux [W/m$^2$]', fontsize=textsize)
+            ax1.set_ylabel('frequency', fontsize=textsize)
+            ax1.set_xlim([0,3])
+            ax1.grid(True, which='both', linewidth=0.1)
+            (mu, sigma) = norm.fit(hf_total_cond)
+            med = np.median(hf_total_cond)
+            ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            # legend
+            #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+            #ax_leg.axis('off')
+            f.tight_layout()
+            # save PNG
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_Heat_flux_nwells_'+str(count_wells)+'_multi_samples.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            
+            ###########################
+            # TOTAL HEAT FLUX
+            hf_total = []
+            count_wells = 0
+            for i, wl in enumerate(wells_objects):
+                # check if well is infield
+                # Resistivity Boundary, Mielke
+                path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
+                lats, lons = np.genfromtxt(path_rest_bound_WT, skip_header=1, delimiter=',').T
+                poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+                # check if well is infield (bool)
+                val = ray_tracing_method(wl.lon_dec, wl.lat_dec, poli_in)
+                if val:
+                    try:
+                        # import betas and add to list
+                        hf_l2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hf_tot_samples.txt').T
+                        [hf_total.append(item) for item in hf_l2 if item>0.]
+                        del(hf_l2)
+                        count_wells+=1
+                    except:
+                        pass
+            # plot histograms
+            f = plt.figure(figsize=(8, 7))
+            gs = gridspec.GridSpec(nrows=1, ncols=1)
+            ax1 = f.add_subplot(gs[0, 0])
+            #ax2 = f.add_subplot(gs[0, 1])
+            #ax_leg= f.add_subplot(gs[0, 2])
+            colors = ['orange','blue']
+            colors = [u'#ff7f0e', u'#1f77b4']
+            
+            #x_multi = [betas_total, t1_batch_filt_out]
+            n_bins = int(2*np.sqrt(len(hf_total)))#15
+            ax1.hist(hf_total, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+            ax1.set_xlabel(r'Heat flux [W/m$^2$]', fontsize=textsize)
+            ax1.set_ylabel('frequency', fontsize=textsize)
+            ax1.set_xlim([0,10])
+            ax1.grid(True, which='both', linewidth=0.1)
+            (mu, sigma) = norm.fit(hf_total)
+            med = np.median(hf_total)
+            #ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            ax1.set_title(r'$med$:{:3.1f}, $per. 70$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(hf_total, 70, axis=0),
+                np.percentile(hf_total, 90, axis=0)), fontsize = textsize, color='gray')
+            # legend
+            #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+            #ax_leg.axis('off')
+            f.tight_layout()
+            # save PNG
+            plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'hist_Heat_flux_total_nwells_'+str(count_wells)+'_multi_samples.png', dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)

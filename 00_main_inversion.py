@@ -48,12 +48,12 @@ if __name__ == "__main__":
 	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = True # True always
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = False
+	prof_WRKNW5 = True
 	array_WRKNW5_WRKNW6 = False
-	prof_WRK_EW_7 = True # PW_TM_AR
+	prof_WRK_EW_7 = False # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
 	prof_WT_NS_1 = False # KS_OT_AR
 	#
@@ -78,8 +78,8 @@ if __name__ == "__main__":
 	set_up = True
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
-	mcmc_MT_inv = False
-	plot_2D_MT = True
+	mcmc_MT_inv = True
+	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -125,35 +125,26 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-			# sta2work = ['WT001a','WT002a','WT004a','WT006a','WT010a','WT011a','WT015a','WT016a',
-			# 			'WT017a','WT018a','WT022a','WT024a','WT025a','WT026a','WT029a','WT034a',
-			# 			'WT037a','WT039a','WT045a','WT046a','WT047a','WT049a','WT060a','WT065a',
-			# 			'WT066a','WT073a','WT076b','WT078a','WT082a','WT088a','WT089a','WT092a',
-			# 			'WT108a','WT113a','WT116a','WT118a','WT120a','WT145a','WT148a','WT150b',
-			# 			'WT152a','WT162a','WT167a','WT167a','WT169a','WT172a','WT175a','WT177a',
-			# 			'WT179a','WT182a','WT183a','WT184a','WT186a','WT188a','WT190a','WT191a',
-			# 			'WT194a','WT198a','WT211a','WT214a','WT219a','WT221a','WT225a','WT306a',
-			# 			'WT312a','WT324a','WT325a','WT326a','WT329a','WT330a','WT332a','WT336a',
-			# 			'WT500a','WT501a','WT502a','WT503a','WT504a']
 
-			# sta2work = 	['WT312a','WT060a','WT190a','WT186a','WT011a','WT046a','WT336a','WT182a',
-			# 			'WT194a','WT177a','WT198a','WT015a','WT306a','WT078a','WT326a',
-			# 			'WT167a','WT188a','WT184a','WT312a','WT312a','WT312a','WT312a']
-
-		if prof_WRK_EW_7:
-			sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
-				'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
-		if prof_WRK_SENW_8:
-			sta2work = ['WT225a','WT066a','WT329a','WT078a','WT091a','WT107a','WT117b',
-				'WT122a','WT130a','WT140a','WT152a','WT153b'] # ,'WT150b'
-		if prof_WT_NS_1:
-			sta2work = ['WT061a','WT063a','WT069b','WT513a','WT082a','WT098a','WT096a', \
-				'WT099a','WT119a','WT125a','WT128a','WT036a','WT308a','WT156a','WT028a',\
-					'WT086a','WT055a','WT300a'] # 'WT117b' 
-		if prof_TH_SENW_2:
-			sta2work = ['WT192a','WT306a','WT149a','WT328a','WT323a','WT199a',
-				'WT156a','WT166a','WT168a','WT185a','WT040a','WT313a','WT202a',\
-					'WT197a'] # ,'WT150b', 'WT340a', 'WT307a',
+				
+			if prof_WRKNW5:
+				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
+					'WT068a','WT070b','WT223a','WT107a','WT111a']			
+				#sta2work = ['WT107a']
+			if prof_WRK_EW_7:
+				sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
+					'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
+			if prof_WRK_SENW_8:
+				sta2work = ['WT225a','WT066a','WT329a','WT078a','WT091a','WT107a','WT117b',
+					'WT122a','WT130a','WT140a','WT152a','WT153b'] # ,'WT150b'
+			if prof_WT_NS_1:
+				sta2work = ['WT061a','WT063a','WT069b','WT513a','WT082a','WT098a','WT096a', \
+					'WT099a','WT119a','WT125a','WT128a','WT036a','WT308a','WT156a','WT028a',\
+						'WT086a','WT055a','WT300a'] # 'WT117b' 
+			if prof_TH_SENW_2:
+				sta2work = ['WT192a','WT306a','WT149a','WT328a','WT323a','WT199a',
+					'WT156a','WT166a','WT168a','WT185a','WT040a','WT313a','WT202a',\
+						'WT197a'] # ,'WT150b', 'WT340a', 'WT307a',
 		#########################################################################################
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
@@ -549,6 +540,7 @@ if __name__ == "__main__":
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
 		if True:
+			rms_list = []
 			for sta_obj in station_objects:
 				if sta_obj.ref < 0: # start at 0
 				#if sta_obj.name[:-4] != 'WT130a': #sta2work = ['WT122','WT130a','WT115a']
@@ -611,7 +603,7 @@ if __name__ == "__main__":
 							error_max_per = [5.,2.5]
 						if sta_obj.name[:-4] == 'WT107a': # station with static shift
 							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-							range_p = [0,5.] # range of periods
+							range_p = [0.001,5.] # range of periods
 							error_max_per = [5.,2.5]
 						if sta_obj.name[:-4] == 'WT111a': # station with static shift
 							range_p = [0,5.] # range of periods
@@ -643,8 +635,8 @@ if __name__ == "__main__":
 					if error_mean:
 						error_max_per = [1.,1.]
 					# set number of walkers and walker jumps
-					nwalkers = 40
-					walk_jump = 3000
+					nwalkers = 36
+					walk_jump = 2000
 					####### condition for MeB prior
 					# if prior_meb:
 					# 	if all([sta_obj.rho_app[1][i] > 10. for i in range(len(sta_obj.rho_app[1])-10)]):
@@ -701,7 +693,8 @@ if __name__ == "__main__":
 					## plot results without burn-in section
 					mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
 					shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
-
+					print(mcmc_sta.rms_samples)
+					rms_list.append(mcmc_sta.rms_samples)
 					# save figures
 					if pdf_fit:
 						pp.savefig(g)
@@ -712,6 +705,15 @@ if __name__ == "__main__":
 					mcmc_sta.model_pars_est()
 					## delete chain.dat
 					#os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
+			print(rms_list)
+			print(np.mean(rms_list))
+			# save rms stations 
+			rms_file = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'rms_misfit.txt','w')
+			rms_file.write('RMS misfit for apparent resistivity, based on chi-square misfit (Pearson, 1900)'+'\n')
+			for sta_obj in station_objects:
+				rms_sta = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'rms_misfit.txt',skip_header=1).T
+				rms_file.write(sta_obj.name[:-4]+'\t'+str(rms_sta)+'\n')
+			rms_file.close()
 
 			## enlapsed time for the inversion (every station in station_objects)
 			enlap_time_f = time.time() - start_time_f # enlapsed time
@@ -1178,7 +1180,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if True:  # histogram of MT inversion parameters for stations inverted
+		if False:  # histogram of MT inversion parameters for stations inverted
 			# Resistivity Boundary, Risk
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
 			# Resistivity Boundary, Mielke, OUT
@@ -1314,7 +1316,7 @@ if __name__ == "__main__":
 							wl.heat_flux = wl_TG_TC_HF_results[2]
 							# write results 
 							wl_TG_TC_HF.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+
-								str(wl.thermal_grad)+','+str(wl.thermal_cond)+','+str(wl.heat_flux)+'\n')
+								str(round(wl.thermal_grad,2))+','+str(round(wl.thermal_cond,1))+','+str(round(wl.heat_flux,2))+'\n')
 					except:
 						pass
 				wl_TG_TC_HF.close()

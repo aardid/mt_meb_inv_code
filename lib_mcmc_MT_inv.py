@@ -110,6 +110,8 @@ class mcmc_inv(object):
                             resistivity (model parameter) calculated 
                             from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description
+    rms_samples             Average RMS for samples (estimated observation) generated from
+                            forwarding the posterior.  
     autocor_tim             autocorrelation time (steps) in mcmc inv. 
                             [par1,...,par5]
     aceprat                 acceptance ratio in mcmc inv.
@@ -134,7 +136,7 @@ class mcmc_inv(object):
         prior = None, prior_input = None, prior_meb = None, prior_meb_weigth = None, nwalkers = None, \
             walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None, \
                 data_error = None, add_error = None, fit_max_mode = None, add_error_per = None, add_mod_err =None, \
-                    error_max_per = None, error_mean = None):
+                    error_max_per = None, error_mean = None, rms_samples = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -279,7 +281,7 @@ class mcmc_inv(object):
         self.r1_pars = None
         self.r2_pars = None
         self.r3_pars = None
-
+        self.rms_samples = None
         self.autocor_accpfrac = autocor_accpfrac
     # ===================== 
     # Methods               
@@ -980,13 +982,43 @@ class mcmc_inv(object):
             ax.set_ylabel(r'$\rho_{app}$ [$\Omega$ m]', size = textsize)
             ax.set_xlabel('period [s]', size = textsize)
             #ax.set_title('Apparent Resistivity (TM and TE)', size = textsize)
+            # 
+            rms_tot = 0.
+            Nsamp = 0 #number of samples considered
             # plot samples
             for par in pars:
                 if all(x > 0. for x in par):
                     Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
                         self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
                     ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'sample')
+                    ##############
+                    ##############
+                    ## calc RMS misfit
+                    # vector in the proper range 
+                    aux, from_p = find_nearest(self.T_obs,self.range_p[0])
+                    aux, to_p = find_nearest(self.T_obs,self.range_p[1])
+                    y_est = np.concatenate((app_res_vec_aux[from_p:to_p+1], app_res_vec_aux[from_p:to_p+1]))
+                    y_obs = np.concatenate((self.rho_app_obs[1][from_p:to_p+1], self.rho_app_obs[2][from_p:to_p+1])) 
+                    error = np.concatenate((self.rho_app_obs_er[1][from_p:to_p+1], self.rho_app_obs_er[2][from_p:to_p+1])) 
+                    n = len(y_est) # number of inverted data points
+                    # chi-square misfit (Pearson, 1900)
+                    misfit = ((y_est- y_obs)/error)**2
+                    # sqrt(sq_dif/n)
+                    rms = np.sqrt(np.sum(misfit)/n)
+                    rms_tot+=rms
+                    Nsamp += 1
+            
+            # sqrt(sq_dif / n) / NumberSamples
+            self.rms_samples = rms_tot / Nsamp
+            
+            del(aux, from_p, to_p, y_est, y_obs,rms, error, misfit, rms_tot, Nsamp)
+            # save RMS in file 
+            rms_file = open(self.path_results+os.sep+'rms_misfit.txt','w')
+            rms_file.write('RMS misfit for apparent resistivity, based on chi-square misfit (Pearson, 1900)'+'\n')
+            rms_file.write(str(np.round(self.rms_samples,2)))
+            rms_file.close()
+            # for legend
+            ax.loglog([], [],'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'sample')
             #plot observed
             ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
             ax.errorbar(self.T_obs,self.rho_app_obs[1],self.rho_app_obs_er[1], fmt='r*')
@@ -1015,10 +1047,10 @@ class mcmc_inv(object):
             ax1.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
             ax1.set_xscale('log')
             # plot reference for periods consider in inversion (range_p)
-            ax.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ax.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ax1.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
+            ax.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ax.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ax1.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
             ### layout figure
             #
             ax.grid()
@@ -1037,7 +1069,6 @@ class mcmc_inv(object):
             return f, g
 
     def model_pars_est(self, path = None):
-
         if path is None: 
             path =  self.path_results
         # import chain and estimated model parameters

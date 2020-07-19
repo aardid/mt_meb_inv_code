@@ -40,7 +40,7 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 ##################### BASEMAP PLOTS
-	if False: # base map figures
+	if True: # base map figures
 		base_map = True # plot map with wells and stations # modify .png ouput
 		##
 		zones = True # add injection and extraction zones
@@ -53,7 +53,8 @@ if __name__ == "__main__":
 		mt_results = False # add scatter MT results # modify .png ouput
 		temp_results = False # add scatter Temp results  # modify .png ouput
 		temp_grad = False # add scatter temperature gradient inside the conductor # modify .png ouput
-		temp_hflux = False # add scatter heatflux  # modify .png ouput
+		temp_hflux = False # add scatter conductive heatflux  # modify .png ouput
+		temp_hflux_tot = False # add scatter conductive total heatflux (cond+adv)  # modify .png ouput
 		z1_vs_temp_z1_basemap = False # z1 from MT vs temp at z1  # modify .png ouput
 		d2_vs_temp_d2_basemap = False # d2 (z1+z2) from MT vs temp at d2  # modify .png ouput
 		temp_grad_HF_basemap = True # temperature gradient and heat flux # modify .png ouput
@@ -416,10 +417,11 @@ if __name__ == "__main__":
 			ax.set_title('Geothermal gradient inside the conductor', size = textsize)
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'
 		# add scatter Heat Flux 
-		if temp_hflux:
+		if temp_hflux or temp_hflux_tot:
 			scatter_p = False # scatter plot in well locations. Total power calc as mean * area 
 			contour_p = True  # contour plot. Total power calc as sum of grid points
 			cmap_hf = 'GnBu'
+			# if both 'True', both are plot 
 
 			if scatter_p: # scatter plot in well locations. Total power calc as mean * area 
 				HF_mean = []
@@ -437,7 +439,7 @@ if __name__ == "__main__":
 					array = HF_mean
 					name = 'Heat_Flux'
 				# scatter plot
-				size = 200*np.ones(len(array))
+				size = 100*np.ones(len(array))
 				# levels = np.arange(200,576,25)  # for mean z1
 				## vmin = min(levels)
 				# vmax = max(levels)
@@ -476,9 +478,16 @@ if __name__ == "__main__":
 			if contour_p: # distribibution plot. Total power calc as sum of grid points
 				HF_mean = []
 				# import results 
-				wl_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+				if temp_hflux:
+					wl_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+				if temp_hflux_tot:
+					wl_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HFC_HFT.dat', delimiter = ',', skip_header=1).T
+				
 				# columns: well_name[0],lon_dec[1],lat_dec[2],T1_mean[3],T1_std[4],T2_mean[5],T2_std[6]
-				name = 'Heat_Flux_grid'	
+				if temp_hflux:
+					name = 'Heat_Flux_grid'	
+				if temp_hflux_tot:
+					name = 'Heat_Flux_Total_grid'
 				lon_wls = wl_lon_lat_TG_TC_HF[1]
 				lat_wls = wl_lon_lat_TG_TC_HF[2]
 				# resistivity boundary
@@ -509,7 +518,10 @@ if __name__ == "__main__":
 							# add dist_min list
 							if dist_min != 1.e8:
 								wl_dist_2_bound.append(dist_min)
-								wl_hf.append(wl_lon_lat_TG_TC_HF[5][i])
+								if temp_hflux:
+									wl_hf.append(wl_lon_lat_TG_TC_HF[5][i])
+								if temp_hflux_tot:
+									wl_hf.append(wl_lon_lat_TG_TC_HF[6][i])
 					#
 					f1 = plt.figure(figsize=[7.5,5.5])
 					ax1 = plt.axes([0.18,0.25,0.70,0.50]) 
@@ -531,11 +543,18 @@ if __name__ == "__main__":
 					# array of fix pm2 values at resistivity boundary locations 
 					frac = 20 # fraction of points from rb to be taken
 					bound_pw2 =0.5
+					if temp_hflux_tot:
+						frac = 25 # fraction of points from rb to be taken
+						bound_pw2 =0.5
 					####
 					pm2_rb = [[lons_rb[i*frac], lats_rb[i*frac], bound_pw2] for i in range(int(len(lons_rb)/frac))]
 					# 0.64 is HF at a well located in the boundary WK650
 					# array of pm2 at well locatins
-					pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+					if temp_hflux:
+						pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+					if temp_hflux_tot:
+						pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+
 					# array of both
 					pm2 = pm2_wls.copy()
 					pm2 = pm2 + pm2_rb
@@ -560,7 +579,10 @@ if __name__ == "__main__":
 									for wl in pm2]
 								dist_wls = list(filter(None, dist_wls))
 								#
-								dist_weigth = [1./d**2 for d in dist_wls]
+								if temp_hflux:
+									dist_weigth = [1./d**2 for d in dist_wls]
+								if temp_hflux_tot:
+									dist_weigth = [1./d**2 for d in dist_wls]
 								pm2_grid[j][i] = np.dot(pm2_aux,dist_weigth)/np.sum(dist_weigth)
 								pm2_grid_list.append([lon,lat,pm2_grid[j][i]])
 					# filter points inside rest bound
@@ -587,7 +609,10 @@ if __name__ == "__main__":
 					hf_full = sum(pm2_filt_rb*(frac_grid**2))
 					# print power for the whole field
 					try: # add error base on senstivity to HF at bound 
-						resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
+						if temp_hflux_tot:
+							resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf_total.txt', delimiter = ',', skip_header=1).T
+						else:
+							resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
 						d_power = abs(power[-1] - power[0])/2
 						print('Wairakei-Tauhara estimated POWER: '+str(round(hf_full/1.e6,2))+' ± '+str(round(d_power,2))+' [MW]')#, size = textsize)
 					except:
@@ -614,12 +639,27 @@ if __name__ == "__main__":
 				if True: # plot integral as scatter 
 					# scatter plot
 					vmin = None#0. # bound_pw2
-					vmax = None#max(pm2_filt_rb)-.2
+					vmax = None#max(pm2_filt_rb)-.2 
+					if temp_hflux_tot: 
+						vmin = 0.#0. # bound_pw2
+						vmax = 3.#max(pm2_filt_rb)-.2 
 					size = (frac_grid/3)*np.ones(len(pm2_filt_rb))
-					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, edgecolors = None, \
+					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, alpha=0.25, edgecolors = None, \
 						vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#
+					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, alpha=0.8, edgecolors = None, \
+						vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 0)#
+
+					if True: # plot wells
+						path_wl_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls.dat'
+						lons, lats = np.genfromtxt(path_wl_locs, delimiter=',').T
+						plt.plot(lons, lats, 's' , c = 'gray', zorder = 4, markersize=3)
+						plt.plot([], [], 's' , c = 'gray', zorder = 0, label = 'Well', markersize=8)
 					try: # add error base on senstivity to HF at bound 
-						resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
+						if temp_hflux_tot:
+							resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf_total.txt', delimiter = ',', skip_header=1).T
+						else:
+							resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
+						d_power = abs(power[-1] - power[0])/2
 						d_power = abs(power[-1] - power[0])/2
 						ax.set_title('Wairakei-Tauhara estimated POWER: '+str(round(hf_full/1.e6,1))+' ± '+str(round(d_power,1))+' [MW]', size = textsize)
 					except:
@@ -634,8 +674,11 @@ if __name__ == "__main__":
 						plt.plot(lons, lats, '.' , c = 'gray', zorder = 5, markersize=4)
 						plt.plot([], [], '.' , c = 'gray', zorder = 0, label = 'Well', markersize=8)
 
-					if True: # plot scatter of HF in wells 
-						HF_mean = wl_lon_lat_TG_TC_HF[5]
+					if False: # plot scatter of HF in wells 
+						if temp_hflux: 
+							HF_mean = wl_lon_lat_TG_TC_HF[5]
+						if temp_hflux_tot: 
+							HF_mean = wl_lon_lat_TG_TC_HF[6]
 						array = HF_mean
 						# scatter plot
 						size = 100*np.ones(len(array))
@@ -784,6 +827,9 @@ if __name__ == "__main__":
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'base_map_'+'d2_mt_vs_T2'+'.png'		
 		# add scatter of geogradient and background of heat flux
 		if temp_grad_HF_basemap:
+			## 
+			HF_tot = True # plot total heat fluc (adv + cond)
+			##
 			name = 'gg_hf'
 			cmap_hf = 'GnBu'	
 			# geothermal gradient 
@@ -793,6 +839,8 @@ if __name__ == "__main__":
 			count = 0
 			# import results 
 			gg_result = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+			if HF_tot: 
+				gg_result = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HFC_HFT.dat', delimiter = ',', skip_header=1).T
 			# columns: well_name[0],lon_dec[1],lat_dec[2],T1_mean[3],T1_std[4],T2_mean[5],T2_std[6]
 			lon_stas = gg_result[1]
 			lat_stas = gg_result[2]
@@ -800,7 +848,7 @@ if __name__ == "__main__":
 			array = 1.e3*array # from m to km
 			# array to plot
 			# scatter plot
-			size = 200*np.ones(len(array))
+			size = 100*np.ones(len(array))
 			# levels = np.arange(200,576,25)  # for mean z1
 			## vmin = min(levels)
 			# vmax = max(levels)
@@ -818,6 +866,9 @@ if __name__ == "__main__":
 			HF_mean = []
 			# import results 
 			wl_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HF.dat', delimiter = ',', skip_header=1).T
+			if HF_tot:
+				wl_lon_lat_TG_TC_HF = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_TG_TC_HFC_HFT.dat', delimiter = ',', skip_header=1).T
+
 			# columns: well_name[0],lon_dec[1],lat_dec[2],T1_mean[3],T1_std[4],T2_mean[5],T2_std[6]
 			
 			lon_wls = wl_lon_lat_TG_TC_HF[1]
@@ -837,12 +888,17 @@ if __name__ == "__main__":
 				frac_grid = 100 # distance in meters per point in the grid 
 				# array of fix pm2 values at resistivity boundary locations 
 				frac = 20 # fraction of points from rb to be taken
+				if HF_tot:
+					frac = 25
 				bound_pw2 =0.5
 				####
 				pm2_rb = [[lons_rb[i*frac], lats_rb[i*frac], bound_pw2] for i in range(int(len(lons_rb)/frac))]
 				# 0.64 is HF at a well located in the boundary WK650
 				# array of pm2 at well locatins
 				pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+				if HF_tot:
+					pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] for i in range(len(wl_lon_lat_TG_TC_HF[6]))]
+
 				# array of both
 				pm2 = pm2_wls.copy()
 				pm2 = pm2 + pm2_rb
@@ -906,6 +962,9 @@ if __name__ == "__main__":
 				# scatter plot
 				vmin = None#0. # bound_pw2
 				vmax = None#max(pm2_filt_rb)-.2
+				if HF_tot: 
+					vmin = 0.#0. # bound_pw2
+					vmax = 3.#max(pm2_filt_rb)-.2 
 				size = (frac_grid/3)*np.ones(len(pm2_filt_rb))
 				cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, edgecolors = None, \
 					vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#
@@ -942,7 +1001,7 @@ if __name__ == "__main__":
 		if base_map: # topo 
 			if not (meb_results or mt_results or temp_results \
 					or z1_vs_temp_z1_basemap or d2_vs_temp_d2_basemap \
-						or temp_hflux or temp_grad or temp_grad_HF_basemap):
+						or temp_hflux or temp_hflux_tot or temp_grad or temp_grad_HF_basemap):
 				f.colorbar(topo_cb, ax=ax, label ='Elevation [m] (m.a.s.l.)')
 				file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_topo.png'
 		if meb_results: # meb
@@ -953,7 +1012,7 @@ if __name__ == "__main__":
 			f.colorbar(scatter_temp, ax=ax, label ='Temperature [°C]')
 		if temp_grad: # Temp
 			f.colorbar(scatter_temp, ax=ax, label ='Temperature gradient [°C/km]')
-		if temp_hflux: # Temp
+		if temp_hflux or temp_hflux_tot: # Temp
 			if scatter_p:
 				f.colorbar(scatter_hf, ax=ax, label ='Heat Flux [W/m2]')
 			if contour_p:
@@ -976,7 +1035,7 @@ if __name__ == "__main__":
 			orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
 #################### SCATTER VERSUS PLOT
-	if True: # 
+	if False: # 
 		### SCATTER PLOTS
 		d12_vs_temp_d12_scatter = True
 		d12_vs_hf_scatter = False
@@ -1113,7 +1172,7 @@ if __name__ == "__main__":
 
 				if True: # Geothermal gradient 
 					# filter by depth and temp bounds = [-700,95.]
-					if False: 
+					if True: 
 						f2 = plt.figure(figsize=[13,10])
 						ax2 = plt.axes([0.1,0.15,0.75,0.75]) 
 						bounds = [-700,95.] # [depth, temp]
@@ -1250,7 +1309,7 @@ if __name__ == "__main__":
 							ax1.set_ylabel('freq.', fontsize=textsize)
 							ax1.grid(True, which='both', linewidth=0.1)
 							file_name_aux = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'versus_plots'+os.sep+'gradient_d12_vs_T12_histogram_infield'+'.png'
-						
+						f2.tight_layout()
 						f2.savefig(file_name_aux, dpi=300, facecolor='w', edgecolor='w',
 							orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
