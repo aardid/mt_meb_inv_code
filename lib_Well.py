@@ -329,18 +329,25 @@ class Wells(object):
             f.set_size_inches(6,8)
             ax1.set_xscale("linear")
             ax1.set_yscale("linear")    
-            ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'data') # plot true data
-            ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'SC interpolation')
+            ax1.plot(self.temp_prof_true,self.red_depth,'o', label = 'temperature data') # plot true data
+            ax1.plot(self.temp_prof_rs,self.red_depth_rs,'-', label = 'temperature data interpolation')
             
-            # upper boundary (z1 distribution)
-            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0], self.elev - self.z1_pars[0]],'y-', alpha=0.5)
-            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0] - self.z1_pars[1], self.elev - self.z1_pars[0] - self.z1_pars[1]],'y--', alpha=0.3)
-            ax1.plot([-5.,300.], [self.elev - self.z1_pars[0] + self.z1_pars[1], self.elev - self.z1_pars[0] + self.z1_pars[1]],'y--', alpha=0.3)
-            # lower boundary (z2 distribution)
-            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]), self.elev - (self.z1_pars[0] + self.z2_pars[0])],'r-', alpha=0.5)
-            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]) - self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) - self.z2_pars[1]],'r--', alpha=0.3)
-            ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]) + self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) + self.z2_pars[1]],'r--', alpha=0.3)
+            ## top boundary (z1 distribution)
+            #ax1.plot([-5.,300.], [self.elev - self.z1_pars[0], self.elev - self.z1_pars[0]],'-',c = pale_orange_col, alpha=0.5, label = 'CC top boundary from MT')
+            #ax1.plot([-5.,300.], [self.elev - self.z1_pars[0] - self.z1_pars[1], self.elev - self.z1_pars[0] - self.z1_pars[1]],'y--', alpha=0.3)
+            #ax1.plot([-5.,300.], [self.elev - self.z1_pars[0] + self.z1_pars[1], self.elev - self.z1_pars[0] + self.z1_pars[1]],'y--', alpha=0.3)
+            ax1.fill_between([-5.,300.],[self.elev - self.z1_pars[0] - 1.5*self.z1_pars[1], self.elev - self.z1_pars[0] - 1.5*self.z1_pars[1]]
+                ,[self.elev - self.z1_pars[0] + 1.5*self.z1_pars[1], self.elev - self.z1_pars[0] + 1.5*self.z1_pars[1]]
+                    ,color = pale_orange_col, alpha=0.3, label = 'CC top boundary from MT')
             
+            ## bottom boundary (z2 distribution)
+            #ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]), self.elev - (self.z1_pars[0] + self.z2_pars[0])],'-', c=pale_blue_col, alpha=0.5, label = 'CC bottom boundary from MT')
+            #ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]) - self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) - self.z2_pars[1]],'r--', alpha=0.3)
+            #ax1.plot([-5.,300.], [self.elev - (self.z1_pars[0] + self.z2_pars[0]) + self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) + self.z2_pars[1]],'r--', alpha=0.3)
+            ax1.fill_between([-5.,300.],[self.elev - (self.z1_pars[0] + self.z2_pars[0]) - 1.5*self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) - 1.5*self.z2_pars[1]]
+                ,[self.elev - (self.z1_pars[0] + self.z2_pars[0]) + 1.5*self.z2_pars[1], self.elev - (self.z1_pars[0] + self.z2_pars[0]) + 1.5*self.z2_pars[1]]
+                    ,color = pale_blue_col, alpha=0.3,  label = 'CC bottom boundary from MT')      
+
             ax1.set_xlabel('Temperature [deg C]', fontsize=18)
             ax1.set_ylabel('Depth [m]', fontsize=18)
             ax1.grid(True, which='both', linewidth=0.4)
@@ -350,6 +357,7 @@ class Wells(object):
         ## Calculates temp profile for samples 
         count = 0
         Test_list = []
+
         for z1,z2 in zip(s_z1,s_z2):
             #while (z2 >= 0. and z1>= 0.):
             #    z1 = np.random.normal(self.z1_pars[0], self.z1_pars[1], 1) # 
@@ -386,12 +394,24 @@ class Wells(object):
             zmax.write('\n')
 
         if plot_samples:
-            for Tsamp in Test_list: 
-                ax1.plot(Tsamp[1:-1],self.red_depth_rs,'g-', alpha=0.2, lw = 1)  
+            plot_sec_layer = True
+            if plot_sec_layer:
+                for z1,z2,Tsamp in zip(s_z1,s_z2,Test_list):
+                    # find indexes of s_z1 and s_z2 in self.red_depth_rs
+                    d1 = self.elev - z1# elev. to top of CC
+                    d2 = self.elev - (z1+z2)# elev. to bottom of CC
+                    aux, idx_z1 = find_nearest(self.red_depth_rs, d1)
+                    aux, idx_z2 = find_nearest(self.red_depth_rs, d2)
+                    # plot Tsamp between indexes
+                    ax1.plot(Tsamp[idx_z1:idx_z2],self.red_depth_rs[idx_z1:idx_z2],'g-', alpha=0.2, lw = 1) 
+            else:
+                for Tsamp in Test_list: 
+                    ax1.plot(Tsamp[1:-1],self.red_depth_rs,'g-', alpha=0.2, lw = 1)  
             ax1.plot([],[],'g-', alpha=1.0 ,label = 'sample')
             ax1.legend()
             plt.tight_layout()
-            f.savefig("Test_samples.png", bbox_inches='tight')
+            f.savefig("Test_samples.png", dpi=300, facecolor='w', edgecolor='w',
+                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
             shutil.move('Test_samples.png',self.path_temp_est+os.sep+'Test_samples.png')
             if ret_fig:
                 return f

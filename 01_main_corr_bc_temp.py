@@ -61,7 +61,7 @@ if __name__ == "__main__":
     plot_temp_bc = False
     #
     HF_by_beta = True
-    stat_HF_by_beta = True
+    stat_HF_by_beta = False
 
     # (0) Import data and create objects: MT from edi files and wells from spreadsheet files
     if set_up:
@@ -513,7 +513,7 @@ if __name__ == "__main__":
                     path_files_out = '.'+os.sep+'corr_temp_bc'+os.sep+wl.name
                     # this function calc beta reference positive up (+ up)
                     wl.temp_prof_est(plot_samples = True, ret_fig = None, 
-                        path_files_out = path_files_out, Ns = 50) # method of well object
+                        path_files_out = path_files_out, Ns = 1) # method of well object
                     if pdf_temp_samlples:
                         g = wl.temp_prof_est(plot_samples = True, ret_fig = None, 
                             path_files_out = path_files_out, Ns = 50) # method of well object
@@ -523,7 +523,7 @@ if __name__ == "__main__":
                         # save temp profile png in well folder 
                         gen_temp_sample = True
                         wl.temp_prof_est(plot_samples = gen_temp_sample, ret_fig = None, 
-                            path_files_out = path_files_out, Ns = 50) # method of well object
+                            path_files_out = path_files_out, Ns = 70) # method of well object
                         if gen_temp_sample: # save in folder
                             file_name = '.'+os.sep+'corr_temp_bc'+os.sep+'temp_prof_samples'+os.sep+wl.name+'_temp_sample.png'
                             # copy from well folder to temp_prof_samples folder 
@@ -623,8 +623,54 @@ if __name__ == "__main__":
                         wl_TG_TC_HFC_HFT.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+',' \
                             +str(round(wl.thermal_grad[0],2))+','+str(round(wl.thermal_cond,2))+',' \
                                 +str(round(wl.heat_flux_cond[0],2))+','+str(round(wl.heat_flux_cond[0],2))+'\n')
+                    
+                    plot_hist_beta_HF_sta = True
+                    if plot_hist_beta_HF_sta:
+                        if len(bsam_l2):
+                            # plot beta histrogram 
+                            # plot histograms
+                            f = plt.figure(figsize=(4, 7))
+                            gs = gridspec.GridSpec(nrows=2, ncols=1)
+                            ax1 = f.add_subplot(gs[0, 0])
+                            ax2 = f.add_subplot(gs[1, 0])
+                            #ax_leg= f.add_subplot(gs[0, 2])
+                            colors = ['orange','blue']
+                            colors = [u'#ff7f0e', u'#1f77b4']
+                            
+                            ## betas
+                            #x_multi = [betas_total, t1_batch_filt_out]
+                            bsams = -1*bsam_l2 # positive downward
+                            n_bins = int(2*np.sqrt(len(bsams)))#15
+                            ax1.hist(bsams, n_bins, histtype='bar', color = colors[0],edgecolor='#E6E6E6')
+                            ax1.set_xlabel(r'$\beta$', fontsize=textsize)
+                            ax1.set_ylabel('frequency', fontsize=textsize)
+                            #ax1.set_xlim([-3,3])
+                            ax1.grid(True, which='both', linewidth=0.1)
+                            (mu, sigma) = norm.fit(bsams)
+                            med = np.median(bsams)
+                            ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                            
+                            ## heat flux total (cond+adv)
+                            #x_multi = [betas_total, t1_batch_filt_out]
+                            n_bins = int(2*np.sqrt(len(hf_tot_list)))#15
+                            ax2.hist(hf_tot_list, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+                            ax2.set_xlabel(r'Heat flux $[W/m^2]$', fontsize=textsize)
+                            ax2.set_ylabel('frequency', fontsize=textsize)
+                            #ax2.set_xlim([-3,3])
+                            ax2.grid(True, which='both', linewidth=0.1)
+                            (mu, sigma) = norm.fit(hf_tot_list)
+                            med = np.median(hf_tot_list)
+                            ax2.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                            
+                            #ax1.legend()
+                            plt.tight_layout()
+                            f.savefig("hist_beta_HFtot.png", dpi=300, facecolor='w', edgecolor='w',
+                                orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+                            shutil.move('hist_beta_HFtot.png','.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hist_beta_HFtot.png')
+                            plt.close()
             except:
                 pass
+            #
         if pdf_temp_samlples:
             pp.close()
         wl_TG_TC_HFC_HFT.close()
@@ -680,7 +726,7 @@ if __name__ == "__main__":
             
             ## average proportion
             #x_multi = [betas_total, t1_batch_filt_out]
-            n_bins = int(2*np.sqrt(len(betas_total)))#15
+            n_bins = int(2*np.sqrt(len(ave_prop_total)))#15
             n_bins = 36
             ax2.hist(ave_prop_total, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
             ax2.set_xlabel(r'$\gamma$', fontsize=textsize)

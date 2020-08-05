@@ -412,7 +412,7 @@ if __name__ == "__main__":
 			scatter_temp = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', 
 				cmap = 'spring_r', zorder = 5)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
 			ax.scatter([],[], s = size, c = 'pink', edgecolors = 'k', \
-				zorder = 5, label = 'Temperature gradient at Well location')#alpha = 0.5)
+				zorder = 5, label = 'Temperature gradient at well location')#alpha = 0.5)
 			# Need to
 			ax.set_title('Geothermal gradient inside the conductor', size = textsize)
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'
@@ -538,23 +538,39 @@ if __name__ == "__main__":
 						dpi=300, facecolor='w', edgecolor='w', orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 					plt.close(f1)
 				if True: # distribution from constant boundaries HF. distance weigth. 
+					# weigth to bounds
+					w_bound = True
 					#### tune pars
 					frac_grid = 100 # distance in meters per point in the grid 
 					# array of fix pm2 values at resistivity boundary locations 
 					frac = 20 # fraction of points from rb to be taken
 					bound_pw2 =0.5
 					if temp_hflux_tot:
-						frac = 25 # fraction of points from rb to be taken
-						bound_pw2 =0.5
+						if w_bound:
+							frac = 1#25 # fraction of points from rb to be taken
+						else:
+							frac = 25 # fraction of points from rb to be taken
+						bound_pw2 =0.5#0.5
 					####
 					pm2_rb = [[lons_rb[i*frac], lats_rb[i*frac], bound_pw2] for i in range(int(len(lons_rb)/frac))]
 					# 0.64 is HF at a well located in the boundary WK650
 					# array of pm2 at well locatins
 					if temp_hflux:
-						pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+						pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] 
+							for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
 					if temp_hflux_tot:
-						pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
-
+						if w_bound:
+							n = 0
+							pm2_wls = []
+							while n < 20: # more weigth in interpolation to real points in well location (virtual points in the boundary)
+								pm2_wls_aux = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] 
+									for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+								pm2_wls = pm2_wls + pm2_wls_aux
+								n+=1
+						else:
+							pm2_wls_aux = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] 
+								for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+					del(pm2_wls_aux)
 					# array of both
 					pm2 = pm2_wls.copy()
 					pm2 = pm2 + pm2_rb
@@ -641,13 +657,13 @@ if __name__ == "__main__":
 					vmin = None#0. # bound_pw2
 					vmax = None#max(pm2_filt_rb)-.2 
 					if temp_hflux_tot: 
-						vmin = 0.#0. # bound_pw2
+						vmin = 0.5#0. # bound_pw2
 						vmax = 3.#max(pm2_filt_rb)-.2 
 					size = (frac_grid/3)*np.ones(len(pm2_filt_rb))
-					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, alpha=0.25, edgecolors = None, \
+					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, alpha=0.9, edgecolors = None, \
 						vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#
-					cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, alpha=0.8, edgecolors = None, \
-						vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 0)#
+					#cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, alpha=0.8, edgecolors = None, \
+					#	vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 0)#
 
 					if True: # plot wells
 						path_wl_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls.dat'
@@ -856,7 +872,7 @@ if __name__ == "__main__":
 			scatter_temp = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', 
 				cmap = 'spring_r', zorder = 5)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
 			ax.scatter([],[], s = size, c = 'pink', edgecolors = 'k', \
-				zorder = 5, label = 'Temperature gradient at Well location')#alpha = 0.5)
+				zorder = 5, label = 'Temperature gradient at well location')#alpha = 0.5)
 			# Need to
 			ax.set_title('Geothermal gradient inside the conductor', size = textsize)
 
@@ -884,21 +900,34 @@ if __name__ == "__main__":
 			poli_in = [[lons_rb[i],lats_rb[i]] for i in range(len(lats_rb))]
 
 			if True: # distribution from constant boundaries HF. distance weigth. 
+				w_bound = True # calc integral with weigths on real (wells) and virtual (boundaries) HF points
 				#### tune pars
 				frac_grid = 100 # distance in meters per point in the grid 
 				# array of fix pm2 values at resistivity boundary locations 
 				frac = 20 # fraction of points from rb to be taken
 				if HF_tot:
-					frac = 25
-				bound_pw2 =0.5
+					frac = 10
+					if w_bound:
+						frac = 1 
+				bound_pw2 = 0.75 # 0.64 is HF at a well located in the boundary WK650
 				####
 				pm2_rb = [[lons_rb[i*frac], lats_rb[i*frac], bound_pw2] for i in range(int(len(lons_rb)/frac))]
 				# 0.64 is HF at a well located in the boundary WK650
 				# array of pm2 at well locatins
-				pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+				pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[5][i]] 
+					for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
 				if HF_tot:
-					pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] for i in range(len(wl_lon_lat_TG_TC_HF[6]))]
-
+					if w_bound:
+						n = 0
+						pm2_wls = []
+						while n < 20: # more weigth in interpolation to real points in well location (virtual points in the boundary)
+							pm2_wls_aux = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] 
+								for i in range(len(wl_lon_lat_TG_TC_HF[5]))]
+							pm2_wls = pm2_wls + pm2_wls_aux
+							n+=1
+					else: 
+						pm2_wls = [[wl_lon_lat_TG_TC_HF[1][i], wl_lon_lat_TG_TC_HF[2][i], wl_lon_lat_TG_TC_HF[6][i]] 
+							for i in range(len(wl_lon_lat_TG_TC_HF[6]))]
 				# array of both
 				pm2 = pm2_wls.copy()
 				pm2 = pm2 + pm2_rb
@@ -924,6 +953,7 @@ if __name__ == "__main__":
 							dist_wls = list(filter(None, dist_wls))
 							#
 							dist_weigth = [1./d**2 for d in dist_wls]
+							#dist_weigth = [1./d**1.5 for d in dist_wls]
 							pm2_grid[j][i] = np.dot(pm2_aux,dist_weigth)/np.sum(dist_weigth)
 							pm2_grid_list.append([lon,lat,pm2_grid[j][i]])
 				# filter points inside rest bound
@@ -968,12 +998,14 @@ if __name__ == "__main__":
 				size = (frac_grid/3)*np.ones(len(pm2_filt_rb))
 				cf = ax.scatter(lon_filt,lat_filt, s = size, c = pm2_filt_rb, edgecolors = None, \
 					vmin = vmin, vmax = vmax, cmap = cmap_hf, zorder = 4)#
-				try: # add error base on senstivity to HF at bound 
-					resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
-					d_power = abs(power[-1] - power[0])/2
-					ax.set_title('Heat flux through the clay cap: '+str(round(hf_full/1.e6,1))+' ± '+str(round(d_power,1))+' [MW]', size = textsize)
-				except:
-					ax.set_title('Heat flux through the clay cap: '+str(int(hf_full/1.e6))+' [MW]', size = textsize)
+				#try: # add error base on senstivity to HF at bound 
+				#	resboundHF, power = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'heat_flux_power'+os.sep+'senst_2_boundRB_hf.txt', delimiter = ',', skip_header=1).T
+				#	d_power = abs(power[-1] - power[0])/2
+				#	ax.set_title('Heat flux through the clay cap: '+str(round(hf_full/1.e6,1))+' ± '+str(round(d_power,1))+' [MW]', size = textsize)
+				#except:
+				#	ax.set_title('Heat flux through the clay cap: '+str(int(hf_full/1.e6))+' [MW]', size = textsize)
+				#ax.set_title('Heat flux through the clay cap: '+str(round(hf_full/1.e6,1))+' ± '+str(15.)+' [MW]', size = textsize)
+				ax.set_title('Heat flux through the clay cap: '+str(int(hf_full/1.e6))+' ± '+str(18)+' [MW]', size = textsize)
 
 				# plot resistivity boundary on top the scatter plot
 				plt.plot(lons_rb, lats_rb, color = 'orange' ,linewidth = 2, zorder = 4)

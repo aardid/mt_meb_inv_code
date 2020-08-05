@@ -51,7 +51,7 @@ if __name__ == "__main__":
 	full_dataset = True # True always
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
 	prof_WRK_EW_7 = False # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 	prof_THNW05 = False
 	#
 	# Filter has qualitu MT stations
-	filter_lowQ_data_MT = True
+	filter_lowQ_data_MT = False
 	# Filter MeB wells with useless info (for prior)
 	filter_useless_MeB_well = True
 	## run with quality filter per well
@@ -77,8 +77,8 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
+	prior_MT_meb_read = False
+	mcmc_MT_inv = False
 	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 			if prof_WRKNW5:
 				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
 					'WT068a','WT070b','WT223a','WT107a','WT111a']			
-				#sta2work = ['WT071a']
+				#sta2work = ['WT111a']
 			if prof_WRK_EW_7:
 				sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
 					'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
@@ -538,7 +538,6 @@ if __name__ == "__main__":
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
 		if True:
-			rms_list = []
 			for sta_obj in station_objects:
 				if sta_obj.ref < 0: # start at 0
 				#if sta_obj.name[:-4] != 'WT130a': #sta2work = ['WT122','WT130a','WT115a']
@@ -574,7 +573,6 @@ if __name__ == "__main__":
 						inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
 						# fitting mode xy or yx: 
 						fit_max_mode = False
-
 					try:
 						path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
 						sta_obj.plot_noise(path_img = path_img)
@@ -609,7 +607,8 @@ if __name__ == "__main__":
 							error_max_per = [5.,2.5]
 							inv_dat = [0,0,1,1]
 						if sta_obj.name[:-4] == 'WT030a': # station with static shift
-							range_p = [0,10.] # range of periods
+							inv_dat = [1,1,0,0]
+							range_p = [0.001,10.] # range of periods
 						if sta_obj.name[:-4] == 'WT060a': # station with static shift
 							range_p = [0.005,1.] # range of periods
 							inv_dat = [1,1,0,0]
@@ -630,7 +629,7 @@ if __name__ == "__main__":
 							range_p = [0.001,5.] # range of periods
 							error_max_per = [5.,2.5]
 						if sta_obj.name[:-4] == 'WT111a': # station with static shift
-							range_p = [0,5.] # range of periods
+							range_p = [0.001, 5.] # range of periods
 						if sta_obj.name[:-4] == 'WT223a': # station with static shift
 							range_p = [0,10.] # range of periods
 							error_max_per = [20.,5.]
@@ -683,6 +682,7 @@ if __name__ == "__main__":
 							print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
 					## run inversion
 					mcmc_sta.inv()
+					
 					## plot results (save in .png)
 					if True: # plot results for full chain 
 						mcmc_sta.plot_results_mcmc(chain_file = 'chain.dat', corner_plt = False, walker_plt = True)
@@ -693,13 +693,12 @@ if __name__ == "__main__":
 					if pdf_fit:
 						f, g = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
 					else:
-						mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)		
+						mcmc_sta.sample_post(idt_sam = True, plot_fit = True, rms = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)		
 					#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
 					## plot results without burn-in section
 					mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
 					shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
-					print(mcmc_sta.rms_samples)
-					rms_list.append(mcmc_sta.rms_samples)
+					
 					# save figures
 					if pdf_fit:
 						pp.savefig(g)
@@ -710,14 +709,19 @@ if __name__ == "__main__":
 					mcmc_sta.model_pars_est()
 					## delete chain.dat
 					#os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
-			print(rms_list)
-			print(np.mean(rms_list))
+
 			# save rms stations 
+			rms_appres_list = []
+			rms_phase_list  = []
 			rms_file = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'rms_misfit.txt','w')
-			rms_file.write('RMS misfit for apparent resistivity, based on chi-square misfit (Pearson, 1900)'+'\n')
+			rms_file.write('Station RMS misfit for apparent resistivity and phase, based on chi-square misfit (Pearson, 1900)'+'\n')
 			for sta_obj in station_objects:
 				rms_sta = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'rms_misfit.txt',skip_header=1).T
-				rms_file.write(sta_obj.name[:-4]+'\t'+str(rms_sta)+'\n')
+				rms_file.write(sta_obj.name[:-4]+'\t'+str(np.round(rms_sta[0],2))+'\t'+str(np.round(rms_sta[1],2))+'\n')
+				rms_appres_list.append(rms_sta[0])
+				rms_phase_list.append(rms_sta[1]) 
+			rms_file.write('\n')
+			rms_file.write('mean'+'\t'+str(np.mean(rms_sta[0]))+'\t'+str(np.mean(rms_sta[1]))+'\n')
 			rms_file.close()
 
 			## enlapsed time for the inversion (every station in station_objects)
@@ -774,7 +778,7 @@ if __name__ == "__main__":
 				plot_litho_wells = False
 		else: 
 			plot_litho_wells = False
-		if False: # plot resisitvity boundary reference
+		if True: # plot resisitvity boundary reference
 			if prof_WRK_EW_7:
 				# risk, 1984
 				path_rest_bound_inter = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'rb_1980_coord_for_WK7.txt' 
@@ -1105,7 +1109,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if False:
+	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf
@@ -1185,13 +1189,14 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if False:  # histogram of MT inversion parameters for stations inverted
+		if True:  # histogram of MT inversion parameters for stations inverted
 			# Resistivity Boundary, Risk
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
 			# Resistivity Boundary, Mielke, OUT
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
 			#histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'overlap')
-			histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
+			#histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
+			histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count=path_rest_bound_WT)
 
 		if False:   # histogram of MeB inversion parameters for wells 
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
@@ -1214,7 +1219,7 @@ if __name__ == "__main__":
 			wl_loc.close()
 			wlmeb_loc.close()
 
-		if True:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
+		if False:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
 			# mcmc MeB results 
 			if False:
 				wl_meb_results = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wl_meb_results.dat','w')
