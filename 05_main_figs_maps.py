@@ -44,20 +44,22 @@ if __name__ == "__main__":
 		base_map = True # plot map with wells and stations # modify .png ouput
 		##
 		zones = True # add injection and extraction zones
-		wells_loc = False # add wells
+		wells_loc = False # add wells (plot temp, meb and litho wells)
+		wells_meb_loc = True
+		wells_litho_loc = False
 		stations_loc = False # add mt stations
-		mt_2d_profiles = False
+		mt_2d_profiles = True
 		temp_fix_depth = False # temperature at fix depth (def 0 masl)
 		######## Just one of the following can be 'True'
 		meb_results = False # add scatter MeB results # modify .png ouput
-		mt_results = False # add scatter MT results # modify .png ouput
+		mt_results = True # add scatter MT results # modify .png ouput
 		temp_results = False # add scatter Temp results  # modify .png ouput
 		temp_grad = False # add scatter temperature gradient inside the conductor # modify .png ouput
 		temp_hflux = False # add scatter conductive heatflux  # modify .png ouput
 		temp_hflux_tot = False # add scatter conductive total heatflux (cond+adv)  # modify .png ouput
 		z1_vs_temp_z1_basemap = False # z1 from MT vs temp at z1  # modify .png ouput
 		d2_vs_temp_d2_basemap = False # d2 (z1+z2) from MT vs temp at d2  # modify .png ouput
-		temp_grad_HF_basemap = True # temperature gradient and heat flux # modify .png ouput
+		temp_grad_HF_basemap = False # temperature gradient and heat flux # modify .png ouput
 
 		########
 		# plot map with wells and stations
@@ -165,18 +167,20 @@ if __name__ == "__main__":
 
 		######## DATA
 		# add wells
-		if wells_loc:
+		if wells_loc or wells_meb_loc or wells_litho_loc:
 			path_wl_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls.dat'
 			lons, lats = np.genfromtxt(path_wl_locs, delimiter=',').T
-			plt.plot(lons, lats, 's' , c = 'gray', zorder = 2, markersize=6)
-			plt.plot([], [], 's' , c = 'gray', zorder = 2, label = 'Well', markersize=8)
-			if True:
+			if wells_loc:
+				plt.plot(lons, lats, 's' , c = 'gray', zorder = 2, markersize=6)
+				plt.plot([], [], 's' , c = 'gray', zorder = 2, label = 'Well', markersize=8)
+			if wells_meb_loc:
 				# meb wells 
 				path_wlmeb_locs = '.'+os.sep+'base_map_img'+os.sep+'location_mt_wells'+os.sep+'location_wls_meb.dat'
 				lons, lats = np.genfromtxt(path_wlmeb_locs, delimiter=',').T
-				plt.plot(lons, lats, 's' , c = 'w', zorder = 2, markersize=6)
-				plt.plot(lons, lats, 's' , c = 'gray', zorder = 2, markersize=6, markerfacecolor='none')
+				plt.plot(lons, lats, 's' , c = 'w', zorder = 8, markersize=6)
+				plt.plot(lons, lats, 's' , c = 'gray', zorder = 8, markersize=6, markerfacecolor='none')
 				plt.plot([], [], 's' , c = 'gray', zorder = 2, label = 'Well with MeB data', markersize=8, markerfacecolor='none')
+			if wells_litho_loc:
 				# lito wells
 				path = '.'+os.sep+'base_map_img'+os.sep+'wells_lithology'+os.sep+'wls_with_litho.txt'
 				names, lons, lats = np.genfromtxt(path, delimiter=',').T
