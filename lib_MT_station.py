@@ -232,21 +232,25 @@ class Station(object):
         self.Z_xx[0] = Z_dr[1]
         self.Z_xx[1] = Z_dr[2]
         self.Z_xx[2] = [complex(Z_dr[1][i], Z_dr[2][i]) for i in range(len(Z_dr[0]))]
+        self.Z_xx[2] = np.absolute(self.Z_xx[2])
         self.Z_xx[3] = Z_dr[9]
         # Zyx
         self.Z_yx[0] = Z_dr[3]
         self.Z_yx[1] = Z_dr[4]
         self.Z_yx[2] = [complex(Z_dr[3][i], Z_dr[4][i]) for i in range(len(Z_dr[0]))]
+        self.Z_yx[2] = np.absolute(self.Z_yx[2])
         self.Z_yx[3] = Z_dr[10]
         # Zxy
         self.Z_xy[0] = Z_dr[5]
         self.Z_xy[1] = Z_dr[6]
         self.Z_xy[2] = [complex(Z_dr[5][i], Z_dr[6][i]) for i in range(len(Z_dr[0]))]
+        self.Z_xy[2] = np.absolute(self.Z_xy[2])
         self.Z_xy[3] = Z_dr[11]
         # Zxx
         self.Z_yy[0] = Z_dr[7]
         self.Z_yy[1] = Z_dr[8]
         self.Z_yy[2] = [complex(Z_dr[7][i], Z_dr[8][i]) for i in range(len(Z_dr[0]))]
+        self.Z_yy[2] = np.absolute(self.Z_yy[2])
         self.Z_yy[3] = Z_dr[12]
 
         #Z = [file,periods,zxxr,zxxi,zxx,zxx_var,zxyr,zxyi,zxy,zxy_var,zyxr,zyxi,zyx,zyx_var,zyyr,zyyi,zyy,zyy_var]

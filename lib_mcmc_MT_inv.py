@@ -42,6 +42,10 @@ class mcmc_inv(object):
 	obj                     MT stations to inverted. It's an objec of
     T_obs                   periods recorded
     rho_app_obs             apparent resistivity observed (4 comp.)
+	Z_xx			 		impedanse xx [real, img, mag, var]
+	Z_xy					impedanse xy [real, img, mag, var]
+	Z_yx					impedanse yx [real, img, mag, var]
+	Z_yy					impedanse yy [real, img, mag, var]
     rho_app_obs_er          error of apparent resistivity observed (4 comp.)
     phase_obs               phase (degree) observed (4 comp.)
     phase_obs_er            error of phase (degree) observed (4 comp.)
@@ -154,6 +158,11 @@ class mcmc_inv(object):
         self.rho_app_obs_er = sta_obj.rho_app_er
         self.phase_obs = sta_obj.phase_deg
         self.phase_obs_er = sta_obj.phase_deg_er
+        # impedance tensor 
+        self.Z_xx = sta_obj.Z_xx
+        self.Z_xy = sta_obj.Z_xy
+        self.Z_yx = sta_obj.Z_yx
+        self.Z_yy = sta_obj.Z_yy
         # add model error
         #if add_mod_err is None:
         #    add_mod_err = False
@@ -269,7 +278,7 @@ class mcmc_inv(object):
         
         if ini_mod is None: 
             if self.num_lay == 3:
-                self.ini_mod = [200,200,300,2.5,50]
+                self.ini_mod = [50,50,15,1.5,15]#[500,500,1000,3.5,350] #[200,200,300,2.5,50]
             if self.num_lay == 4:
                 self.ini_mod = [200,100,200,150,50,500,1000]  
         if ini_mod: 
@@ -310,7 +319,8 @@ class mcmc_inv(object):
         data = np.array([self.T_obs,\
                     self.rho_app_obs[1],self.phase_obs[1],\
                     self.rho_app_obs[2],self.phase_obs[2],\
-                    self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs]).T
+                    self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs,\
+                    self.Z_xy,self.Z_yx]).T
         cores = multiprocessing.cpu_count()
         if self.name == 'WT024a' or self.name == 'WT068a':
             cores = cores - 2
@@ -389,6 +399,14 @@ class mcmc_inv(object):
             #if variance: 
             w_app_res = 1. 
             w_phase =  .01
+            ## invert log10(/Z/) instead of log10(appres)
+            inv_mag_Z = True
+            ##
+            if inv_mag_Z:
+                error_floor_mag_Zxy = 0.05
+                error_floor_mag_Zyx = 0.05
+                error_floor_phi_Zxy = 0.05
+                error_floor_phi_Zyx = 0.05
             # filter range of periods to work with
             if self.range_p: 
                 ## range_p = [0.01, 1.0] s
@@ -420,12 +438,35 @@ class mcmc_inv(object):
                             TE_apres = self.inv_dat[0]*-np.sum(((obs[:,1] \
                                 - rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[1])) #/v
                         else:
-                            mf = []
-                            mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
-                                / (np.log10(self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
-                                
-                            TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
+                            if inv_mag_Z: # invert log10(mag(Z))
+                                mf = []
+                                abs_Z_obs = obs[8][2] # magnitud of Zxy
+                                abs_Z_est = 1e-3*np.absolute(Z_est[:])
+                                # aprox error (% of mag of component), need to be fixed to incorporate real error 
+                                error_Z_obs =  np.log10(np.ones(len(abs_Z_obs))* np.max(abs_Z_obs)*error_floor_mag_Zxy)
+                                # error base on Wheelock 2015
+                                error_Z_obs = 2.e2*obs[9][3] / np.log(10) * 1/abs_Z_obs # error of Zxy (sigma)
+                                #error_Z_obs =  abs_Z_obs*error_floor_mag_Zxy # % of mag values
+                                #
+                                mf = [((np.log10(abs_Z_obs[i]) - np.log10(abs_Z_est[i])) \
+                                    / (error_Z_obs * v_vec[i]))**self.norm \
+                                    for i in range(len(abs_Z_obs))]
+                                TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
+                            
+                            else: # invert log10(appres)
+                                mf = []
+                                appres_xy_obs = obs[1] # appres of Zxy
+                                appres_Z_est = rho_ap_est
+                                error_appres_xy_obs = self.rho_app_obs_er[1]
+                                #
+                                mf = [((np.log10(appres_xy_obs[i]) - np.log10(appres_Z_est[i])) \
+                                    / (np.log10(error_appres_xy_obs[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(appres_xy_obs))]
+                                #mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
+                                #    / (np.log10(self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
+                                #    for i in range(len(obs[:,0]))]
+                            
+                                TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
                 else:
                     # invert with impose error (same for every station)
                     v = 0.1
@@ -435,7 +476,10 @@ class mcmc_inv(object):
                 TE_apres = 0.
             # apply weigth 
             #TE_apres = TE_apres*w_app_res
+
+
             #####################################
+            # phase TE
             if self.inv_dat[1] == 1:
                 if variance:
                     if self.variance_mean: 
@@ -454,9 +498,29 @@ class mcmc_inv(object):
                             #TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
                             #        - phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v
                             mf = []
-                            mf = [((np.log10(abs(obs[i][2])) - np.log10(abs(phi_est[i]))) \
-                                / (np.log10(abs(self.phase_obs_er[1][i])) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
+                            phi_obs = obs[:][2] # phase of Zxy
+                            phi_est = phi_est
+                            phi_er = 4.*self.phase_obs_er[1][:]
+                            #
+                            if inv_mag_Z: 
+                                pass
+                                #phi_er =  np.ones(len(phi_obs))* np.max(phi_obs)*error_floor_phi_Zxy
+                            
+                            ## invert for log10 phi
+                            #mf = [((np.log10(phi_obs[i]) - np.log10(phi_est[i])) \
+                            #    / (np.log10(phi_er[i]) * v_vec[i]))**self.norm \
+                            #    for i in range(len(phi_obs))]
+                            ## invert for phi
+                            if inv_mag_Z: 
+                                mf = [(((abs(phi_obs[i])) - abs(phi_est[i])) \
+                                    / ((abs(phi_er[i])) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
+                            else:
+                            ## invert for log10 phi
+                                mf = [((np.log10(phi_obs[i]) - np.log10(phi_est[i])) \
+                                    / (np.log10(phi_er[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
+                            #
                             TE_phase = self.inv_dat[1]*-.5 * np.sum(mf)
                 else: 
                     v = 100          
@@ -482,15 +546,35 @@ class mcmc_inv(object):
                             TM_apres = self.inv_dat[2]*-np.sum(((obs[:,3] \
                                 -rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[2])) #/v
                         else:
-                            # log space
-                            #TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                            #    - np.log10(rho_ap_est))/v_vec)**self.norm / (2*np.log10(self.rho_app_obs_er[2])**2)) #/v
-                            # log space
-                            mf = []
-                            mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) \
-                                / (np.log10(self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
-                            TM_apres = self.inv_dat[2]*-.5 * np.sum(mf)
+
+                            if inv_mag_Z: # invert log10(mag(Z))
+                                mf = []
+                                abs_Z_obs = obs[9][2] # magnitud of Zyx
+                                abs_Z_est = 1e-3*np.absolute(Z_est[:])
+                                # aprox error (% of mag of component), need to be fixed to incorporate real error 
+                                error_Z_obs =  np.log10(np.ones(len(abs_Z_obs))* np.max(abs_Z_obs)*error_floor_mag_Zyx)
+                                # error base on Wheelock 2015
+                                error_Z_obs = 2.e2*obs[9][3] / np.log(10) * 1/abs_Z_obs # error of Zxy (sigma)
+
+                                mf = [((np.log10(abs_Z_obs[i]) - np.log10(abs_Z_est[i])) \
+                                    / (error_Z_obs * v_vec[i]))**self.norm \
+                                    for i in range(len(abs_Z_obs))]
+                                TM_apres = self.inv_dat[0]*-.5 * np.sum(mf)
+
+                            else: # invert log10(appres) of Zyx
+
+                                mf = []
+                                appres_yx_obs = obs[3] # appres of Zxy
+                                appres_Z_est = rho_ap_est
+                                error_appres_yx_obs = self.rho_app_obs_er[2]
+                                #
+                                mf = [((np.log10(appres_yx_obs[i]) - np.log10(appres_Z_est[i])) \
+                                    / (np.log10(error_appres_yx_obs[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(appres_yx_obs))]
+                                #mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) \
+                                #    / (np.log10(self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
+                                #    for i in range(len(obs[:,0]))]
+                                TM_apres = self.inv_dat[2]*-.5 * np.sum(mf)
                 else:
                     v = .1
                     TM_apres = w_app_res*self.inv_dat[2]*-.5 *-np.sum(((np.log10(obs[:,3]) \
@@ -499,8 +583,9 @@ class mcmc_inv(object):
                 TM_apres = 0.
             # apply weigth 
             #TM_apres = TM_apres*w_app_res
+            
             #####################################
-
+            # phase TM
             if self.inv_dat[3] == 1:
                 if variance:
                     if self.variance_mean: 
@@ -514,11 +599,28 @@ class mcmc_inv(object):
                         else:
                             #TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
                             #        -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[2]**2)) #/v
+                            
                             mf = []
-                            mf = [((np.log10(abs(obs[i][4])) - np.log10(abs(phi_est[i]))) \
-                                / (np.log10(abs(self.phase_obs_er[2][i])) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
+                            phi_obs = obs[:][4] # phase of Zyx
+                            phi_est = phi_est
+                            phi_er = 4.*self.phase_obs_er[2][:]
+                            #
+                            if inv_mag_Z: 
+                                pass
+                                #phi_er =  np.ones(len(phi_obs))* np.max(phi_obs)*error_floor_phi_Zyx
+
+                            if inv_mag_Z: 
+                                ## invert for phi
+                                mf = [(((abs(phi_obs[i])) - abs(phi_est[i])) \
+                                    / ((abs(phi_er[i])) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
+                            else:
+                                ## invert for log10 phi
+                                mf = [((np.log10(phi_obs[i]) - np.log10(phi_est[i])) \
+                                    / (np.log10(phi_er[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
                             TM_phase = self.inv_dat[3]*-.5 * np.sum(mf)
+
                 else:
                     v = 100
                     TM_phase = w_phase*self.inv_dat[3]*-.5*-np.sum(((obs[:,4] \

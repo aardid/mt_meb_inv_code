@@ -51,7 +51,7 @@ if __name__ == "__main__":
 	full_dataset = True # True always
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = False
+	prof_WRKNW5 = True
 	array_WRKNW5_WRKNW6 = False
 	prof_WRK_EW_7 = False # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
@@ -77,8 +77,8 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = False
-	mcmc_MT_inv = False
+	prior_MT_meb_read = True
+	mcmc_MT_inv = True
 	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 			if prof_WRKNW5:
 				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
 					'WT068a','WT070b','WT223a','WT107a','WT111a']			
-				#sta2work = ['WT111a']
+				sta2work = ['WT111a']
 			if prof_WRK_EW_7:
 				sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
 					'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
@@ -533,7 +533,7 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
-		prior_meb = True  # if false -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
+		prior_meb = False  # if false -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
@@ -554,7 +554,7 @@ if __name__ == "__main__":
 					## inv_dat: weighted data to invert and range of periods
 					## 		inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
 					## range_p = [0.001,10.] # range of periods
-					if True: # import inversion parameters from file 
+					if False: # import inversion parameters from file 
 						name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
 						inv_pars = [x.split() for x in open(name_file).readlines() if x[0]!='#']
 						inv_pars_names = [x[0] for x in inv_pars] 
@@ -586,7 +586,7 @@ if __name__ == "__main__":
 						error_max_per = [1.,1.]
 					# set number of walkers and walker jumps
 					nwalkers = 40
-					walk_jump = 3000
+					walk_jump = 5000
 					####### condition for MeB prior
 					# if prior_meb:
 					# 	if all([sta_obj.rho_app[1][i] > 10. for i in range(len(sta_obj.rho_app[1])-10)]):
@@ -653,13 +653,13 @@ if __name__ == "__main__":
 						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
 							walk_jump = walk_jump, nwalkers = nwalkers, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 								range_p = range_p, autocor_accpfrac = True, data_error = True, \
-									error_max_per=error_max_per, error_mean = error_mean)
+									error_mean = error_mean, error_max_per=error_max_per)
 					except: # in case that inversion breaks due to low number of independet samples 
 						try:
 							mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
 								walk_jump = walk_jump+1000, nwalkers = nwalkers+10, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 									range_p = range_p, autocor_accpfrac = True, data_error = True, \
-										error_max_per=error_max_per, error_mean = error_mean)
+										error_mean = error_mean, error_max_per=error_max_per)
 						except:
 							pass
 
@@ -778,7 +778,7 @@ if __name__ == "__main__":
 				plot_litho_wells = False
 		else: 
 			plot_litho_wells = False
-		if True: # plot resisitvity boundary reference
+		if False: # plot resisitvity boundary reference
 			if prof_WRK_EW_7:
 				# risk, 1984
 				path_rest_bound_inter = '.'+os.sep+'base_map_img'+os.sep+'extras'+os.sep+'mt_prof'+os.sep+'rb_1980_coord_for_WK7.txt' 
@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if True:
+	if False:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf

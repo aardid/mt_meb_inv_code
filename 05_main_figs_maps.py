@@ -45,18 +45,18 @@ if __name__ == "__main__":
 		##
 		zones = True # add injection and extraction zones
 		wells_loc = False # add wells (plot temp, meb and litho wells)
-		wells_meb_loc = True
+		wells_meb_loc = False
 		wells_litho_loc = False
 		stations_loc = False # add mt stations
-		mt_2d_profiles = True
+		mt_2d_profiles = False
 		temp_fix_depth = False # temperature at fix depth (def 0 masl)
 		######## Just one of the following can be 'True'
 		meb_results = False # add scatter MeB results # modify .png ouput
-		mt_results = True # add scatter MT results # modify .png ouput
+		mt_results = False # add scatter MT results # modify .png ouput
 		temp_results = False # add scatter Temp results  # modify .png ouput
 		temp_grad = False # add scatter temperature gradient inside the conductor # modify .png ouput
 		temp_hflux = False # add scatter conductive heatflux  # modify .png ouput
-		temp_hflux_tot = False # add scatter conductive total heatflux (cond+adv)  # modify .png ouput
+		temp_hflux_tot = True # add scatter conductive total heatflux (cond+adv)  # modify .png ouput
 		z1_vs_temp_z1_basemap = False # z1 from MT vs temp at z1  # modify .png ouput
 		d2_vs_temp_d2_basemap = False # d2 (z1+z2) from MT vs temp at d2  # modify .png ouput
 		temp_grad_HF_basemap = False # temperature gradient and heat flux # modify .png ouput
@@ -463,7 +463,8 @@ if __name__ == "__main__":
 				lats, lons = np.genfromtxt(path_area, skip_header=1, delimiter=',').T
 				conv_to_meters = 111000. # 111 km
 				area_m2 = PolyArea(lons*conv_to_meters,lats*conv_to_meters)
-				area_km2 = area_m2/1.e6
+				area_km2 = area_m2/1.e6 # 171
+
 				# filter wells: inside area
 				# check if station is inside poligon 
 				HF_inside = []

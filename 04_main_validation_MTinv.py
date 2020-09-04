@@ -286,13 +286,13 @@ if __name__ == "__main__":
                     z0_grid = z_grid[count]
                 count+=1    
             # create figure
-            f = plt.figure(figsize=[7.5,6.5])
+            f = plt.figure(figsize=[6.5,5.5])
             ## plot profile 3d inv
             ax = plt.axes()
             # note: z_vec is + downward 
             #ax.plot(np.log10(res_z), z_vec -  elev[i] ,'m-', label='profile from 3D inv.')
             #ax.plot(np.log10(res_z), z_vec -  z0_grid ,'r-', label='1D profile from 3D deterministic inversion', linewidth=2.0)
-            ax.plot(res_z, z_vec -  z0_grid ,'r-', label='1D profile from 3D deterministic inversion', linewidth=2.0)
+            ax.plot(res_z, z_vec -  z0_grid ,'r-', label='3D ModEM inversion', linewidth=2.0)
 
 
             #plt.xlim([0,10])
@@ -361,7 +361,7 @@ if __name__ == "__main__":
                         sam = random.randint(0,N_ind_s-1)
                         sq_prof_est = square_fn([chain[sam,2],chain[sam,2]+chain[sam,3],chain[sam,4],chain[sam,5],chain[sam,6]], x_axis=z_model)
                         ax.semilogx(sq_prof_est,z_model,'b-', lw = .5, alpha=0.1, zorder=0)
-                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1., alpha=0.5, zorder=0, label= '1D profile from 1D stochastic inversion')
+                    ax.semilogx(sq_prof_est,z_model,'b-', lw = 1., alpha=0.5, zorder=0, label= '1D Bayesian inversion')
 
 
             if plot_meb: 
@@ -380,8 +380,8 @@ if __name__ == "__main__":
                     ## thick lines 
                     # top boundary
                     x_axis = np.linspace(0,100000, 100)
-                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well TH19: top boundary clay cap')
-                    ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well TH19: bottom boundary clay cap')
+                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB inversion TH19: top boundary')
+                    ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB inversion TH19: bottom boundary')
                 if stas_name[i] == 'WT107a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -395,8 +395,8 @@ if __name__ == "__main__":
                     ## thick lines 
                     # top boundary
                     x_axis = np.linspace(0,100000, 100)
-                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + 1.5*z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK401: top boundary clay cap')
-                    ax.fill_between(x_axis, z2_meb[0] - 1.5*z2_meb[1], z2_meb[0] + 1.5*z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK401: bottom boundary clay cap')
+                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + 1.5*z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB inversion WK401: top boundary')
+                    ax.fill_between(x_axis, z2_meb[0] - 1.5*z2_meb[1], z2_meb[0] + 1.5*z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB inversion WK401: bottom boundary')
                 if stas_name[i] == 'WT033c':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -410,8 +410,8 @@ if __name__ == "__main__":
                     ## thick lines 
                     # top boundary
                     x_axis = np.linspace(0,100000, 100)
-                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + 1.5*z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK267A: top boundary clay cap')
-                    ax.fill_between(x_axis, z2_meb[0] - 1.5*z2_meb[1], z2_meb[0] + 1.5*z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK267A: bottom boundary clay cap')
+                    ax.fill_between(x_axis, z1_meb[0] - 1.5*z1_meb[1], z1_meb[0] + 1.5*z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB inversion WK267A: top boundary')
+                    ax.fill_between(x_axis, z2_meb[0] - 1.5*z2_meb[1], z2_meb[0] + 1.5*z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB inversion WK267A: bottom boundary')
                 if stas_name[i] == 'WT501a':
                     # import meb results 
                     # note: z1 and z2 in MeB are depths (not thicknesess)
@@ -425,8 +425,8 @@ if __name__ == "__main__":
                     ## thick lines 
                     # top boundary
                     x_axis = np.linspace(0,100000, 100)
-                    ax.fill_between(x_axis, z1_meb[0] - z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB well WK267A: top boundary clay cap')
-                    ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB well WK267A: bottom boundary clay cap')
+                    ax.fill_between(x_axis, z1_meb[0] - z1_meb[1], z1_meb[0] + z1_meb[1],  alpha=.2, edgecolor='g', facecolor='g', label = 'MeB inversion WK267A: top boundary')
+                    ax.fill_between(x_axis, z2_meb[0] - z2_meb[1], z2_meb[0] + z2_meb[1],  alpha=.2, edgecolor='c', facecolor='c', label = 'MeB inversion WK267A: bottom boundary')
             plt.ylim([0.,(z1_mcmc[0] + z2_mcmc[0] + 1000)])
             plt.xlim([.1,1e5])
             plt.gca().invert_yaxis()
@@ -434,8 +434,10 @@ if __name__ == "__main__":
             ax.tick_params(labelsize=textsize)
             plt.tight_layout()
             #plt.show()
-            f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_'+stas_name[i]+'.png')   # save the figure to file
-            f.savefig('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_'+stas_name[i]+'.png')   # save the figure to file
+            f.savefig('.'+os.sep+'modEM_inv'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_'+stas_name[i]+'.png',
+                dpi=300, facecolor='w', edgecolor='w', orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)   # save the figure to file
+            f.savefig('.'+os.sep+'mcmc_inversions'+os.sep+stas_name[i]+os.sep+'comp_modEM_mcmc_'+stas_name[i]+'.png',
+                dpi=300, facecolor='w', edgecolor='w', orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)   # save the figure to file   
             pp.savefig(f)
             plt.close(f)    # close the figure
         
