@@ -79,7 +79,7 @@ if __name__ == "__main__":
 	mcmc_meb_inv = False
 	prior_MT_meb_read = True
 	mcmc_MT_inv = True
-	plot_2D_MT = False
+	plot_2D_MT = True
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -128,7 +128,7 @@ if __name__ == "__main__":
 			if prof_WRKNW5:
 				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
 					'WT068a','WT070b','WT223a','WT107a','WT111a']			
-				sta2work = ['WT111a']
+				#sta2work = ['WT111a']
 			if prof_WRK_EW_7:
 				sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
 					'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
@@ -533,7 +533,7 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
-		prior_meb = False  # if false -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
+		prior_meb = None  # if False -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
@@ -586,7 +586,7 @@ if __name__ == "__main__":
 						error_max_per = [1.,1.]
 					# set number of walkers and walker jumps
 					nwalkers = 40
-					walk_jump = 5000
+					walk_jump = 3000
 					####### condition for MeB prior
 					# if prior_meb:
 					# 	if all([sta_obj.rho_app[1][i] > 10. for i in range(len(sta_obj.rho_app[1])-10)]):
