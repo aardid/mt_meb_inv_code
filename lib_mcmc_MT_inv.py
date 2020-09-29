@@ -2308,7 +2308,7 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
         ax_leg= f.add_subplot(gs[0, 2])
 
         # z1
-        n_bins = int(.25*np.sqrt(len(z1_batch_filt_in)))#15
+        n_bins = int(.35*np.sqrt(len(z1_batch_filt_in)))#15
         colors = ['orange','blue']
         colors = [u'#ff7f0e', u'#1f77b4']
         ax1.hist(z1_batch_filt_in, n_bins, histtype='bar', color = colors[0], edgecolor='#E6E6E6')
@@ -2326,7 +2326,10 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
                 pass
             #ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
             #ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-            ax1.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax1.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(z1_batch_filt_in, [5,50,95])
+            ax1.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+
 
         # z2
         # Make a multiple-histogram of data-sets with different length.
@@ -2348,8 +2351,9 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
                 pass
             #ax2.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
             #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-            ax2.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
-
+            #ax2.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(z2_batch_filt_in, [5,50,95])
+            ax2.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
         # r1
         # Make a multiple-histogram of data-sets with different length.
         n_bins = int(.25*np.sqrt(len(r1_batch_filt_in)))#15
@@ -2370,8 +2374,9 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
                 pass
             #ax3.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
             #ax3.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-            ax3.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
-
+            #ax3.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(r1_batch_filt_in, [5,50,95])
+            ax3.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
         # r2
         # Make a multiple-histogram of data-sets with different length.
         n_bins = int(.25*np.sqrt(len(r2_batch_filt_in)))#15
@@ -2392,8 +2397,9 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
                 pass
             #ax4.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
             #ax4.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-            ax4.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
-
+            #ax4.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(r2_batch_filt_in, [5,50,95])
+            ax4.set_title('{:3.1f}'.format(p50)+'$^{+'+'{:3.1f}'.format(p95-p50)+'}_{-'+'{:3.1f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
         # r3
         # Make a multiple-histogram of data-sets with different length.
         n_bins = int(.25*np.sqrt(len(r3_batch_filt_in)))#15
@@ -2414,8 +2420,9 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
                 pass
             #ax5.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
             #ax5.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-            ax5.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
-        
+            #ax5.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(r3_batch_filt_in, [5,50,95])
+            ax5.set_title('{:3.1f}'.format(p50)+'$^{+'+'{:3.1f}'.format(p95-p50)+'}_{-'+'{:3.1f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
         # 
         #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
         # active zone

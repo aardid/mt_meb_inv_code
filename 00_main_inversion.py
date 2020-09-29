@@ -51,7 +51,7 @@ if __name__ == "__main__":
 	full_dataset = True # True always
 	# Profiles
 	prof_WRKNW6 = False
-	prof_WRKNW5 = True
+	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
 	prof_WRK_EW_7 = False # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
@@ -77,9 +77,9 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
-	mcmc_MT_inv = True
-	plot_2D_MT = True
+	prior_MT_meb_read = False
+	mcmc_MT_inv = False
+	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -1109,7 +1109,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if False:
+	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf

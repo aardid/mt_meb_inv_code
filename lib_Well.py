@@ -1791,7 +1791,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
 
     if type_hist == 'infield':
         # plot histograms 
-        f = plt.figure(figsize=(8, 4))
+        f = plt.figure(figsize=(7, 3.5))
         gs = gridspec.GridSpec(nrows=1, ncols=2)
         ax1 = f.add_subplot(gs[0, 0])
         ax2 = f.add_subplot(gs[0, 1])
@@ -1805,7 +1805,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         colors = [u'#ff7f0e', u'#1f77b4']
         ax1.hist(t1_batch_filt_in, n_bins, histtype='bar', color = colors[0], edgecolor='#E6E6E6')
         ax1.set_xlabel('$T_1$ [°C]', fontsize=textsize)
-        ax1.set_ylabel('frequency', fontsize=textsize)
+        ax1.set_ylabel('posterior samples', fontsize=textsize)
         ax1.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1817,7 +1817,9 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
                 #y = stats.norm.pdf(bins, mu, sigma)
                 pass
             #ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
-            ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(t1_batch_filt_in, [5,50,95])
+            ax1.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
 
         # T2
         # Make a multiple-histogram of data-sets with different length.
@@ -1829,7 +1831,7 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
         #x_multi = [t2_batch_filt_in, t2_batch_filt_out]
         ax2.hist(t2_batch_filt_in, n_bins, histtype='bar', color = colors[1], edgecolor='#E6E6E6')
         ax2.set_xlabel('$T_2$ [°C]', fontsize=textsize)
-        ax2.set_ylabel('frequency', fontsize=textsize)
+        ax2.set_ylabel('posterior samples', fontsize=textsize)
         ax2.grid(True, which='both', linewidth=0.1)
 
         if filt_in_count:
@@ -1841,7 +1843,9 @@ def histogram_temp_T1_T2(wells_objects, filt_in_count = None, filt_out_count = N
                 #y = stats.norm.pdf(bins, mu, sigma)
                 pass
             #ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
-            ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(t2_batch_filt_in, [5,50,95])
+            ax2.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
 
         f.tight_layout()
 

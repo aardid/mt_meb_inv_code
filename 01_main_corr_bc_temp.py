@@ -60,8 +60,8 @@ if __name__ == "__main__":
     calc_cond_bound_temps = False
     plot_temp_bc = False
     #
-    HF_by_beta = True
-    stat_HF_by_beta = False
+    HF_by_beta = False
+    stat_HF_by_beta = True
 
     # (0) Import data and create objects: MT from edi files and wells from spreadsheet files
     if set_up:
@@ -750,7 +750,116 @@ if __name__ == "__main__":
             # save PNG
             plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'betas_ave_prop_nwells_'+str(count_wells)+'.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)  
-        
+
+            if True:
+                # calculate Vz
+                kappa = 2.25
+                cheat = 4176.
+                dens = 1000.
+                L = 300. 
+                C = kappa / (dens*cheat*L)
+                vz = [-1*beta * C for beta in betas_total if (beta < 0. and beta > -5.)]  # m/s
+                vz_nano_ms = np.asarray(vz) * 1.e9
+                vz_mmyear = vz_nano_ms * 100/3
+                vz_mmyear_log = np.log10(vz_mmyear)
+                
+                # plot histogram in nano m/s
+                f = plt.figure(figsize=(6.5, 5.5))#(8, 7))
+                gs = gridspec.GridSpec(nrows=1, ncols=1)
+                ax1 = f.add_subplot(gs[0, 0])
+                #ax2 = f.add_subplot(gs[0, 1])
+                #ax_leg= f.add_subplot(gs[0, 2])
+                colors = ['orange','blue']
+                colors = [u'#ff7f0e', u'#1f77b4']
+                
+                #x_multi = [betas_total, t1_batch_filt_out]
+                n_bins = int(.5*np.sqrt(len(vz_nano_ms)))#15
+                ax1.hist(vz_nano_ms, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+                ax1.set_xlabel(r'$v_z$ [$n$m/s]', fontsize=textsize)
+                ax1.set_ylabel('posterior samples', fontsize=textsize)
+                #ax1.set_xlim([0,10])
+                ax1.grid(True, which='both', linewidth=0.1)
+                (mu, sigma) = norm.fit(vz_nano_ms)
+                med = np.median(vz_nano_ms)
+                #ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                #ax1.set_title(r'$med$:{:3.1f}, $per. 70$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(hf_total, 70, axis=0),
+                #    np.percentile(hf_total, 90, axis=0)), fontsize = textsize, color='gray')
+                p5,p50,p95 = np.percentile(vz_nano_ms, [5,50,95])
+                ax1.set_title('{:3.2f}'.format(p50)+'$^{+'+'{:3.2f}'.format(p95-p50)+'}_{-'+'{:3.2f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+
+                # legend
+                #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+                #ax_leg.axis('off')
+                f.tight_layout()
+                # save PNG
+                plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'vel_z_nanoms_up_nwells_'+str(count_wells)+'_multi_samples.png', dpi=300, facecolor='w', edgecolor='w',
+                    orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+                # plot histogram in mm/year
+                f = plt.figure(figsize=(6.5, 5.5))#(8, 7))
+                gs = gridspec.GridSpec(nrows=1, ncols=1)
+                ax1 = f.add_subplot(gs[0, 0])
+                #ax2 = f.add_subplot(gs[0, 1])
+                #ax_leg= f.add_subplot(gs[0, 2])
+                colors = ['orange','blue']
+                colors = [u'#ff7f0e', u'#1f77b4']
+                
+                #x_multi = [betas_total, t1_batch_filt_out]
+                n_bins = int(.5*np.sqrt(len(vz_mmyear)))#15
+                ax1.hist(vz_mmyear, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+                ax1.set_xlabel(r'$v_z$ [mm/year]', fontsize=textsize)
+                ax1.set_ylabel('posterior samples', fontsize=textsize)
+                #ax1.set_xlim([0,10])
+                ax1.grid(True, which='both', linewidth=0.1)
+                (mu, sigma) = norm.fit(vz_mmyear)
+                med = np.median(vz_mmyear)
+                #ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                #ax1.set_title(r'$med$:{:3.1f}, $per. 70$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(hf_total, 70, axis=0),
+                #    np.percentile(hf_total, 90, axis=0)), fontsize = textsize, color='gray')
+                p5,p50,p95 = np.percentile(vz_mmyear, [5,50,95])
+                ax1.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+
+                # legend
+                #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+                #ax_leg.axis('off')
+                f.tight_layout()
+                # save PNG
+                plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'vel_z_mmyear_up_nwells_'+str(count_wells)+'_multi_samples.png', dpi=300, facecolor='w', edgecolor='w',
+                    orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+                # plot histogram in log10 mm/year
+                f = plt.figure(figsize=(6.5, 5.5))#(8, 7))
+                gs = gridspec.GridSpec(nrows=1, ncols=1)
+                ax1 = f.add_subplot(gs[0, 0])
+                #ax2 = f.add_subplot(gs[0, 1])
+                #ax_leg= f.add_subplot(gs[0, 2])
+                colors = ['orange','blue']
+                colors = [u'#ff7f0e', u'#1f77b4']
+                
+                #x_multi = [betas_total, t1_batch_filt_out]
+                n_bins = int(.5*np.sqrt(len(vz_mmyear_log)))#15
+                ax1.hist(vz_mmyear_log, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
+                ax1.set_xlabel(r'$log_{10}$ $v_z$ [mm/year]', fontsize=textsize)
+                ax1.set_ylabel('posterior samples', fontsize=textsize)
+                ax1.set_xlim([0,2.5])
+                ax1.grid(True, which='both', linewidth=0.1)
+                (mu, sigma) = norm.fit(vz_mmyear_log)
+                med = np.median(vz_mmyear_log)
+                #ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                #ax1.set_title(r'$med$:{:3.1f}, $per. 70$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(hf_total, 70, axis=0),
+                #    np.percentile(hf_total, 90, axis=0)), fontsize = textsize, color='gray')
+                p5,p50,p95 = np.percentile(vz_mmyear_log, [5,50,95])
+                ax1.set_title('{:3.2f}'.format(p50)+'$^{+'+'{:3.2f}'.format(p95-p50)+'}_{-'+'{:3.2f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+
+                # legend
+                #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+                #ax_leg.axis('off')
+                
+                f.tight_layout()
+                # save PNG
+                plt.savefig('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'vel_z_log10mmyear_up_nwells_'+str(count_wells)+'_multi_samples.png', dpi=300, facecolor='w', edgecolor='w',
+                    orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+            
         if True: # histogram of total heat flux (conduction + advection) through the clay cap  
             
             ###########################
@@ -769,7 +878,7 @@ if __name__ == "__main__":
                     try:
                         # import betas and add to list
                         hf_l2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hf_samples.txt').T
-                        [hf_total_cond.append(item) for item in hf_l2 if item>0.]
+                        [hf_total_cond.append(item) for item in hf_l2 if item>.0]
                         del(hf_l2)
                         count_wells+=1
                     except:
@@ -816,13 +925,13 @@ if __name__ == "__main__":
                     try:
                         # import betas and add to list
                         hf_l2 = np.genfromtxt('.'+os.sep+'corr_temp_bc'+os.sep+wl.name+os.sep+'hf_tot_samples.txt').T
-                        [hf_total.append(item) for item in hf_l2 if item>0.]
+                        [hf_total.append(item) for item in hf_l2 if item>0.75]
                         del(hf_l2)
                         count_wells+=1
                     except:
                         pass
-            # plot histograms
-            f = plt.figure(figsize=(8, 7))
+            # plot histogram
+            f = plt.figure(figsize=(6.5, 5.5))#(5, 4.5))#(8, 7))
             gs = gridspec.GridSpec(nrows=1, ncols=1)
             ax1 = f.add_subplot(gs[0, 0])
             #ax2 = f.add_subplot(gs[0, 1])
@@ -831,17 +940,20 @@ if __name__ == "__main__":
             colors = [u'#ff7f0e', u'#1f77b4']
             
             #x_multi = [betas_total, t1_batch_filt_out]
-            n_bins = int(2*np.sqrt(len(hf_total)))#15
+            n_bins = int(1.*np.sqrt(len(hf_total)))#15
             ax1.hist(hf_total, n_bins, histtype='bar', color = colors[1],edgecolor='#E6E6E6')
             ax1.set_xlabel(r'Heat flux [W/m$^2$]', fontsize=textsize)
-            ax1.set_ylabel('frequency', fontsize=textsize)
+            ax1.set_ylabel('posterior samples', fontsize=textsize)
             ax1.set_xlim([0,10])
             ax1.grid(True, which='both', linewidth=0.1)
             (mu, sigma) = norm.fit(hf_total)
             med = np.median(hf_total)
             #ax1.set_title(r'$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
-            ax1.set_title(r'$med$:{:3.1f}, $per. 70$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(hf_total, 70, axis=0),
-                np.percentile(hf_total, 90, axis=0)), fontsize = textsize, color='gray')
+            #ax1.set_title(r'$med$:{:3.1f}, $per. 70$%: {:2.2f}, $per. 90$%: {:2.2f}'.format(med,np.percentile(hf_total, 70, axis=0),
+            #    np.percentile(hf_total, 90, axis=0)), fontsize = textsize, color='gray')
+            p5,p50,p95 = np.percentile(hf_total, [5,50,95])
+            ax1.set_title('{:3.1f}'.format(p50)+'$^{+'+'{:3.1f}'.format(p95-p50)+'}_{-'+'{:3.1f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+
             # legend
             #ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
             #ax_leg.axis('off')
