@@ -41,6 +41,10 @@ class mcmc_inv(object):
 	obj                     MT stations to inverted. It's an objec of
     T_obs                   periods recorded
     rho_app_obs             apparent resistivity observed (4 comp.)
+	Z_xx			 		impedanse xx [real, img, mag, var]
+	Z_xy					impedanse xy [real, img, mag, var]
+	Z_yx					impedanse yx [real, img, mag, var]
+	Z_yy					impedanse yy [real, img, mag, var]
     rho_app_obs_er          error of apparent resistivity observed (4 comp.)
     phase_obs               phase (degree) observed (4 comp.)
     phase_obs_er            error of phase (degree) observed (4 comp.)
@@ -109,6 +113,8 @@ class mcmc_inv(object):
                             resistivity (model parameter) calculated 
                             from mcmc chain results: [a,b,c,d]
                             * See z1_pars vector description
+    rms_samples             Average RMS for samples (estimated observation) generated from
+                            forwarding the posterior.  
     autocor_tim             autocorrelation time (steps) in mcmc inv. 
                             [par1,...,par5]
     aceprat                 acceptance ratio in mcmc inv.
@@ -133,7 +139,7 @@ class mcmc_inv(object):
         prior = None, prior_input = None, prior_meb = None, prior_meb_weigth = None, nwalkers = None, \
             walk_jump = None, inv_dat = None, ini_mod = None, range_p = None, autocor_accpfrac = None, \
                 data_error = None, add_error = None, fit_max_mode = None, add_error_per = None, add_mod_err =None, \
-                    error_max_per = None, error_mean = None):
+                    error_max_per = None, error_mean = None, rms_samples = None):
 	# ==================== 
     # Attributes            
     # ===================== 
@@ -151,6 +157,11 @@ class mcmc_inv(object):
         self.rho_app_obs_er = sta_obj.rho_app_er
         self.phase_obs = sta_obj.phase_deg
         self.phase_obs_er = sta_obj.phase_deg_er
+        # impedance tensor 
+        self.Z_xx = sta_obj.Z_xx
+        self.Z_xy = sta_obj.Z_xy
+        self.Z_yx = sta_obj.Z_yx
+        self.Z_yy = sta_obj.Z_yy
         # add model error
         #if add_mod_err is None:
         #    add_mod_err = False
@@ -266,7 +277,7 @@ class mcmc_inv(object):
         
         if ini_mod is None: 
             if self.num_lay == 3:
-                self.ini_mod = [200,200,300,2.5,50]
+                self.ini_mod = [50,50,15,1.5,15]#[500,500,1000,3.5,350] #[200,200,300,2.5,50]
             if self.num_lay == 4:
                 self.ini_mod = [200,100,200,150,50,500,1000]  
         if ini_mod: 
@@ -278,7 +289,8 @@ class mcmc_inv(object):
         self.r1_pars = None
         self.r2_pars = None
         self.r3_pars = None
-
+        self.rms_samples_app_res = None
+        self.rms_samples_phase = None
         self.autocor_accpfrac = autocor_accpfrac
     # ===================== 
     # Methods               
@@ -306,7 +318,8 @@ class mcmc_inv(object):
         data = np.array([self.T_obs,\
                     self.rho_app_obs[1],self.phase_obs[1],\
                     self.rho_app_obs[2],self.phase_obs[2],\
-                    self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs]).T
+                    self.max_Z_obs,self.det_Z_obs,self.ssq_Z_obs,\
+                    self.Z_xy,self.Z_yx]).T
         cores = multiprocessing.cpu_count()
         if self.name == 'WT024a' or self.name == 'WT068a':
             cores = cores - 2
@@ -385,6 +398,14 @@ class mcmc_inv(object):
             #if variance: 
             w_app_res = 1. 
             w_phase =  .01
+            ## invert log10(/Z/) instead of log10(appres)
+            inv_mag_Z = True
+            ##
+            if inv_mag_Z:
+                error_floor_mag_Zxy = 0.05
+                error_floor_mag_Zyx = 0.05
+                error_floor_phi_Zxy = 0.05
+                error_floor_phi_Zyx = 0.05
             # filter range of periods to work with
             if self.range_p: 
                 ## range_p = [0.01, 1.0] s
@@ -416,12 +437,35 @@ class mcmc_inv(object):
                             TE_apres = self.inv_dat[0]*-np.sum(((obs[:,1] \
                                 - rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[1])) #/v
                         else:
-                            mf = []
-                            mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
-                                / (np.log10(self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
-                                
-                            TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
+                            if inv_mag_Z: # invert log10(mag(Z))
+                                mf = []
+                                abs_Z_obs = obs[8][2] # magnitud of Zxy
+                                abs_Z_est = 1e-3*np.absolute(Z_est[:])
+                                # aprox error (% of mag of component), need to be fixed to incorporate real error 
+                                error_Z_obs =  np.log10(np.ones(len(abs_Z_obs))* np.max(abs_Z_obs)*error_floor_mag_Zxy)
+                                # error base on Wheelock 2015
+                                error_Z_obs = 2.e2*obs[9][3] / np.log(10) * 1/abs_Z_obs # error of Zxy (sigma)
+                                #error_Z_obs =  abs_Z_obs*error_floor_mag_Zxy # % of mag values
+                                #
+                                mf = [((np.log10(abs_Z_obs[i]) - np.log10(abs_Z_est[i])) \
+                                    / (error_Z_obs * v_vec[i]))**self.norm \
+                                    for i in range(len(abs_Z_obs))]
+                                TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
+                            
+                            else: # invert log10(appres)
+                                mf = []
+                                appres_xy_obs = obs[1] # appres of Zxy
+                                appres_Z_est = rho_ap_est
+                                error_appres_xy_obs = self.rho_app_obs_er[1]
+                                #
+                                mf = [((np.log10(appres_xy_obs[i]) - np.log10(appres_Z_est[i])) \
+                                    / (np.log10(error_appres_xy_obs[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(appres_xy_obs))]
+                                #mf = [((np.log10(obs[i][1]) - np.log10(rho_ap_est[i])) \
+                                #    / (np.log10(self.rho_app_obs_er[1][i]) * v_vec[i]))**self.norm \
+                                #    for i in range(len(obs[:,0]))]
+                            
+                                TE_apres = self.inv_dat[0]*-.5 * np.sum(mf)
                 else:
                     # invert with impose error (same for every station)
                     v = 0.1
@@ -431,7 +475,10 @@ class mcmc_inv(object):
                 TE_apres = 0.
             # apply weigth 
             #TE_apres = TE_apres*w_app_res
+
+
             #####################################
+            # phase TE
             if self.inv_dat[1] == 1:
                 if variance:
                     if self.variance_mean: 
@@ -450,9 +497,29 @@ class mcmc_inv(object):
                             #TE_phase = self.inv_dat[1]*-np.sum(((obs[:,2] \
                             #        - phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[1]**2)) #/v
                             mf = []
-                            mf = [((np.log10(abs(obs[i][2])) - np.log10(abs(phi_est[i]))) \
-                                / (np.log10(abs(self.phase_obs_er[1][i])) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
+                            phi_obs = obs[:][2] # phase of Zxy
+                            phi_est = phi_est
+                            phi_er = 4.*self.phase_obs_er[1][:]
+                            #
+                            if inv_mag_Z: 
+                                pass
+                                #phi_er =  np.ones(len(phi_obs))* np.max(phi_obs)*error_floor_phi_Zxy
+                            
+                            ## invert for log10 phi
+                            #mf = [((np.log10(phi_obs[i]) - np.log10(phi_est[i])) \
+                            #    / (np.log10(phi_er[i]) * v_vec[i]))**self.norm \
+                            #    for i in range(len(phi_obs))]
+                            ## invert for phi
+                            if inv_mag_Z: 
+                                mf = [(((abs(phi_obs[i])) - abs(phi_est[i])) \
+                                    / ((abs(phi_er[i])) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
+                            else:
+                            ## invert for log10 phi
+                                mf = [((np.log10(phi_obs[i]) - np.log10(phi_est[i])) \
+                                    / (np.log10(phi_er[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
+                            #
                             TE_phase = self.inv_dat[1]*-.5 * np.sum(mf)
                 else: 
                     v = 100          
@@ -478,15 +545,35 @@ class mcmc_inv(object):
                             TM_apres = self.inv_dat[2]*-np.sum(((obs[:,3] \
                                 -rho_ap_est)/v_vec)**self.norm / (2*self.rho_app_obs_er_add[2])) #/v
                         else:
-                            # log space
-                            #TM_apres = self.inv_dat[2]*-np.sum(((np.log10(obs[:,3]) \
-                            #    - np.log10(rho_ap_est))/v_vec)**self.norm / (2*np.log10(self.rho_app_obs_er[2])**2)) #/v
-                            # log space
-                            mf = []
-                            mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) \
-                                / (np.log10(self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
-                            TM_apres = self.inv_dat[2]*-.5 * np.sum(mf)
+
+                            if inv_mag_Z: # invert log10(mag(Z))
+                                mf = []
+                                abs_Z_obs = obs[9][2] # magnitud of Zyx
+                                abs_Z_est = 1e-3*np.absolute(Z_est[:])
+                                # aprox error (% of mag of component), need to be fixed to incorporate real error 
+                                error_Z_obs =  np.log10(np.ones(len(abs_Z_obs))* np.max(abs_Z_obs)*error_floor_mag_Zyx)
+                                # error base on Wheelock 2015
+                                error_Z_obs = 2.e2*obs[9][3] / np.log(10) * 1/abs_Z_obs # error of Zxy (sigma)
+
+                                mf = [((np.log10(abs_Z_obs[i]) - np.log10(abs_Z_est[i])) \
+                                    / (error_Z_obs * v_vec[i]))**self.norm \
+                                    for i in range(len(abs_Z_obs))]
+                                TM_apres = self.inv_dat[0]*-.5 * np.sum(mf)
+
+                            else: # invert log10(appres) of Zyx
+
+                                mf = []
+                                appres_yx_obs = obs[3] # appres of Zxy
+                                appres_Z_est = rho_ap_est
+                                error_appres_yx_obs = self.rho_app_obs_er[2]
+                                #
+                                mf = [((np.log10(appres_yx_obs[i]) - np.log10(appres_Z_est[i])) \
+                                    / (np.log10(error_appres_yx_obs[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(appres_yx_obs))]
+                                #mf = [((np.log10(obs[i][3]) - np.log10(rho_ap_est[i])) \
+                                #    / (np.log10(self.rho_app_obs_er[2][i]) * v_vec[i]))**self.norm \
+                                #    for i in range(len(obs[:,0]))]
+                                TM_apres = self.inv_dat[2]*-.5 * np.sum(mf)
                 else:
                     v = .1
                     TM_apres = w_app_res*self.inv_dat[2]*-.5 *-np.sum(((np.log10(obs[:,3]) \
@@ -495,8 +582,9 @@ class mcmc_inv(object):
                 TM_apres = 0.
             # apply weigth 
             #TM_apres = TM_apres*w_app_res
+            
             #####################################
-
+            # phase TM
             if self.inv_dat[3] == 1:
                 if variance:
                     if self.variance_mean: 
@@ -510,11 +598,28 @@ class mcmc_inv(object):
                         else:
                             #TM_phase = self.inv_dat[3]*-np.sum(((obs[:,4] \
                             #        -phi_est)/v_vec)**self.norm / (2*self.phase_obs_er[2]**2)) #/v
+                            
                             mf = []
-                            mf = [((np.log10(abs(obs[i][4])) - np.log10(abs(phi_est[i]))) \
-                                / (np.log10(abs(self.phase_obs_er[2][i])) * v_vec[i]))**self.norm \
-                                for i in range(len(obs[:,0]))]
+                            phi_obs = obs[:][4] # phase of Zyx
+                            phi_est = phi_est
+                            phi_er = 4.*self.phase_obs_er[2][:]
+                            #
+                            if inv_mag_Z: 
+                                pass
+                                #phi_er =  np.ones(len(phi_obs))* np.max(phi_obs)*error_floor_phi_Zyx
+
+                            if inv_mag_Z: 
+                                ## invert for phi
+                                mf = [(((abs(phi_obs[i])) - abs(phi_est[i])) \
+                                    / ((abs(phi_er[i])) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
+                            else:
+                                ## invert for log10 phi
+                                mf = [((np.log10(phi_obs[i]) - np.log10(phi_est[i])) \
+                                    / (np.log10(phi_er[i]) * v_vec[i]))**self.norm \
+                                    for i in range(len(phi_obs))]
                             TM_phase = self.inv_dat[3]*-.5 * np.sum(mf)
+
                 else:
                     v = 100
                     TM_phase = w_phase*self.inv_dat[3]*-.5*-np.sum(((obs[:,4] \
@@ -680,7 +785,7 @@ class mcmc_inv(object):
         chain = None
         plt.close('all')
 
-    def sample_post(self, idt_sam = None, plot_fit = True, exp_fig = None, plot_model = None): 
+    def sample_post(self, idt_sam = None, plot_fit = True, rms = None, exp_fig = None, plot_model = None): 
         """
         idt_sam: sample just independet samples by autocorrelation in time criteria 
         """
@@ -773,6 +878,163 @@ class mcmc_inv(object):
                 pars_order[j,2], pars_order[j,3], pars_order[j,4],\
                 pars_order[j,5], pars_order[j,6], pars_order[j,7]))
         f.close()
+
+        if plot_fit: 
+            g,(ax, ax1) = plt.subplots(2,1)
+            g.set_size_inches(8,8) 
+            g.suptitle(self.name, size = textsize)#, y=1.08)
+
+            ### ax: apparent resistivity
+            ax.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
+            ax.set_xlim([1E-3,1e3])
+            ax.set_ylim([1e0,5.e3])
+            #ax.set_xlabel('period [s]', size = textsize)
+            ax.set_ylabel(r'$\rho_{app}$ [$\Omega$ m]', size = textsize)
+            ax.set_xlabel('period [s]', size = textsize)
+            #ax.set_title('Apparent Resistivity (TM and TE)', size = textsize)
+            # 
+            rms_list = []
+            rms_tot = 0.
+            rms_min = 10.e6
+            #
+            rms_list_phi = []
+            rms_tot_phi = 0.
+            rms_min_phi = 10.e6
+            #
+            Nsamp = 0 #number of samples considered
+            # plot samples
+            for par in pars:
+                if all(x > 0. for x in par):
+                    Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
+                        self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
+                    ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
+                    ##############
+                    ##############
+                    if rms:## calc RMS misfit
+                        # vector in the proper range 
+                        aux, from_p = find_nearest(self.T_obs,self.range_p[0])
+                        aux, to_p = find_nearest(self.T_obs,self.range_p[1])
+                        if self.inv_dat[0:4] == [1,1,1,1]:
+                            y_est = np.concatenate((app_res_vec_aux[from_p:to_p+1], app_res_vec_aux[from_p:to_p+1]))
+                            y_obs = np.concatenate((self.rho_app_obs[1][from_p:to_p+1], self.rho_app_obs[2][from_p:to_p+1])) 
+                            error = np.concatenate((self.rho_app_obs_er[1][from_p:to_p+1], self.rho_app_obs_er[2][from_p:to_p+1])) 
+                            # phase
+                            y_est_phi = np.concatenate((phase_vec_aux[from_p:to_p+1], phase_vec_aux[from_p:to_p+1]))
+                            y_obs_phi = np.concatenate((self.phase_obs[1][from_p:to_p+1], self.phase_obs[2][from_p:to_p+1])) 
+                            error_phi = np.concatenate((self.phase_obs_er[1][from_p:to_p+1], self.phase_obs_er[2][from_p:to_p+1])) 
+                        if self.inv_dat[0:4] == [1,1,0,0]:
+                            y_est = app_res_vec_aux[from_p:to_p+1]
+                            y_obs = self.rho_app_obs[1][from_p:to_p+1]
+                            error = self.rho_app_obs_er[1][from_p:to_p+1]
+                            # phase
+                            y_est_phi = phase_vec_aux[from_p:to_p+1]
+                            y_obs_phi = self.phase_obs[1][from_p:to_p+1]
+                            error_phi = self.phase_obs_er[1][from_p:to_p+1]
+                        if self.inv_dat[0:4] == [0,0,1,1]:
+                            y_est = app_res_vec_aux[from_p:to_p+1]
+                            y_obs = self.rho_app_obs[2][from_p:to_p+1]
+                            error = self.rho_app_obs_er[2][from_p:to_p+1]
+                            # phase
+                            y_est_phi = phase_vec_aux[from_p:to_p+1]
+                            y_obs_phi = self.phase_obs[2][from_p:to_p+1]
+                            error_phi = self.phase_obs_er[2][from_p:to_p+1]
+                            #
+                        n = len(y_est) # number of inverted data points
+                        # chi-square misfit (Pearson, 1900)
+                        # apparent resistivity
+                        misfit = ((y_est- y_obs)/error)**2
+                        # phase
+                        misfit_phi = ((y_est_phi- y_obs_phi)/error_phi)**2
+                        # sqrt(sq_dif/n)
+                        rms_calc = np.sqrt(np.sum(misfit)/n)
+                        rms_calc_phi = np.sqrt(np.sum(misfit_phi)/n)
+                        rms_tot+=rms_calc
+                        rms_tot_phi+=rms_calc_phi
+                        rms_list.append(rms_calc)
+                        rms_list_phi.append(rms_calc_phi)
+                        if rms_calc < rms_min:
+                            pars_best_fit = [par[1],par[2],par[3],par[4],par[5]]
+                            rms_min = rms_calc
+                        if rms_calc_phi < rms_min_phi:
+                            pars_best_fit_phi = [par[1],par[2],par[3],par[4],par[5]]
+                            rms_min_phi = rms_calc_phi
+                    Nsamp += 1
+            
+            # sqrt(sq_dif / n) / NumberSamples
+            if rms:
+                self.rms_samples_app_res = rms_tot / Nsamp
+                self.rms_samples_phase = rms_tot_phi / Nsamp
+                # 
+                del(aux, from_p, to_p, y_est, y_obs, error, misfit, rms_tot, Nsamp, rms_calc)
+                # save RMS in file 
+                rms_file = open(self.path_results+os.sep+'rms_misfit.txt','w')
+                rms_file.write('RMS misfit for apparent resistivity and phase, based on chi-square misfit (Pearson, 1900)'+'\n')
+                rms_file.write(str(np.round(self.rms_samples_app_res,2))+'\t'+str(np.round(self.rms_samples_phase,2)))
+                rms_file.close()
+
+            #plot observed
+            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
+            ax.errorbar(self.T_obs,self.rho_app_obs[1],self.rho_app_obs_er[1], fmt='r*')
+            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{yx}$')
+            ax.errorbar(self.T_obs,self.rho_app_obs[2],self.rho_app_obs_er[2], fmt='g*')
+
+            ### ax: phase
+            ax1.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
+            ax1.set_xlim([1E-3,1e3])
+            ax1.set_ylim([0.e0,1.5e2])
+            ax1.set_xlabel('period [s]', size = textsize)
+            ax1.set_ylabel('$\phi$ [°]', size = textsize)
+            #ax1.set_title('Phase (TM and TE)', size = textsize)
+            # plot samples
+            for par in pars:
+                if all(x > 0. for x in par):
+                    Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
+                        self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
+                    ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
+            #ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'samples')
+            #plot observed
+            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
+            ax1.errorbar(self.T_obs,self.phase_obs[1],self.phase_obs_er[1], fmt='r*')
+            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{yx}$')
+            ax1.errorbar(self.T_obs,self.phase_obs[2],self.phase_obs_er[2], fmt='g*')
+            #ax1.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
+            ax1.set_xscale('log')
+            # plot reference for periods consider in inversion (range_p)
+            ax.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ax.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ax1.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=2., alpha = .8)
+            ### layout figure
+            if rms:
+                #g.suptitle('Station '+ self.name+' (RMS: '+str(np.round(self.rms_samples,2))+')', size = textsize)#, y=1.08)
+                g.suptitle('Station '+ self.name, size = textsize)#, y=1.08)
+            else:
+                g.suptitle('Station '+ self.name, size = textsize)#, y=1.08)
+            
+            # plot rms and min fit 
+            if rms:
+                # for legend 
+                ax.loglog([], [],'b-', lw = 0.5, alpha=0.8, zorder=0, 
+                    label = 'samples'+' (RMS: '+str(np.round(self.rms_samples_app_res,2))+')')
+                ax1.plot([], [],'b-', lw = 0.5, alpha=0.8, zorder=0, 
+                    label = 'samples'+' (RMS: '+str(np.round(self.rms_samples_phase,2))+')')
+                # plot best fit from RMS
+                Z, rho_ap, phi =  self.MT1D_fwd_3layers(*pars_best_fit, self.T_obs)
+                ax.plot(self.T_obs, rho_ap,'m--', lw = 2.0, alpha=1., zorder=1, label = 'min misfit sample'+' (RMS: '+str(np.round(rms_min,2))+')')
+                Z, rho_ap, phi =  self.MT1D_fwd_3layers(*pars_best_fit_phi, self.T_obs)
+                ax1.plot(self.T_obs, phi,'m--', lw = 2.0, alpha=1.0, zorder=0, label = 'min misfit sample'+' (RMS: '+str(np.round(rms_min_phi,2))+')')
+            else:
+                ax1.plot([], [],'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'samples')
+                ax.loglog([], [],'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'samples')                
+            ax.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
+            ax1.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
+            ax.grid()
+            ax1.grid()
+            ax.tick_params(labelsize=textsize)
+            ax1.tick_params(labelsize=textsize)
+            #plt.tight_layout()
+            plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)        
 
         if plot_model:
             def square_fn(pars, x_axis):
@@ -966,69 +1228,38 @@ class mcmc_inv(object):
                         orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
                 #plt.clf()
 
-        if plot_fit: 
-            g,(ax, ax1) = plt.subplots(2,1)
-            g.set_size_inches(8,8) 
-            g.suptitle(self.name, size = textsize)#, y=1.08)
+            if rms: # plot histogram of misfit residual
+                f = plt.figure(figsize=(5, 5))
+                #f.suptitle('Model: '+self.name, size = textsize)
+                gs = gridspec.GridSpec(nrows=1, ncols=1)
+                # model 
+                ax = f.add_subplot(gs[0, 0])
+                # rms_list (app res)
+                bins = np.linspace(np.min(rms_list), np.max(rms_list), int(2*np.sqrt(len(rms_list))))
+                h,e = np.histogram(rms_list, bins, density = True)
+                m = 0.5*(e[:-1]+e[1:])
+                ax.bar(e[:-1], h, e[1]-e[0], alpha = 0.5)
+                ax.set_xlabel(r'misfit', size = texts)
+                ax.set_ylabel('frequency', size = texts)
+                #ax1.grid(True, which='both', linewidth=0.1)
+                # plot normal fit 
+                (mu, sigma) = norm.fit(rms_list)
+                #y = mlab.normpdf(bins, mu, sigma)
+                y = stats.norm.pdf(bins, mu, sigma)
+                #ax.set_title('med: {:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(np.med(rms_list),mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+                ax.set_title('med: {:3.1f}'.format(np.median(rms_list)), fontsize = textsize, color='gray')#, y=0.8)
+                #ax.plot(bins, y, 'r-', linewidth=1)
+                # plot lines for mean 
+                #ax.plot([0,1e3],[mu,mu],'y--', linewidth=1.5,alpha = .5, zorder = 0) #, label = r'$\mu$ of  $\rho_3$'
+                #ax5.plot([mu,mu],[0,max(y)],'y--', label = r'$\mu$ of  $\rho_3$', linewidth=1.5)
+                # plot line for minimum misfit 
+                ax.plot([rms_min,rms_min],[0,max(h)],'m--', label = 'min misfit')
+                ax.legend()
+                plt.tight_layout()
+                plt.savefig(self.path_results+os.sep+'hist_residual_misfit.png', dpi=300, facecolor='w', edgecolor='w',
+                        orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
-            ### ax: apparent resistivity
-            ax.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
-            ax.set_xlim([1E-3,1e3])
-            ax.set_ylim([1e0,1e3])
-            #ax.set_xlabel('period [s]', size = textsize)
-            ax.set_ylabel(r'$\rho_{app}$ [$\Omega$ m]', size = textsize)
-            ax.set_xlabel('period [s]', size = textsize)
-            #ax.set_title('Apparent Resistivity (TM and TE)', size = textsize)
-            # plot samples
-            for par in pars:
-                if all(x > 0. for x in par):
-                    Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
-                        self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
-                    ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax.loglog(self.T_obs, app_res_vec_aux,'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'sample')
-            #plot observed
-            ax.loglog(self.T_obs, self.rho_app_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
-            ax.errorbar(self.T_obs,self.rho_app_obs[1],self.rho_app_obs_er[1], fmt='r*')
-            ax.loglog(self.T_obs, self.rho_app_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{yx}$')
-            ax.errorbar(self.T_obs,self.rho_app_obs[2],self.rho_app_obs_er[2], fmt='g*')
-            ax.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
-            ### ax: phase
-            ax1.set_xlim([np.min(self.T_obs), np.max(self.T_obs)])
-            ax1.set_xlim([1E-3,1e3])
-            ax1.set_ylim([0.e0,1.1e2])
-            ax1.set_xlabel('period [s]', size = textsize)
-            ax1.set_ylabel('$\phi$ [°]', size = textsize)
-            #ax1.set_title('Phase (TM and TE)', size = textsize)
-            # plot samples
-            for par in pars:
-                if all(x > 0. for x in par):
-                    Z_vec_aux,app_res_vec_aux, phase_vec_aux = \
-                        self.MT1D_fwd_3layers(*par[1:6],self.T_obs)
-                    ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.1, alpha=0.2, zorder=0)
-            ax1.plot(self.T_obs, phase_vec_aux,'b-', lw = 0.5, alpha=0.8, zorder=0, label = 'sample')
-            #plot observed
-            ax1.plot(self.T_obs, self.phase_obs[1],'r*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{xy}$')
-            ax1.errorbar(self.T_obs,self.phase_obs[1],self.phase_obs_er[1], fmt='r*')
-            ax1.plot(self.T_obs, self.phase_obs[2],'g*', lw = 1.5, alpha=0.7, zorder=0, label = 'observed $Z_{yx}$')
-            ax1.errorbar(self.T_obs,self.phase_obs[2],self.phase_obs_er[2], fmt='g*')
-            ax1.legend(fontsize=textsize, loc = 1, fancybox=True, framealpha=0.8)
-            ax1.set_xscale('log')
-            # plot reference for periods consider in inversion (range_p)
-            ax.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ax.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ax1.plot([self.range_p[0],self.range_p[0]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ax1.plot([self.range_p[1],self.range_p[1]],[1.e0,1.e3],'y--',linewidth=0.5, alpha = .5)
-            ### layout figure
-            #
-            ax.grid()
-            ax1.grid()
-            ax.tick_params(labelsize=textsize)
-            ax1.tick_params(labelsize=textsize)
-            #plt.tight_layout()
 
-            plt.savefig(self.path_results+os.sep+'app_res_fit.png', dpi=300, facecolor='w', edgecolor='w',
-					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
-            
         if exp_fig == None:
             plt.close('all')
             #plt.clf()
@@ -1036,7 +1267,6 @@ class mcmc_inv(object):
             return f, g
 
     def model_pars_est(self, path = None):
-
         if path is None: 
             path =  self.path_results
         # import chain and estimated model parameters
@@ -2006,6 +2236,216 @@ def histogram_mcmc_MT_inv_results(station_objects, filt_in_count = None, filt_ou
         else:
             plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_nsta_'+str(len(station_objects))+'.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+
+
+
+def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = None, filt_out_count = None): 
+    """
+    Histogram jusy infield, and considering multi samples for each station
+    filt_in_count (or filt_out_count) : file of countour (i.e. WT resisitvity boundary)
+    """
+
+    if filt_in_count:
+        lats, lons = np.genfromtxt(filt_in_count, skip_header=1, delimiter=',').T
+        poli_in = [[lons[i],lats[i]] for i in range(len(lats))]
+    if filt_out_count:
+        lats, lons = np.genfromtxt(filt_out_count, skip_header=1, delimiter=',').T
+        poli_out = [[lons[i],lats[i]] for i in range(len(lats))]
+    
+    if filt_in_count:
+        z1_batch_filt_in = []
+        z2_batch_filt_in = []
+        r1_batch_filt_in = []
+        r2_batch_filt_in = []
+        r3_batch_filt_in = []
+
+
+    ## load pars
+    for sta in station_objects:
+        aux = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'est_par.dat')
+        sta.z1_pars = [aux[0][1],aux[0][2]]
+        sta.z2_pars = [aux[1][1],aux[1][2]]
+        sta.r1_pars = [aux[2][1],aux[2][2]]
+        sta.r2_pars = [aux[3][1],aux[3][2]]
+        sta.r3_pars = [aux[4][1],aux[4][2]]
+            
+        if filt_in_count:
+            N_samples = 50
+            # check if station is inside poligon 
+            val = ray_tracing_method(sta.lon_dec, sta.lat_dec, poli_in)
+            if val:
+                count = 0
+                while count < N_samples:
+                    z1_samp = np.random.normal(sta.z1_pars[0], sta.z1_pars[1], 1)[0]
+                    z2_samp = np.random.normal(sta.z2_pars[0], sta.z2_pars[1], 1)[0]
+                    r1_samp = np.random.normal(sta.r1_pars[0], sta.r1_pars[1], 1)[0]
+                    r2_samp = np.random.normal(sta.r2_pars[0], sta.r2_pars[1], 1)[0]
+                    r3_samp = np.random.normal(sta.r3_pars[0], sta.r3_pars[1], 1)[0]
+                    #
+                    if z1_samp > 0.:
+                        z1_batch_filt_in.append(z1_samp)
+                    if z2_samp > 0.:
+                        z2_batch_filt_in.append(z2_samp)
+                    if r1_samp > 4.e4:
+                        r1_batch_filt_in.append(r1_samp)
+                    if r2_samp > 0.:
+                        r2_batch_filt_in.append(r2_samp)
+                    if r3_samp < 300.:
+                        r3_batch_filt_in.append(r3_samp)
+                    count+=1
+    
+    if filt_in_count:    
+        # plot histograms 
+        f = plt.figure(figsize=(12, 7))
+        gs = gridspec.GridSpec(nrows=2, ncols=3)
+        ax1 = f.add_subplot(gs[0, 0])
+        ax2 = f.add_subplot(gs[0, 1])
+        ax3 = f.add_subplot(gs[1, 0])
+        ax4 = f.add_subplot(gs[1, 1])
+        ax5 = f.add_subplot(gs[1, 2])
+        ax_leg= f.add_subplot(gs[0, 2])
+
+        # z1
+        n_bins = int(.35*np.sqrt(len(z1_batch_filt_in)))#15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        ax1.hist(z1_batch_filt_in, n_bins, histtype='bar', color = colors[0], edgecolor='#E6E6E6')
+        ax1.set_xlabel('$z_1$ [m]', fontsize=textsize)
+        ax1.set_ylabel('posterior samples', fontsize=textsize)
+        ax1.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(z1_batch_filt_in)
+            med = np.median(z1_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax1.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            #ax1.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax1.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(z1_batch_filt_in, [5,50,95])
+            ax1.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+
+
+        # z2
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = int(np.sqrt(.125*len(z2_batch_filt_in)))#15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        ax2.hist(z2_batch_filt_in, n_bins, histtype='bar', color = colors[1], edgecolor='#E6E6E6')
+        ax2.set_xlabel('$z_2$ [m]', fontsize=textsize)
+        ax2.set_ylabel('posterior samples', fontsize=textsize)
+        ax2.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(z2_batch_filt_in)
+            med = np.median(z2_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax2.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            #ax2.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax2.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(z2_batch_filt_in, [5,50,95])
+            ax2.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+        # r1
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = int(.25*np.sqrt(len(r1_batch_filt_in)))#15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        ax3.hist(r1_batch_filt_in, n_bins, histtype='bar', color = colors[0], edgecolor='#E6E6E6')
+        ax3.set_xlabel(r'$\rho_1$ [m]', fontsize=textsize)
+        ax3.set_ylabel('posterior samples', fontsize=textsize)
+        ax3.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(r1_batch_filt_in)
+            med = np.median(r1_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax3.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            #ax3.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax3.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(r1_batch_filt_in, [5,50,95])
+            ax3.set_title('{:3.0f}'.format(p50)+'$^{+'+'{:3.0f}'.format(p95-p50)+'}_{-'+'{:3.0f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+        # r2
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = int(.25*np.sqrt(len(r2_batch_filt_in)))#15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        ax4.hist(r2_batch_filt_in, n_bins, histtype='bar', color = colors[1], edgecolor='#E6E6E6')
+        ax4.set_xlabel(r'$\rho_2$ [m]', fontsize=textsize)
+        ax4.set_ylabel('posterior samples', fontsize=textsize)
+        ax4.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(r2_batch_filt_in)
+            med = np.median(r2_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax4.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            #ax4.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax4.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(r2_batch_filt_in, [5,50,95])
+            ax4.set_title('{:3.1f}'.format(p50)+'$^{+'+'{:3.1f}'.format(p95-p50)+'}_{-'+'{:3.1f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+        # r3
+        # Make a multiple-histogram of data-sets with different length.
+        n_bins = int(.25*np.sqrt(len(r3_batch_filt_in)))#15
+        colors = ['orange','blue']
+        colors = [u'#ff7f0e', u'#1f77b4']
+        ax5.hist(r3_batch_filt_in, n_bins, histtype='bar', color = colors[0], edgecolor='#E6E6E6')
+        ax5.set_xlabel(r'$\rho_3$ [m]', fontsize=textsize)
+        ax5.set_ylabel('posterior samples', fontsize=textsize)
+        ax5.grid(True, which='both', linewidth=0.1)
+
+        if filt_in_count:
+            (mu, sigma) = norm.fit(r3_batch_filt_in)
+            med = np.median(r3_batch_filt_in)
+            try:
+                y = mlab.normpdf(bins, mu, sigma)
+            except:
+                #y = stats.norm.pdf(bins, mu, sigma)
+                pass
+            #ax5.plot([med,med],[0,np.max(h)],'r-', zorder = 3, linewidth=3)
+            #ax5.set_title('$med$:{:3.1f}, $\mu$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,mu,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            #ax5.set_title('$med$:{:3.1f}, $\sigma$: {:2.1f}'.format(med,sigma), fontsize = textsize, color='gray')#, y=0.8)
+            p5,p50,p95 = np.percentile(r3_batch_filt_in, [5,50,95])
+            ax5.set_title('{:3.1f}'.format(p50)+'$^{+'+'{:3.1f}'.format(p95-p50)+'}_{-'+'{:3.1f}'.format(p50-p5)+'}$', fontsize = textsize, color='gray')
+        # 
+        #ax_leg.bar([],[],[], alpha =.9, color = 'darkorange', edgecolor = 'w', label = 'active zone',zorder = 3)
+        # active zone
+        colors = [u'#ff7f0e', u'#1f77b4']
+        #ax_leg.plot([],[], c = colors[0], linewidth=7, label = r' Infield', alpha =1.)
+        # cooling zone
+        #ax_leg.plot([],[], c = colors[1], linewidth=7, label = r' Outfield', alpha =1.)
+
+        ax_leg.plot([],[],' ',label = r'med : median of infield zone')
+        ax_leg.plot([],[],' ',label = r'$\mu$ : mean of infield zone')
+        ax_leg.plot([],[],' ',label = r'$\sigma$ : std. dev. of infield zone')
+        #ax_leg.plot([],[],'r--',label = r'median of $z_1$')
+        #ax_leg.plot([],[],'b--',label = r'median of $z_2$')
+        #ax_leg.plot([],[],'--', c='gray',label = r'median of $\rho_1$')
+        #ax_leg.plot([],[],'g--',label = r'median of $\rho_2$')
+        #ax_leg.plot([],[],'m--',label = r'median of $\rho_3$')
+        ax_leg.legend(loc='center', shadow=False, fontsize=textsize)#, prop={'size': 18})
+        ax_leg.axis('off')
+
+        f.tight_layout()
+
+        if filt_in_count: 
+            plt.savefig('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'hist_pars_multi_samples_nsta_infield_'+str(len(station_objects))+'.png', dpi=300, facecolor='w', edgecolor='w', orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
 
 
 

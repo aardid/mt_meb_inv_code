@@ -48,12 +48,12 @@ if __name__ == "__main__":
 	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
-	full_dataset = True
+	full_dataset = True # True always
 	# Profiles
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
-	prof_WRK_EW_7 = True # PW_TM_AR
+	prof_WRK_EW_7 = False # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
 	prof_WT_NS_1 = False # KS_OT_AR
 	#
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 	prof_THNW05 = False
 	#
 	# Filter has qualitu MT stations
-	filter_lowQ_data_MT = True
+	filter_lowQ_data_MT = False
 	# Filter MeB wells with useless info (for prior)
 	filter_useless_MeB_well = False
 	## run with quality filter per well
@@ -77,9 +77,9 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	mcmc_meb_inv = False
-	prior_MT_meb_read = True
+	prior_MT_meb_read = False
 	mcmc_MT_inv = False
-	plot_2D_MT = True
+	plot_2D_MT = False
 	plot_3D_MT = False
 	wells_temp_fit = False
 	sta_temp_est = False
@@ -125,35 +125,24 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
-			# sta2work = ['WT001a','WT002a','WT004a','WT006a','WT010a','WT011a','WT015a','WT016a',
-			# 			'WT017a','WT018a','WT022a','WT024a','WT025a','WT026a','WT029a','WT034a',
-			# 			'WT037a','WT039a','WT045a','WT046a','WT047a','WT049a','WT060a','WT065a',
-			# 			'WT066a','WT073a','WT076b','WT078a','WT082a','WT088a','WT089a','WT092a',
-			# 			'WT108a','WT113a','WT116a','WT118a','WT120a','WT145a','WT148a','WT150b',
-			# 			'WT152a','WT162a','WT167a','WT167a','WT169a','WT172a','WT175a','WT177a',
-			# 			'WT179a','WT182a','WT183a','WT184a','WT186a','WT188a','WT190a','WT191a',
-			# 			'WT194a','WT198a','WT211a','WT214a','WT219a','WT221a','WT225a','WT306a',
-			# 			'WT312a','WT324a','WT325a','WT326a','WT329a','WT330a','WT332a','WT336a',
-			# 			'WT500a','WT501a','WT502a','WT503a','WT504a']
-
-			# sta2work = 	['WT312a','WT060a','WT190a','WT186a','WT011a','WT046a','WT336a','WT182a',
-			# 			'WT194a','WT177a','WT198a','WT015a','WT306a','WT078a','WT326a',
-			# 			'WT167a','WT188a','WT184a','WT312a','WT312a','WT312a','WT312a']
-
-		if prof_WRK_EW_7:
-			sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
-				'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
-		if prof_WRK_SENW_8:
-			sta2work = ['WT225a','WT066a','WT329a','WT078a','WT091a','WT107a','WT117b',
-				'WT122a','WT130a','WT140a','WT152a','WT153b'] # ,'WT150b'
-		if prof_WT_NS_1:
-			sta2work = ['WT061a','WT063a','WT069b','WT513a','WT082a','WT098a','WT096a', \
-				'WT099a','WT119a','WT125a','WT128a','WT036a','WT308a','WT156a','WT028a',\
-					'WT086a','WT055a','WT300a'] # 'WT117b' 
-		if prof_TH_SENW_2:
-			sta2work = ['WT192a','WT306a','WT149a','WT328a','WT323a','WT199a',
-				'WT156a','WT166a','WT168a','WT185a','WT040a','WT313a','WT202a',\
-					'WT197a'] # ,'WT150b', 'WT340a', 'WT307a',
+			if prof_WRKNW5:
+				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
+					'WT068a','WT070b','WT223a','WT107a','WT111a']			
+				#sta2work = ['WT111a']
+			if prof_WRK_EW_7:
+				sta2work = ['WT169a','WT008a','WT006a','WT015a','WT023a','WT333a','WT060a', \
+					'WT507a','WT103a','WT114a','WT140a','WT153b','WT172a','WT179a'] # 'WT505a','WT079a','WT148a'
+			if prof_WRK_SENW_8:
+				sta2work = ['WT225a','WT066a','WT329a','WT078a','WT091a','WT107a','WT117b',
+					'WT122a','WT130a','WT140a','WT152a','WT153b'] # ,'WT150b'
+			if prof_WT_NS_1:
+				sta2work = ['WT061a','WT063a','WT069b','WT513a','WT082a','WT098a','WT096a', \
+					'WT099a','WT119a','WT125a','WT128a','WT036a','WT308a','WT156a','WT028a',\
+						'WT086a','WT055a','WT300a'] # 'WT117b' 
+			if prof_TH_SENW_2:
+				sta2work = ['WT192a','WT306a','WT149a','WT328a','WT323a','WT199a',
+					'WT156a','WT166a','WT168a','WT185a','WT040a','WT313a','WT202a',\
+						'WT197a'] # ,'WT150b', 'WT340a', 'WT307a',
 		#########################################################################################
 		## Loop over the file directory to collect the data, create station objects and fill them
 		station_objects = []   # list to be fill with station objects
@@ -551,7 +540,7 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
-		prior_meb = True  # if false -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
+		prior_meb = None  # if False -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
@@ -572,7 +561,7 @@ if __name__ == "__main__":
 					## inv_dat: weighted data to invert and range of periods
 					## 		inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
 					## range_p = [0.001,10.] # range of periods
-					if True: # import inversion parameters from file 
+					if False: # import inversion parameters from file 
 						name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
 						inv_pars = [x.split() for x in open(name_file).readlines() if x[0]!='#']
 						inv_pars_names = [x[0] for x in inv_pars] 
@@ -591,53 +580,6 @@ if __name__ == "__main__":
 						inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
 						# fitting mode xy or yx: 
 						fit_max_mode = False
-
-					# inversion pars. per station (manual)
-					if True:
-						if sta_obj.name[:-4] == 'WT024a': # station with static shift
-							error_max_per = [5.,2.5]
-							range_p = [0,100.] # range of periods
-						if sta_obj.name[:-4] == 'WT030a': # station with static shift
-							range_p = [0,10.] # range of periods
-						if sta_obj.name[:-4] == 'WT039a': # station with static shift
-							range_p = [0,10.] # range of periods
-							error_max_per = [5.,2.5]
-						if sta_obj.name[:-4] == 'WT060a': # station with static shift
-							range_p = [0.,1.] # range of periods
-							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-							#error_max_per = [20.,10.]
-						if sta_obj.name[:-4] == 'WT068a': # station with static shift
-							range_p = [0,5.] # range of periods
-							error_max_per = [20.,10.]
-							#inv_dat = [1,1,0,1]
-						if sta_obj.name[:-4] == 'WT070b': # station with static shift
-							range_p = [0,5.] # range of periods
-						if sta_obj.name[:-4] == 'WT071a': # station with static shift
-							range_p = [0,5.] # range of periods
-							range_p = [0,10.] # range of periods
-							error_max_per = [5.,2.5]
-						if sta_obj.name[:-4] == 'WT107a': # station with static shift
-							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-							range_p = [0,5.] # range of periods
-							error_max_per = [5.,2.5]
-						if sta_obj.name[:-4] == 'WT111a': # station with static shift
-							range_p = [0,5.] # range of periods
-						if sta_obj.name[:-4] == 'WT223a': # station with static shift
-							range_p = [0,10.] # range of periods
-							error_max_per = [20.,5.]
-						if sta_obj.name[:-4] == 'WT501a': # station with static shift
-							range_p = [0,5.] # range of periods
-						if sta_obj.name[:-4] == 'WT502a': # station with static shift
-							#range_p = [0,5.] # range of periods
-							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
-						if sta_obj.name[:-4] == 'WT003a': # station with static shift
-							error_max_per = [20.,10.]	
-							#inv_dat = [1,0,1,0]
-					## print relevant information
-					if verbose:
-						print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
-						print('inverted data: '+str(inv_dat))
-					## plot noise
 					try:
 						path_img = 'mcmc_inversions'+os.sep+sta_obj.name[:-4]
 						sta_obj.plot_noise(path_img = path_img)
@@ -659,18 +601,72 @@ if __name__ == "__main__":
 					# 	if all([sta_obj.rho_app[2][i] > 10. for i in range(len(sta_obj.rho_app[2])-10)]):
 					# 		prior_meb = False
 
-					# run inversion
+					# inversion pars. per station (manual)
+					if True:
+						if sta_obj.name[:-4] == 'WT024a': # station with static shift
+							error_max_per = [5.,2.5]
+							range_p = [0.005,100.] # range of periods
+							prior_meb = True
+							# for two layers: 
+							#par_range = [[.01*1e2,2.*1e3],[0.*1e1,1.*1e0],[1.*1e1,1.*1e5],[.50*1e1,.51*1e1],[.5*1e1,1.*1e3]]
+						if sta_obj.name[:-4] == 'WT039a': # station with static shift
+							range_p = [0.001,100.] # range of periods
+							error_max_per = [5.,2.5]
+							inv_dat = [0,0,1,1]
+						if sta_obj.name[:-4] == 'WT030a': # station with static shift
+							inv_dat = [1,1,0,0]
+							range_p = [0.001,10.] # range of periods
+						if sta_obj.name[:-4] == 'WT060a': # station with static shift
+							range_p = [0.005,1.] # range of periods
+							inv_dat = [1,1,0,0]
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							#error_max_per = [20.,10.]
+						if sta_obj.name[:-4] == 'WT068a': # station with static shift
+							range_p = [0,5.] # range of periods
+							error_max_per = [20.,10.]
+							#inv_dat = [1,1,0,1]
+						if sta_obj.name[:-4] == 'WT070b': # station with static shift
+							range_p = [0,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT071a': # station with static shift
+							range_p = [0,5.] # range of periods
+							range_p = [0.005,3.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT107a': # station with static shift
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							range_p = [0.001,5.] # range of periods
+							error_max_per = [5.,2.5]
+						if sta_obj.name[:-4] == 'WT111a': # station with static shift
+							range_p = [0.001, 5.] # range of periods
+						if sta_obj.name[:-4] == 'WT223a': # station with static shift
+							range_p = [0,10.] # range of periods
+							error_max_per = [20.,5.]
+						if sta_obj.name[:-4] == 'WT501a': # station with static shift
+							range_p = [0.005,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT502a': # station with static shift
+							#range_p = [0,5.] # range of periods
+							par_range = [[.01*1e2,.5*1e3],[.5*1e1,1.*1e3],[1.*1e1,1.*1e5],[1.*1e0,.5*1e1],[.5*1e1,1.*1e3]]
+							range_p = [0.005,5.] # range of periods
+						if sta_obj.name[:-4] == 'WT003a': # station with static shift
+							error_max_per = [20.,10.]	
+							#inv_dat = [1,0,1,0]
+
+					###### run inversion
+					## print relevant information
+					if verbose:
+						print('range of periods: [{:2.3f}, {:2.2f}] [s]'.format(range_p[0],range_p[1]))
+						print('inverted data: '+str(inv_dat))
+					## plot noise
 					try: 
 						mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
 							walk_jump = walk_jump, nwalkers = nwalkers, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 								range_p = range_p, autocor_accpfrac = True, data_error = True, \
-									error_max_per=error_max_per, error_mean = error_mean)
+									error_mean = error_mean, error_max_per=error_max_per)
 					except: # in case that inversion breaks due to low number of independet samples 
 						try:
 							mcmc_sta = mcmc_inv(sta_obj, prior='uniform', inv_dat = inv_dat, prior_input = par_range, \
 								walk_jump = walk_jump+1000, nwalkers = nwalkers+10, prior_meb = prior_meb, prior_meb_weigth = prior_meb_weigth,\
 									range_p = range_p, autocor_accpfrac = True, data_error = True, \
-										error_max_per=error_max_per, error_mean = error_mean)
+										error_mean = error_mean, error_max_per=error_max_per)
 						except:
 							pass
 
@@ -693,6 +689,7 @@ if __name__ == "__main__":
 							print("	prior [z1_mean, std][z2_mean, std] = {} \n".format(sta_obj.prior_meb)) 
 					## run inversion
 					mcmc_sta.inv()
+					
 					## plot results (save in .png)
 					if True: # plot results for full chain 
 						mcmc_sta.plot_results_mcmc(chain_file = 'chain.dat', corner_plt = False, walker_plt = True)
@@ -703,12 +700,12 @@ if __name__ == "__main__":
 					if pdf_fit:
 						f, g = mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = True, plot_model = True) # Figure with fit to be add in pdf (whole station)
 					else:
-						mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)		
+						mcmc_sta.sample_post(idt_sam = True, plot_fit = True, rms = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)		
 					#mcmc_sta.sample_post(idt_sam = True, plot_fit = True, exp_fig = False, plot_model = True) # Figure with fit to be add in pdf (whole station)
 					## plot results without burn-in section
 					mcmc_sta.plot_results_mcmc(chain_file = 'chain_sample_order.dat', corner_plt = True, walker_plt = False)
 					shutil.move(mcmc_sta.path_results+os.sep+'corner_plot.png', mcmc_sta.path_results+os.sep+'corner_plot_burn.png')
-
+					
 					# save figures
 					if pdf_fit:
 						pp.savefig(g)
@@ -719,6 +716,20 @@ if __name__ == "__main__":
 					mcmc_sta.model_pars_est()
 					## delete chain.dat
 					#os.remove('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'chain.dat')
+
+			# save rms stations 
+			rms_appres_list = []
+			rms_phase_list  = []
+			rms_file = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'rms_misfit.txt','w')
+			rms_file.write('Station RMS misfit for apparent resistivity and phase, based on chi-square misfit (Pearson, 1900)'+'\n')
+			for sta_obj in station_objects:
+				rms_sta = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta_obj.name[:-4]+os.sep+'rms_misfit.txt',skip_header=1).T
+				rms_file.write(sta_obj.name[:-4]+'\t'+str(np.round(rms_sta[0],2))+'\t'+str(np.round(rms_sta[1],2))+'\n')
+				rms_appres_list.append(rms_sta[0])
+				rms_phase_list.append(rms_sta[1]) 
+			rms_file.write('\n')
+			rms_file.write('mean'+'\t'+str(np.mean(rms_sta[0]))+'\t'+str(np.mean(rms_sta[1]))+'\n')
+			rms_file.close()
 
 			## enlapsed time for the inversion (every station in station_objects)
 			enlap_time_f = time.time() - start_time_f # enlapsed time
@@ -1105,7 +1116,7 @@ if __name__ == "__main__":
 
 #####################################################################################################################################################################
 ## EXTRAS that use list of objects
-	if False:
+	if True:
 		# PDF file with figure of inversion misfit (observe data vs. estatimated data)
 		if False: 
 			if False: # option 1: print appres fit to pdf
@@ -1191,7 +1202,8 @@ if __name__ == "__main__":
 			# Resistivity Boundary, Mielke, OUT
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_OUT_Mielke.txt'
 			#histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'overlap')
-			histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
+			#histogram_mcmc_MT_inv_results(station_objects, filt_in_count=path_rest_bound_WT, filt_out_count=path_rest_bound_WT, type_hist = 'sidebyside')
+			histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count=path_rest_bound_WT)
 
 		if False:   # histogram of MeB inversion parameters for wells 
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
@@ -1214,7 +1226,7 @@ if __name__ == "__main__":
 			wl_loc.close()
 			wlmeb_loc.close()
 
-		if True:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
+		if False:   # .dat with results meb inversion, mt inversion, and temp estimation at boundaries of conductor 
 			# mcmc MeB results 
 			if False:
 				wl_meb_results = open('.'+os.sep+'mcmc_meb'+os.sep+'00_global_inversion'+os.sep+'wl_meb_results.dat','w')
@@ -1321,7 +1333,7 @@ if __name__ == "__main__":
 							wl.heat_flux = wl_TG_TC_HF_results[2]
 							# write results 
 							wl_TG_TC_HF.write(str(wl.name)+','+str(wl.lon_dec)+','+str(wl.lat_dec)+','+
-								str(wl.thermal_grad)+','+str(wl.thermal_cond)+','+str(wl.heat_flux)+'\n')
+								str(round(wl.thermal_grad,2))+','+str(round(wl.thermal_cond,1))+','+str(round(wl.heat_flux,2))+'\n')
 					except:
 						pass
 				wl_TG_TC_HF.close()

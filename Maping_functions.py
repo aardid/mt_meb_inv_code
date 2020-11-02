@@ -2815,6 +2815,7 @@ def base_map_region(path_topo = None , xlim = None, ylim = None,
     '''
     # figure
     fig, ax = plt.subplots(figsize=(13,10))
+    fig, ax = plt.subplots(figsize=(10,7))
     if two_cbar:
         fig, ax = plt.subplots(figsize=(16,10))
     ax.set_xlabel('Latitude [°]', size = textsize)
@@ -2844,7 +2845,7 @@ def base_map_region(path_topo = None , xlim = None, ylim = None,
 
     if path_lake_shoreline: 
         lats, lons = np.genfromtxt(path_lake_shoreline, skip_header=1, delimiter=',').T
-        plt.plot(lons, lats, color = 'c' ,linewidth= 2, label = 'Taupo lake shoreline', zorder = 1)
+        plt.plot(lons, lats, color = 'c' ,linewidth= 2, label = 'Taupo'+u'\u0304'+' lake shoreline', zorder = 1)
 
     if path_faults:
         def read_nzafd():
