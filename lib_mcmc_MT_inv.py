@@ -23,11 +23,10 @@ import multiprocessing
 from misc_functios import find_nearest
 import csv
 import matplotlib.mlab as mlab
-from shapely.geometry import Polygon
+#from shapely.geometry import Polygon
 
 textsize = 15.
 min_val = 1.e-7
-
 
 # ==============================================================================
 #  MCMC class

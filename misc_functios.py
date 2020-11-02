@@ -107,6 +107,8 @@ def find_nearest(array, value):
 def ray_tracing_method(x,y,poly): # Ray tracing function
     '''
     Check is x,y are inside area define by polygon (poly)
+	x,y : point lon_0, lat_0
+	Input: poly = array of point [[lon_1, lat_1],[lon_2, lat_2],...]
     Output: bool (True if its inside)
     '''
     n = len(poly)

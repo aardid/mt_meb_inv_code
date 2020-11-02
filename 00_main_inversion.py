@@ -44,8 +44,8 @@ textsize = 15.
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalMac'
+	pc = 'office'
+	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -66,11 +66,11 @@ if __name__ == "__main__":
 	# Filter has qualitu MT stations
 	filter_lowQ_data_MT = True
 	# Filter MeB wells with useless info (for prior)
-	filter_useless_MeB_well = True
+	filter_useless_MeB_well = False
 	## run with quality filter per well
 	filter_lowQ_data_well = True  # need to be checked, not working: changing the orther of well obj list
 	## re model temp profiles from wells with lateral inflows ()
-	temp_prof_remodel_wells = True # re model base on '.'+os.sep+'corr_temp_bc'+os.sep+'RM_temp_prof.txt'
+	temp_prof_remodel_wells = False # re model base on '.'+os.sep+'corr_temp_bc'+os.sep+'RM_temp_prof.txt'
 	# Stations not modeled
 	sta_2_re_invert = False
 	# ==============================================================================
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 			path_wells_loc = "D:\Wairakei_Tauhara_data\Temp_wells\well_location_latlon.txt"
 			path_wells_temp = "D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp.txt"
             #path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
-			path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date_3_new_wells.txt'
+			path_wells_temp_date = 	"D:\Wairakei_Tauhara_data\Temp_wells\well_depth_redDepth_temp_date.txt"
 			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
 			####### MeB data in wells 
 			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
@@ -210,7 +210,14 @@ if __name__ == "__main__":
 					wls_meb_notemp.append(wl_meb)
 			# list of wells with bad quality temperature, wells with bas quality temp data 
 			wls_BQ_temp = []
-			name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
+			try:
+				name_file =  '.'+os.sep+'corr_temp_bc'+os.sep+'Q_temp_prof.txt'
+			except:
+				try: 
+					name_file =  '.'+os.sep+'corr_temp_bc'
+				except:
+					os.mkdir( '.'+os.sep+'corr_temp_bc')
+
 			BQ_wls = [x.split()[0] for x in open(name_file).readlines() if x[0]!='#' and x[-2] is '0']
 			[wls_BQ_temp.append(wl_bq) for wl_bq in BQ_wls] 
 

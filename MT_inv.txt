@@ -1,0 +1,1 @@
+# lat	lon	mean_temp_z1	std_temp_z1	mean_temp_z2	std_temp_z2
