@@ -2097,7 +2097,354 @@ def plot_dist_noise(station_objects,bands):
         plt.close()
 
 
+# ==============================================================================
+# INTERPOLATION
+# ==============================================================================
 
+def interpolate_Z(Z, range_p): 
+    
+    # variables 
+    name = Z[0]
+    periods = Z[1]
+    zxxr = Z[2]
+    zxxi = Z[3]
+    zxx = Z[4]
+    zxx_var = Z[5]
+    zxyr = Z[6]
+    zxyi = Z[7]
+    zxy = Z[8]
+    zxy_var = Z[9]
+    zyxr = Z[10]
+    zyxi = Z[11]
+    zyx = Z[12]
+    zyx_var = Z[13]
+    zyyr = Z[14]
+    zyyi = Z[15]
+    zyy = Z[16]
+    zyy_var = Z[17]
+
+    # Zxx
+    zxxr_interp = np.interp(range_p, periods, zxxr)
+    zxxi_interp = np.interp(range_p, periods, zxxi)
+    zxx_interp = np.interp(range_p, periods, zxxr)
+    zxx_var_interp = np.interp(range_p, periods, zxx_var)
+    # Zxy
+    zxyr_interp = np.interp(range_p, periods, zxyr)
+    zxyi_interp = np.interp(range_p, periods, zxyi)
+    zxy_interp = np.interp(range_p, periods, zxyr)
+    zxy_var_interp = np.interp(range_p, periods, zxy_var)
+    # Zyx
+    zyxr_interp = np.interp(range_p, periods, zyxr)
+    zyxi_interp = np.interp(range_p, periods, zyxi)
+    zyx_interp = np.interp(range_p, periods, zyxr)
+    zyx_var_interp = np.interp(range_p, periods, zyx_var)
+    # Zyy
+    zyyr_interp = np.interp(range_p, periods, zyyr)
+    zyyi_interp = np.interp(range_p, periods, zyyi)
+    zyy_interp = np.interp(range_p, periods, zyyr)
+    zyy_var_interp = np.interp(range_p, periods, zyy_var)
+    
+    Z_interp = [name,range_p,zxxr_interp,zxxi_interp,zxx_interp,zxx_var_interp,zxyr_interp,
+               zxyi_interp,zxy_interp,zxy_var_interp,zyxr_interp,zyxi_interp,zyx_interp,
+               zyx_var_interp,zyyr_interp,zyyi_interp,zyy_interp,zyy_var_interp]
+    
+    return [Z_interp]
+
+def spline_coefficient_matrix(xi):
+    # create zero array with correct dimensions
+    N = len(xi)
+    A = np.zeros((4*(N-1),4*(N-1)))
+    j = 0 	# row (equation) counter for matrix
+
+    # for each subinterval, add two equations
+    for i in range(N-1):
+         # compute interval width term
+        ci = 1./(xi[i+1]-xi[i])
+        # add first equation (for LHS boundary of subint)
+        A[j,4*i:4*(i+1)] = [1, 0, 0, 0]
+        j = j+1
+        # add second equation (for RHS boundary of subint)
+        A[j,4*i:4*(i+1)] = [1, 1./ci, 1./ci**2, 1./ci**3]
+        j += 1
+
+    # for each subinterval boundary, add two equations
+    for i in range(N-2):
+        # compute interval width term
+        ci = 1./(xi[i+1]-xi[i])
+         # add first equation (for 1st derivative at boundary)
+        A[j,4*i:4*(i+2)] = [0, 1, 2./ci, 3./ci**2, 0, -1, 0, 0]
+        j += 1
+        # add first equation (for 2st derivative at boundary)
+        A[j,4*i:4*(i+2)] = [0, 0, 2., 6./ci, 0, 0, -2, 0]
+        j += 1
+
+    # for beginning and end nodes, natural spline condition
+    A[j,:4] = [0,0,2,0]
+    j += 1
+    ci = 1./(xi[-1]-xi[-2])
+    A[j,4*(N-2):4*(N-1)] = [0,0,2,6./ci]
+    j += 1
+
+    return A
+
+def spline_rhs(yi):
+    # create zero array with correct dimensions
+    N = len(yi)
+    b = np.zeros(4*(N-1))
+    j = 0 	# row (equation) counter for matrix
+
+    # for each subinterval, add two equations
+    for i in range(N-1):
+        # add first equation (for LHS boundary of subint)
+        b[j] = yi[i]
+        j += 1
+        # add second equation (for RHS boundary of subint)
+        b[j] = yi[i+1]
+        j += 1
+    return b
+
+def spline_interpolate(xj, xi, ak):
+    # initialise with first polynomial
+    i = 1
+    aki = ak[4*(i-1):4*i]
+
+    # loop through interpolation points
+    yj = []
+    for xji in xj:	
+        # check if need to move onto next polynomial
+        while xji > xi[i]:
+            i += 1
+            aki = ak[4*(i-1):4*i]
+
+        # evaluate polynomial
+        yj.append(polyval(aki,xji-xi[i-1]))
+
+    return np.array(yj)
+
+# this function is complete
+def polyval(a,xi):
+    # initialise output at correct length
+    yi = 0.*xi
+
+    # loop over polynomial coefficients
+    for i,ai in enumerate(a):
+        yi = yi + ai*xi**i
+
+    return yi
+
+#########################################################
+# Calculate AIC number 
+    
+def AIC_calc(N, error, N_obs):    
+     # calc AIC
+    #N_obs = len(periods)
+    K = N  # number of knots
+    ss_erros = (np.sum(error))**2
+
+    AIC = N_obs*np.log(ss_erros/N) + 2*K
+    AICc = AIC + (2*K*K + 2+K)/(N_obs - K - 1) 
+    
+    return AIC, AICc
+
+#############################################################
+# Calculate the number of parmeters (knots) that minimize AIC
+ # for each component of the tensor
+
+def min_AIC(N_obs, knots, error):
+    
+    N = len(knots)
+    AIC = [10e10, 10e10]
+    k_opt = [0, 0]
+
+    for i in knots: 
+            
+        [AIC_aux, AICc_aux] = AIC_calc(i, error, N_obs)
+    
+        if AIC_aux < AIC[0]:
+            AIC[0] = AIC_aux
+            k_opt[0] = i
+        
+        if AICc_aux < AIC[1]:
+            AIC[1] = AICc_aux
+            k_opt[1] = i
+        
+    return k_opt
+
+def slope_calc(y): 
+    slope = np.zeros(len(y)-1)
+    for count in range(0,len(y)-1):
+        slope[count] = -(y[count]-y[count+1])
+    mean_slope = np.mean(slope)
+    std_slope= np.std(slope)
+            
+    return slope, mean_slope, std_slope
+
+def interpolate_knots(periods, signal, error, k):
+    # how many knots? N 
+    N = k
+
+    inds = np.linspace(0, len(periods)-1, N)
+    inds = [int(ind) for ind in inds]
+        
+    # Look for the best position of the knots
+        
+    # (1) Sample the signal (number of knot, equispaced)
+        
+    xi = np.array([np.log10(periods[ind]) for ind in inds])
+    yi = np.array([np.log10(signal[ind]) for ind in inds])
+        
+    # (2) Calculate slopes (between points) of the somple signal; mean and std
+        
+    slope, mean_slope, std_slope = slope_calc(yi)
+        
+    # (3) If slopes on the sides of a point is bigger that mean+std => replace with the next point of the original signal
+
+    for ite in range(0,int(abs(len(periods)/N))): # Iterate between amount of points between knots
+        count = 0
+        for ind in inds[1:len(inds)-1]:
+            if (abs(slope[count]) > (abs(mean_slope)+std_slope) and abs(slope[count+1]) > (abs(mean_slope)+std_slope)):
+                yi[count+1] = np.log10(signal[ind+1])
+                slope, mean_slope, std_slope = slope_calc(yi)
+            count = count + 1
+    
+   # (4) Interpolate the signal
+        
+    A = spline_coefficient_matrix(xi)
+    b = spline_rhs(yi)
+    
+    ak = solve(A,b)
+
+    xj = np.linspace(xi[0], xi[-1], 101)
+    yj = spline_interpolate(xj,xi,ak)
+
+    # (5) compute objective function for current position of splines
+    
+    yi_mod = spline_interpolate(np.log10(periods),xi,ak)
+
+    robs = np.sqrt(np.sum((yi_mod-np.log10(signal))**2/error))
+        
+    return 10**yi_mod, robs
+
+
+def interpolate_Z_AIC(Z, range_p):
+    
+    # variables 
+    name = Z[0]
+    periods = Z[1]
+    zxxr = abs(Z[2])
+    zxxi = abs(Z[3])
+    zxx = Z[4]
+    zxx_var = Z[5]
+    zxyr = abs(Z[6])
+    zxyi = abs(Z[7])
+    zxy = Z[8]
+    zxy_var = Z[9]
+    zyxr = abs(Z[10])
+    zyxi = abs(Z[11])
+    zyx = Z[12]
+    zyx_var = Z[13]
+    zyyr = abs(Z[14])
+    zyyi = abs(Z[15])
+    zyy = Z[16]
+    zyy_var = Z[17]
+        
+    #############################################################
+    # Calculate optimum number of knots per component of Z
+    
+    knots = np.arange(1,len(periods),1)
+    N_obs = len(periods)
+    # contants
+    mu=4*np.pi/(10^7)       # electrical permeability [Vs/Am]
+    omega = 2*np.pi/periods
+    cte = 2* (mu/(2*np.pi))*(10^6)
+    
+    # ZXX 
+    zxx_error = np.sqrt(cte*periods*np.abs(zxx)*zxx_var)
+    k_zxx = min_AIC(N_obs, knots, zxx_error)
+    # ZXY 
+    zxy_error = np.sqrt(cte*periods*np.abs(zxy)*zxy_var)
+    k_zxy = min_AIC(N_obs, knots, zxy_var)
+    # ZYX 
+    zyx_error = np.sqrt(cte*periods*np.abs(zyx)*zyx_var)
+    k_zyx = min_AIC(N_obs, knots, zyx_var)
+    # ZYY 
+    zyy_error = np.sqrt(cte*periods*np.abs(zyy)*zyy_var)    
+    k_zyy = min_AIC(N_obs, knots, zyy_var)
+    
+    # Interpolate the components of Z for the optimum number of knots
+	
+    # ZXX 
+    [zxxr_interp, zxxr_robs] = interpolate_knots(periods, zxxr, zxx_error, k_zxx[1])
+    [zxxi_interp, zxxi_robs] = interpolate_knots(periods, zxxi, zxx_error, k_zxx[1])
+    [zxx_interp, zxx_robs] = interpolate_knots(periods, zxx, zxx_error, k_zxx[1])
+    # ZXY 
+    [zxyr_interp, zxyr_robs] = interpolate_knots(periods, zxyr, zxy_error, k_zxy[1])
+    [zxyi_interp, zxyi_robs] = interpolate_knots(periods, zxyi, zxy_error, k_zxy[1])
+    [zxy_interp, zxx_robs] = interpolate_knots(periods, zxy, zxy_error, k_zxy[1])
+    # ZYX 
+    [zyxr_interp, zyxr_robs] = interpolate_knots(periods, zyxr, zyx_error, k_zyx[1])
+    [zyxi_interp, zyxi_robs] = interpolate_knots(periods, zyxi, zyx_error, k_zyx[1])
+    [zyx_interp, zyx_robs] = interpolate_knots(periods, zyx, zyx_error, k_zyx[1])
+    # ZYY 
+    [zyyr_interp, zyyr_robs] = interpolate_knots(periods, zyyr, zyy_error, k_zyy[1])
+    [zyyi_interp, zyyi_robs] = interpolate_knots(periods, zyyi, zyy_error, k_zyy[1])
+    [zyy_interp, zyy_robs] = interpolate_knots(periods, zyy, zyy_error, k_zyy[1])
+
+    Z_interp_AIC = [name,periods,zxxr_interp,zxxi_interp,zxx_interp,zxx_var,zxyr_interp,
+                   zxyi_interp,zxy_interp,zxy_var,zyxr_interp,zyxi_interp,zyx_interp,
+                   zyx_var,zyyr_interp,zyyi_interp,zyy_interp,zyy_var]
+
+    # Extrapolate to the new range of periods (range_p)
+    Z_interp = interpolate_Z(Z_interp_AIC, range_p)
+    
+    #plot_interpolate(periods, zxxr_interp, zxy_error, N=[k_zxy])
+
+    return Z_interp
+
+def plot_interpolate(periods, signal, error, N=0):
+     # how many knots? N 
+    i1=0
+    i2=0
+    i3=0
+    i4=0
+    inds = np.linspace(0, len(periods)-1, N)
+    inds = [int(ind) for ind in inds]
+    inds[1] += i1
+    inds[2] += i2
+    inds[3] += i3
+    inds[4] += i4
+
+    xi = np.array([np.log10(periods[ind]) for ind in inds])
+    yi = np.array([np.log10(signal[ind]) for ind in inds])
+    
+    A = spline_coefficient_matrix(xi)
+    b = spline_rhs(yi)
+
+    ak = solve(A,b)
+
+    #
+    f,ax = plt.subplots(1,1)
+    f.set_size_inches(12,6)
+
+    ax.errorbar(periods,signal,error, fmt='ro')
+
+    xj = np.linspace(xi[0], xi[-1], 101)
+    yj = spline_interpolate(xj,xi,ak)
+
+    ax.plot(10**xi, 10**yi, 'ko',zorder=4)
+    ax.plot(10**xj, 10**yj, 'r-')
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    # compute objective function for current position of splines
+    yi_mod = spline_interpolate(np.log10(periods),xi,ak)
+
+    ax.plot(periods, 10**yi_mod, 'k.', ms = 3, zorder = 6)
+
+    robs = np.sqrt(np.sum((yi_mod-np.log10(signal))**2/error))
+    ax.set_title('r={}'.format(robs))
+    plt.show()
 
 
 

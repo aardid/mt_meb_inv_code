@@ -26,6 +26,7 @@ from lib_MT_station import *
 from lib_sample_data import *
 from Maping_functions import *
 from misc_functios import *
+from lib_MT_phase_tensor_functions import *
 from matplotlib.backends.backend_pdf import PdfPages
 
 from sklearn.neighbors import KernelDensity
@@ -53,7 +54,7 @@ if __name__ == "__main__":
 	## Sections of the code tu run
 	set_up = True
 	dif_xy_yx = False
-	z_strike = True
+	z_strike = False
 	phase_ellipses = True
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
@@ -135,8 +136,6 @@ if __name__ == "__main__":
 		#(2)
 
 	# (2) z_strike
-	
-	Zstrikes_array = []
 	if z_strike: 
 		by_depth = True
 		if by_depth:
@@ -261,6 +260,61 @@ if __name__ == "__main__":
 			#save 
 			plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'Z_strike_skin_depth_'+str(d1_from/1e3)+'_'+str(d3_to/1e3)+'_km'+'.png', dpi=100, facecolor='w', edgecolor='w',
 				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+
+	# (3) tensor ellipses 
+	if phase_ellipses:
+    	# loop over stations 
+		count = 1
+		ellips_sta = []
+		# files to create
+		#pp = PdfPages('WT_MT_array_planview_ellipses.pdf')
+		for sta in station_objects:
+			print(count)
+			H = [None, None, sta.lat, sta.lon]
+			## 1. Interpolate Z
+			range_p = np.logspace(-2,3,num=6)
+			[Z_interp] = interpolate_Z_AIC(sta.Z, range_p)    		
+			
+			## 2. Calculate ellipses variables (per period)
+			#ellipses_txt(Z_interp,H) # create the .txt for ellipses for the station 
+			[Z_ellips_var] = ellipses_var(Z_interp,H) # Z_ellips_var[m][n], m: periods (52),  n: variable (6) 
+			
+			## 3. Add ellipses variables to Tensor of all stations  
+			#if count==1:
+			#	ellips_sta.append(Z_ellips_var)
+			#if count>1:     # for using just one station per location (ex: WT056a or WT056b )
+			#	if file[:len(file)-5] == file_previous:
+			#		ellips_sta[-1] = Z_ellips_var
+			#	else:
+			#		ellips_sta.append(Z_ellips_var)  # ellips_sta[m][n][q], m: station (250),  n: period (52), q: variable (6)  
+			ellips_sta.append(Z_ellips_var)  # ellips_sta[m][n][q], m: station (250),  n: period (52), q: variable (6)  
+			##
+			#file_previous = file[:len(file)-5]
+			count  += 1 
+		
+		## 4. Generate map of ellipses per period for all the stations 
+		# region_map()
+		minLat = -38.75
+		maxLat = -38.58
+		minLon = 175.95
+		maxLon = 176.25
+		frame = [minLat, maxLat, minLon, maxLon]
+		ellips_sta_array = np.asarray(ellips_sta)
+		# Resistivity boundary WT: Update. Mielke, 2015
+		path_rest_bound = ['.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat']
+		
+		#range_p_sample = [range_p[10],range_p[20],range_p[30],range_p[40]]  
+		#range_p_sample = [0.01, 0.1, 1., 10., 100., 1000.] 
+		#for p in range_p_sample:
+		for p in range_p: 
+			print('Period: '+str(p)+' [s]')
+			f = plot_ellips_planview(p, ellips_sta_array, frame, path_rest_bound = path_rest_bound)
+			#pp.savefig(f)
+			#save 
+			plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'phase_tensor_ellipses'+os.sep+'ellipses_p_'+str(p)+'_s'+'.png', dpi=100, facecolor='w', edgecolor='w',
+				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+			plt.close("all")
+		#pp.close()
 
 
 
