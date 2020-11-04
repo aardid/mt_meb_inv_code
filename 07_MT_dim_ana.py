@@ -41,8 +41,8 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalMac'
+	#pc = 'office'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
@@ -53,9 +53,9 @@ if __name__ == "__main__":
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
-	dif_xy_yx = False
+	dif_xy_yx = True
 	z_strike = False
-	phase_ellipses = True
+	phase_ellipses = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
 	if set_up:
@@ -111,27 +111,71 @@ if __name__ == "__main__":
 	
 	# (1) Diference in apparent resitivity of XY and YX
 	if dif_xy_yx:
-    	#(0) create plot
+		# plot appres and phase 
 		fig, (ax1, ax2) = plt.subplots(2, 1)
-		fig.set_size_inches(8,12)
+		fig.set_size_inches(8,8)
 		fig.suptitle(' ')
-		# lists to fill
-		dif_appres = [] # matrix
 		#(1) loop over stations 
+		sta_ref = 'WT107a'
 		for sta in station_objects:
-			ax1.loglog(sta.T, sta.rho_app[1], '-', color = pale_red_col, alpha = .3, linewidth =0.3)
-			ax1.loglog(sta.T, sta.rho_app[2], '-', color = pale_blue_col, alpha = .3, linewidth =0.3)
-
-		ax1.loglog([],[], '-', color = pale_red_col, alpha = .5, label = 'Z_xy')
-		ax1.loglog([],[], '-', color = pale_blue_col, alpha = .5, label = 'Z_yx')
-		#ax1.title('Apparent resistivity: WT survey', fontsize = textsize)
-		ax1.set_xlabel('Period [s]',  fontsize = textsize)
-		ax1.set_ylabel(r'\rho_\text{app} [\Omega\,s]',  fontsize = textsize)
-		ax1.set_xlim([0.0001,1000])
-		ax1.set_ylim([0.01,10000])		
+			if sta.name[:-4] == sta_ref:
+				#ax1.loglog(sta.T, sta.rho_app[1], '*--', color = pale_red_col, alpha =1., linewidth =1.3)
+				#ax1.loglog(sta.T, sta.rho_app[2], '*--', color = pale_blue_col, alpha = 1., linewidth =1.3)
+				ax1.errorbar(sta.T,sta.rho_app[1],sta.rho_app_er[1], fmt='*', color = pale_blue_col)#, label = 'observed $Z_{xy}$')
+				ax1.errorbar(sta.T,sta.rho_app[2],sta.rho_app_er[2], fmt='*', color = pale_red_col)#, label = 'observed $Z_{yx}$')
+				ax2.errorbar(sta.T,sta.phase_deg[1],sta.phase_deg_er[1], fmt='*', color = pale_blue_col)#, label = 'observed $Z_{xy}$')
+				ax2.errorbar(sta.T,sta.phase_deg[2],sta.phase_deg_er[2], fmt='*', color = pale_red_col)#, label = 'observed $Z_{yx}$')			
+		# ax1
+		ax1.errorbar([],[],[], fmt='*', color = pale_blue_col, label = '$Z_{xy}$')
+		ax1.errorbar([],[],[], fmt='*', color = pale_red_col, label = '$Z_{yx}$')
+		ax1.set_title('(a) Apparent resistivity for MT station '+sta_ref, fontsize = textsize)
+		ax1.set_xscale("log")
+		ax1.set_yscale("log")
+		ax1.set_xlabel('period [s]', fontsize=textsize)
+		ax1.set_ylabel(r'$\rho_{app}$ [$\Omega\,$m]', fontsize=textsize)
+		ax1.set_ylim([1.,.1e3])
+		ax1.set_xlim([1.e-3,1.e2])	
+		ax1.grid(True, which='both', linewidth=0.1)		
+		ax1.legend(loc = 'upper right', prop={'size': textsize})
+		# ax2
+		ax2.errorbar([],[],[], fmt='*', color = pale_blue_col, label = '$Z_{xy}$')
+		ax2.errorbar([],[],[], fmt='*', color = pale_red_col, label = '$Z_{yx}$')
+		ax2.set_title('(b) Phase for MT station '+sta_ref, fontsize = textsize)
+		ax2.set_xscale("log")
+		#ax2.set_yscale("lin")
+		ax2.set_xlabel('period [s]', fontsize=textsize)
+		ax2.set_ylabel(r'$\phi$ [°]', fontsize=textsize)
+		ax2.set_ylim([0,90])
+		ax2.set_xlim([1.e-3,1.e2])	
+		ax2.grid(True, which='both', linewidth=0.1)	
+		ax2.legend(loc = 'upper right', prop={'size': textsize})
 		plt.tight_layout()
-		plt.show()
-		#(1) 
+		#
+		plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'appres_phase'+os.sep+'ex_MT_'+sta_ref+'.png', dpi=100, facecolor='w', edgecolor='w',
+			orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+		plt.close("all")
+
+    	# #(0) create plot
+		# fig, (ax1, ax2) = plt.subplots(2, 1)
+		# fig.set_size_inches(8,12)
+		# fig.suptitle(' ')
+		# # lists to fill
+		# dif_appres = [] # matrix
+		# #(1) loop over stations 
+		# for sta in station_objects:
+		# 	ax1.loglog(sta.T, sta.rho_app[1], '-', color = pale_red_col, alpha = .3, linewidth =0.3)
+		# 	ax1.loglog(sta.T, sta.rho_app[2], '-', color = pale_blue_col, alpha = .3, linewidth =0.3)
+
+		# ax1.loglog([],[], '-', color = pale_red_col, alpha = .5, label = 'Z_xy')
+		# ax1.loglog([],[], '-', color = pale_blue_col, alpha = .5, label = 'Z_yx')
+		# #ax1.title('Apparent resistivity: WT survey', fontsize = textsize)
+		# ax1.set_xlabel('Period [s]',  fontsize = textsize)
+		# ax1.set_ylabel(r'\rho_\text{app} [\Omega\,s]',  fontsize = textsize)
+		# ax1.set_xlim([0.0001,1000])
+		# ax1.set_ylim([0.01,10000])		
+		# plt.tight_layout()
+		# plt.show()
+		# #(1) 
 
 		#(2)
 
@@ -212,16 +256,18 @@ if __name__ == "__main__":
 				for i, sd in enumerate(sd_vec):
 					if sd < d1_to: 
 						Zstrikes_depths_1.append(Z_strike_2_plot[i])
-						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_orange_col, marker = '.')
+						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_orange_col, marker = '.', alpha =.25)
 					elif sd < d2_to:
 						Zstrikes_depths_2.append(Z_strike_2_plot[i])
-						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_blue_col, marker = '.')
+						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_blue_col, marker = '.', alpha =.25)
 					elif sd < d3_to:
 						Zstrikes_depths_3.append(Z_strike_2_plot[i])
-						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_red_col, marker = '.')
+						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_red_col, marker = '.', alpha =.25)
 			ax1.plot([], [], color = pale_orange_col, marker = '.', label = '['+str(d1_from/1e3)+', '+str(d1_to/1e3)+'] km')
 			ax1.plot([], [], color = pale_blue_col, marker = '.', label = '['+str(d2_from/1e3)+', '+str(d2_to/1e3)+'] km')
 			ax1.plot([], [], color = pale_red_col, marker = '.', label = '['+str(d3_from/1e3)+', '+str(d3_to/1e3)+'] km')
+			ax1.set_xscale('log')
+			ax1.set_xlim([1e-2,.5e2])
 			ax1.set_title(r'(a) $Z_{strike}$ vs skin depth for the MT array', fontsize=textsize, loc='center')
 			ax1.set_xlabel(r'depth [km]', fontsize=textsize)
 			ax1.set_ylabel(r'$Z_{strike}$ [°]', fontsize=textsize)

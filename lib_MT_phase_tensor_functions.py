@@ -306,7 +306,7 @@ def plot_ellips_planview(p, ellips_sta_array, frame, path_rest_bound = None):
     lon_0 = ellips_sta_array[0,0,2]
     
     f,ax = plt.subplots()
-    f.set_size_inches(6,4)
+    f.set_size_inches(8,6)
 
     # m = Basemap(projection='tmerc', resolution='c',
     #             width=8E6, height=8E6, 
@@ -333,6 +333,8 @@ def plot_ellips_planview(p, ellips_sta_array, frame, path_rest_bound = None):
         lon_0=ellips_sta_array[n,pos_p,2]
         e = ellips_sta_array[n,pos_p,3]
         angle = 90 - ellips_sta_array[n,pos_p,4] # Move to MT reference coord. system  
+        if angle > 90:
+            angle = angle - 90 
         color = ellips_sta_array[n,pos_p,5]#[0]
         #x,y=m(lon_0,lat_0)
         x,y=lon_0,lat_0

@@ -40,20 +40,20 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 ##################### BASEMAP PLOTS
-	if False: # base map figures
+	if True: # base map figures
 		base_map = True # plot map with wells and stations # modify .png ouput
 		##
-		zones = False # add injection and extraction zones
+		zones = True # add injection and extraction zones
 		wells_loc = False # add wells (plot temp, meb and litho wells)
 		wells_meb_loc = False
 		wells_litho_loc = False
 		stations_loc = False # add mt stations
-		mt_2d_profiles = True
+		mt_2d_profiles = False
 		temp_fix_depth = False # temperature at fix depth (def 0 masl)
 		######## Just one of the following can be 'True'
 		meb_results = False # add scatter MeB results # modify .png ouput
-		mt_results = True # add scatter MT results # modify .png ouput
-		temp_results = False # add scatter Temp results  # modify .png ouput
+		mt_results = False # add scatter MT results # modify .png ouput
+		temp_results = True # add scatter Temp results  # modify .png ouput
 		temp_grad = False # add scatter temperature gradient inside the conductor # modify .png ouput
 		temp_hflux = False # add scatter conductive heatflux  # modify .png ouput
 		temp_hflux_tot = False # add scatter conductive total heatflux (cond+adv)  # modify .png ouput
@@ -1115,7 +1115,7 @@ if __name__ == "__main__":
 			orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 
 #################### SCATTER VERSUS PLOT
-	if True: # 
+	if False: # 
 		### SCATTER PLOTS
 		d12_vs_temp_d12_scatter = True
 		d12_vs_hf_scatter = False

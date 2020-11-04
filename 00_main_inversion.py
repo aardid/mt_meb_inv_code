@@ -38,14 +38,18 @@ from Maping_functions import *
 from misc_functios import *
 from matplotlib.backends.backend_pdf import PdfPages
 
-textsize = 15.
+textsize = 15
+matplotlib.rcParams.update({'font.size': textsize})
+pale_orange_col = u'#ff7f0e' 
+pale_blue_col = u'#1f77b4' 
+pale_red_col = u'#EE6666'
 # ==============================================================================
 # ==============================================================================
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalMac'
+	#pc = 'office'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True # True always
@@ -1196,7 +1200,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if True:  # histogram of MT inversion parameters for stations inverted
+		if False:  # histogram of MT inversion parameters for stations inverted
 			# Resistivity Boundary, Risk
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
 			# Resistivity Boundary, Mielke, OUT
@@ -1376,7 +1380,36 @@ if __name__ == "__main__":
 			print('wells not considered: '+str(i)+'/'+str(len(wells_objects)))
 			temp_at_masl.close()
 
-
+		if True:   # plot well temperature profile 
+			fig, ax1 = plt.subplots(1, 1)
+			fig.set_size_inches(6,7)
+			fig.suptitle(' ')
+			#(1) loop over stations 
+			wl_ref = 'WK272'
+			for wl in wells_objects:
+				if wl.name == wl_ref:
+					#ax1.set_xscale("linear")
+					#ax1.set_yscale("linear")    
+					ax1.plot(wl.temp_prof_true, wl.red_depth,'o', c = pale_blue_col) # plot true data
+					ax1.plot(wl.temp_prof_rs, wl.red_depth_rs,'-', c = pale_orange_col, linewidth = 2.0)
+			ax1.plot([], [],'o', c = pale_blue_col, label = 'temperature data') # plot true data
+			ax1.plot([], [],'-', c = pale_orange_col, label = 'interpolated data')
+			if True:
+				ax1.plot( [0,300.], [300.,300.],'g--', alpha = 0.5) 
+				ax1.plot( [0,300.], [50.,50.],'g--', alpha = 0.5)
+				ax1.plot( [], [],'g--', label = 'suggested boundary', alpha = 0.5) # plot true data
+				#
+			ax1.set_xlim([-5,300])
+			ax1.set_ylim([-300,500])
+			ax1.set_xlabel('temperature [°C]', fontsize=textsize)
+			ax1.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
+			ax1.set_title('Temperature profile for well '+wl_ref, fontsize=textsize)
+			ax1.grid(True, which='both', linewidth=0.1)	
+			ax1.legend(loc = 'lower left', prop={'size': textsize})
+			plt.tight_layout()
+			fig.savefig('.'+os.sep+'wells_info'+os.sep+'temp_prof_ex'+os.sep+'temp_'+wl_ref+'.png', dpi=300, facecolor='w', edgecolor='w',
+				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+			plt.close("all")
 
 
 
