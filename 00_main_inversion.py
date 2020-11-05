@@ -48,8 +48,8 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	#pc = 'office'
-	pc = 'personalMac'
+	pc = 'office'
+	#pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True # True always
@@ -1381,35 +1381,87 @@ if __name__ == "__main__":
 			temp_at_masl.close()
 
 		if True:   # plot well temperature profile 
-			fig, ax1 = plt.subplots(1, 1)
-			fig.set_size_inches(6,7)
-			fig.suptitle(' ')
-			#(1) loop over stations 
-			wl_ref = 'WK272'
-			for wl in wells_objects:
-				if wl.name == wl_ref:
-					#ax1.set_xscale("linear")
-					#ax1.set_yscale("linear")    
-					ax1.plot(wl.temp_prof_true, wl.red_depth,'o', c = pale_blue_col) # plot true data
-					ax1.plot(wl.temp_prof_rs, wl.red_depth_rs,'-', c = pale_orange_col, linewidth = 2.0)
-			ax1.plot([], [],'o', c = pale_blue_col, label = 'temperature data') # plot true data
-			ax1.plot([], [],'-', c = pale_orange_col, label = 'interpolated data')
 			if True:
-				ax1.plot( [0,300.], [300.,300.],'g--', alpha = 0.5) 
-				ax1.plot( [0,300.], [50.,50.],'g--', alpha = 0.5)
-				ax1.plot( [], [],'g--', label = 'suggested boundary', alpha = 0.5) # plot true data
-				#
-			ax1.set_xlim([-5,300])
-			ax1.set_ylim([-300,500])
-			ax1.set_xlabel('temperature [°C]', fontsize=textsize)
-			ax1.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
-			ax1.set_title('Temperature profile for well '+wl_ref, fontsize=textsize)
-			ax1.grid(True, which='both', linewidth=0.1)	
-			ax1.legend(loc = 'lower left', prop={'size': textsize})
-			plt.tight_layout()
-			fig.savefig('.'+os.sep+'wells_info'+os.sep+'temp_prof_ex'+os.sep+'temp_'+wl_ref+'.png', dpi=300, facecolor='w', edgecolor='w',
-				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
-			plt.close("all")
+				fig, (ax1, ax2) = plt.subplots(1, 2)
+				fig.set_size_inches(10,7)
+				fig.suptitle(' ')
+				#(1) well 1 
+				wl_ref = 'WK272'
+				for wl in wells_objects:
+					if wl.name == wl_ref:
+						#ax1.set_xscale("linear")
+						#ax1.set_yscale("linear")    
+						ax1.plot(wl.temp_prof_true, wl.red_depth,'o', c = pale_blue_col) # plot true data
+						ax1.plot(wl.temp_prof_rs, wl.red_depth_rs,'-', c = pale_orange_col, linewidth = 2.0)
+				ax1.plot([], [],'o', c = pale_blue_col, label = 'temperature data') # plot true data
+				ax1.plot([], [],'-', c = pale_orange_col, label = 'interpolated data')
+				if True:
+					ax1.plot( [0,300.], [300.,300.],'g--', alpha = 0.5) 
+					ax1.plot( [0,300.], [50.,50.],'g--', alpha = 0.5)
+					ax1.plot( [], [],'g--', label = 'suggested boundary', alpha = 0.5) # plot true data
+					#
+				ax1.set_xlim([-5,300])
+				ax1.set_ylim([-300,500])
+				ax1.set_xlabel('temperature [°C]', fontsize=textsize)
+				ax1.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
+				ax1.set_title('Temperature profile for well '+wl_ref, fontsize=textsize)
+				ax1.grid(True, which='both', linewidth=0.1)	
+				ax1.legend(loc = 'lower left', prop={'size': textsize})
+
+				#(1) well 2
+				wl_ref = 'TH14'
+				for wl in wells_objects:
+					if wl.name == wl_ref:
+						#ax1.set_xscale("linear")
+						#ax1.set_yscale("linear")    
+						ax2.plot(wl.temp_prof_true, wl.red_depth,'o', c = pale_blue_col) # plot true data
+						ax2.plot(wl.temp_prof_rs, wl.red_depth_rs,'-', c = pale_orange_col, linewidth = 2.0)
+				ax2.plot([], [],'o', c = pale_blue_col, label = 'temperature data') # plot true data
+				ax2.plot([], [],'-', c = pale_orange_col, label = 'interpolated data')
+				if True:
+					ax2.plot( [0,300.], [250.,250.],'g--', alpha = 0.5) 
+					ax2.plot( [0,300.], [100.,100.],'g--', alpha = 0.5)
+					ax2.plot( [], [],'g--', label = 'suggested boundary', alpha = 0.5) # plot true data
+					#
+				ax2.set_xlim([-5,300])
+				ax2.set_ylim([-300,500])
+				ax2.set_xlabel('temperature [°C]', fontsize=textsize)
+				ax2.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
+				ax2.set_title('Temperature profile for well '+wl_ref, fontsize=textsize)
+				ax2.grid(True, which='both', linewidth=0.1)	
+				#ax2.legend(loc = 'lower left', prop={'size': textsize})
+
+				plt.tight_layout()
+				fig.savefig('.'+os.sep+'wells_info'+os.sep+'temp_prof_ex'+os.sep+'temp_profs_ex.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+				plt.close("all")
+
+			# plot MeB profile 
+			if False:
+				fig, (ax1,ax2) = plt.subplots(1, 2)
+				fig.set_size_inches(10,7)
+				fig.suptitle(' ')
+				#(1) loop over wells 
+				wl_ref = ['WK261','WK270'] #number of wells needs to match number of axes
+				for i, ax in enumerate(fig.axes):
+					wl_aux = [wl for wl in wells_objects if wl.name == wl_ref[i]][0]
+					ax.plot(wl_aux.meb_prof, [d - wl_aux.elev for d in wl_aux.meb_depth],'*', c = pale_red_col, markersize = 12., label = 'MeB data') # plot true data
+					ax.plot(wl_aux.meb_prof, [d - wl_aux.elev for d in wl_aux.meb_depth],'--', c = pale_blue_col, linewidth = 1.5, label = 'interpolated data')
+					ax.plot([2,2],[wl_aux.elev-1200.,wl_aux.elev],'y--', linewidth = 1.0, label = 'resolution limit')
+					ax.plot([5,5],[wl_aux.elev-1200.,wl_aux.elev],'g--', linewidth = 1.0, label = 'high confidence limit')
+					ax.set_xlim([0,12])
+					ax.set_ylim([wl_aux.elev-1200.,wl_aux.elev])
+					ax.set_xlabel('Clay content [MeB %]', fontsize=textsize)
+					ax.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
+					ax.grid(True, which='both', linewidth=0.1)	
+					ax.set_title('MeB profile well '+wl_ref[i], fontsize=textsize)
+				ax1.legend(loc = 'upper right', prop={'size': textsize})
+				plt.tight_layout()
+				fig.savefig('.'+os.sep+'wells_info'+os.sep+'meb_prof_ex'+os.sep+'meb_examples.png', dpi=300, facecolor='w', edgecolor='w',
+					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
+				plt.close("all")
+				
+
 
 
 
