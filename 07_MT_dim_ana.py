@@ -41,20 +41,20 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalMac'
+	#pc = 'office'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True
 	# Profiles
 	#
 	# Filter has qualitu MT stations
-	filter_lowQ_data_MT = True
+	filter_lowQ_data_MT = False
 	# ==============================================================================
 	## Sections of the code tu run
 	set_up = True
-	dif_xy_yx = False
-	z_strike = True
+	dif_xy_yx = True
+	z_strike = False
 	phase_ellipses = False
 
 	# (0) Import data and create objects: MT from edi files and wells from spreadsheet files
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 		
 		#########################################################################################
 	
-	# (1) Diference in apparent resitivity of XY and YX
+	# (1) Apparent resitivity of XY and YX
 	if dif_xy_yx:
 		# plot appres and phase 
 		fig, (ax1, ax2) = plt.subplots(2, 1)
@@ -117,14 +117,22 @@ if __name__ == "__main__":
 		fig.suptitle(' ')
 		#(1) loop over stations 
 		sta_ref = 'WT107a'
+		back_stns = False
 		for sta in station_objects:
 			if sta.name[:-4] == sta_ref:
 				#ax1.loglog(sta.T, sta.rho_app[1], '*--', color = pale_red_col, alpha =1., linewidth =1.3)
 				#ax1.loglog(sta.T, sta.rho_app[2], '*--', color = pale_blue_col, alpha = 1., linewidth =1.3)
-				ax1.errorbar(sta.T,sta.rho_app[1],sta.rho_app_er[1], fmt='*', color = pale_blue_col)#, label = 'observed $Z_{xy}$')
-				ax1.errorbar(sta.T,sta.rho_app[2],sta.rho_app_er[2], fmt='*', color = pale_red_col)#, label = 'observed $Z_{yx}$')
-				ax2.errorbar(sta.T,sta.phase_deg[1],sta.phase_deg_er[1], fmt='*', color = pale_blue_col)#, label = 'observed $Z_{xy}$')
-				ax2.errorbar(sta.T,sta.phase_deg[2],sta.phase_deg_er[2], fmt='*', color = pale_red_col)#, label = 'observed $Z_{yx}$')			
+				ax1.errorbar(sta.T,sta.rho_app[1],sta.rho_app_er[1], fmt='*', color = pale_blue_col, zorder = 1)#, label = 'observed $Z_{xy}$')
+				ax1.errorbar(sta.T,sta.rho_app[2],sta.rho_app_er[2], fmt='*', color = pale_red_col, zorder = 1)#, label = 'observed $Z_{yx}$')
+				ax2.errorbar(sta.T,sta.phase_deg[1],sta.phase_deg_er[1], fmt='*', color = pale_blue_col, zorder = 1)#, label = 'observed $Z_{xy}$')
+				ax2.errorbar(sta.T,sta.phase_deg[2],sta.phase_deg_er[2], fmt='*', color = pale_red_col, zorder = 1)#, label = 'observed $Z_{yx}$')			
+			elif back_stns:
+				ax1.errorbar(sta.T,sta.rho_app[1],sta.rho_app_er[1], fmt='-', color = 'gray', zorder = 0, alpha = 0.2, linewidth = 0.5)#, label = 'observed $Z_{xy}$')
+				ax1.errorbar(sta.T,sta.rho_app[2],sta.rho_app_er[2], fmt='-', color = 'gray', zorder = 0, alpha = 0.2, linewidth = 0.5)#, label = 'observed $Z_{yx}$')
+				ax2.errorbar(sta.T,sta.phase_deg[1],sta.phase_deg_er[1], fmt='-', color = 'gray', zorder = 0, alpha = 0.2, linewidth = 0.5)#, label = 'observed $Z_{xy}$')
+				ax2.errorbar(sta.T,sta.phase_deg[2],sta.phase_deg_er[2], fmt='-', color = 'gray', zorder = 0, alpha = 0.2, linewidth = 0.5)#, label = 'observed $Z_{yx}$')	
+
+
 		# ax1
 		ax1.errorbar([],[],[], fmt='*', color = pale_blue_col, label = '$Z_{xy}$')
 		ax1.errorbar([],[],[], fmt='*', color = pale_red_col, label = '$Z_{yx}$')
@@ -133,7 +141,7 @@ if __name__ == "__main__":
 		ax1.set_yscale("log")
 		ax1.set_xlabel('period [s]', fontsize=textsize)
 		ax1.set_ylabel(r'$\rho_{app}$ [$\Omega\,$m]', fontsize=textsize)
-		ax1.set_ylim([1.,.1e3])
+		ax1.set_ylim([1.,1e3])
 		ax1.set_xlim([1.e-3,1.e2])	
 		ax1.grid(True, which='both', linewidth=0.1)		
 		ax1.legend(loc = 'upper right', prop={'size': textsize})
@@ -151,8 +159,12 @@ if __name__ == "__main__":
 		ax2.legend(loc = 'upper right', prop={'size': textsize})
 		plt.tight_layout()
 		#
-		plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'appres_phase'+os.sep+'ex_MT_'+sta_ref+'.png', dpi=100, facecolor='w', edgecolor='w',
-			orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+		if back_stns:
+			plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'appres_phase'+os.sep+'ex_MT.png', dpi=100, facecolor='w', edgecolor='w',
+				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
+		else:
+			plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'appres_phase'+os.sep+'ex_MT_'+sta_ref+'.png', dpi=100, facecolor='w', edgecolor='w',
+				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 		plt.close("all")
 
     	# #(0) create plot
@@ -181,8 +193,8 @@ if __name__ == "__main__":
 
 	# (2) z_strike
 	if z_strike: 
-		by_depth = False
-		by_depth_heatmap = True
+		by_depth = True
+		by_depth_heatmap = False
 		if by_depth:
 			Zstrikes_depths_1 = []
 			Zstrikes_depths_2 = []
@@ -257,13 +269,16 @@ if __name__ == "__main__":
 				for i, sd in enumerate(sd_vec):
 					if sd < d1_to: 
 						Zstrikes_depths_1.append(Z_strike_2_plot[i])
-						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_orange_col, marker = '.', alpha =.25)
+						ax1.plot(sd/1e3, Z_strike_2_plot[i], marker = '.', color = pale_orange_col, 
+							markersize = 5, alpha =.5)
 					elif sd < d2_to:
 						Zstrikes_depths_2.append(Z_strike_2_plot[i])
-						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_blue_col, marker = '.', alpha =.25)
+						ax1.plot(sd/1e3, Z_strike_2_plot[i], marker = '.', color = pale_blue_col,  
+							markersize = 5, alpha =.5)
 					elif sd < d3_to:
 						Zstrikes_depths_3.append(Z_strike_2_plot[i])
-						ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_red_col, marker = '.', alpha =.25)
+						ax1.plot(sd/1e3, Z_strike_2_plot[i], marker = '.', color = pale_red_col,
+							markersize = 5, alpha =.5)
 			ax1.plot([], [], color = pale_orange_col, marker = '.', label = '['+str(d1_from/1e3)+', '+str(d1_to/1e3)+'] km')
 			ax1.plot([], [], color = pale_blue_col, marker = '.', label = '['+str(d2_from/1e3)+', '+str(d2_to/1e3)+'] km')
 			ax1.plot([], [], color = pale_red_col, marker = '.', label = '['+str(d3_from/1e3)+', '+str(d3_to/1e3)+'] km')
@@ -309,6 +324,13 @@ if __name__ == "__main__":
 				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
 		if by_depth_heatmap:
+			# heatmap Zstrike vs depth
+			Zstr_axis = np.arange(0,95,5)
+			d_axis = np.logspace(1.1,5.1,num = 21, base=10.0)
+			#d_axis = np.arange(0,10000,100)
+			#Zstr_axis = np.linspace(0,90,len(d_axis))
+			matrix_Zstk_depth = np.zeros((len(Zstr_axis),len(d_axis)))
+			#
 			Zstrikes_depths_1 = []
 			Zstrikes_depths_2 = []
 			Zstrikes_depths_3 = []	
@@ -323,11 +345,6 @@ if __name__ == "__main__":
 			f,(ax1,ax2,ax3,ax4) = plt.subplots(4,1)
 			#f,(ax1,ax2,ax3,ax4,ax5) = plt.subplots(5,1)
 			f.set_size_inches(10,14)	
-
-			# heatmap Zstrike vs depth
-			Zstr_axis = np.arange(0,95,5)
-			d_axis = np.logspace(-2,5.,num = 20, base=10.0)
-			matrix_Zstk_depth = np.zeros((len(Zstr_axis),len(d_axis)))
 			# loop over stations to calc Zstrike aux
 			for sta in station_objects:
 				# Z strike between 0 and 90 
@@ -394,18 +411,49 @@ if __name__ == "__main__":
 						Zstrikes_depths_3.append(Z_strike_2_plot[i])
 						#ax1.plot(sd/1e3, Z_strike_2_plot[i], color = pale_red_col, marker = '.', alpha =.25)
 			
-			# loop over Z strike aux and depth per station to fill matrix_Zstk_depth
-			
+				## loop over Z_strike_aux and sd_vec per station to fill matrix_Zstk_depth.
+				## matrix_Zstk_depth is defined in x by d_axis and y by Zstr_axis
+				# # loop over and Zstr_axis (in the station) (i)
+				for i in range(len(Z_strike_aux)):
+					# find box(index) for Z_strike_aux[i] in Zstr_axis
+					val, z_axis_idx = find_nearest(Zstr_axis, Z_strike_aux[i])
+					# find box(index) for sd_vec[i] in d_axis
+					val, d_axis_idx = find_nearest(d_axis, sd_vec[i])
 
-			#ax1.plot([], [], color = pale_orange_col, marker = '.', label = '['+str(d1_from/1e3)+', '+str(d1_to/1e3)+'] km')
-			#ax1.plot([], [], color = pale_blue_col, marker = '.', label = '['+str(d2_from/1e3)+', '+str(d2_to/1e3)+'] km')
-			#ax1.plot([], [], color = pale_red_col, marker = '.', label = '['+str(d3_from/1e3)+', '+str(d3_to/1e3)+'] km')
-			#ax1.set_xscale('log')
-			#ax1.set_xlim([1e-2,.5e2])
-			#ax1.set_title(r'(a) $Z_{strike}$ vs skin depth for the MT array', fontsize=textsize, loc='center')
-			#ax1.set_xlabel(r'depth [km]', fontsize=textsize)
+					# increase box of matrix_Zstk_depth by 1
+					matrix_Zstk_depth[z_axis_idx][d_axis_idx] += 1
+			#print(matrix_Zstk_depth)
+			#fig, ax1 = plt.subplots()
+			#f.set_size_inches(4,8)
+			#im = ax1.imshow(matrix_Zstk_depth, cmap='Greens')#, aspect  = 'equal')
+			im = ax1.pcolor(matrix_Zstk_depth, cmap='Greens')#, aspect  = 'equal')
+			# We want to show all ticks...
+			#x_labels = [str(int(d)) for d in d_axis]
+			x_labels = [str(int(d_axis[d])) for d in range(0,len(d_axis),2)]
+			#y_labels = [str(int(d)) for d in Zstr_axis]
+			y_labels = [str(int(Zstr_axis[d])) for d in range(0,len(Zstr_axis),2)]
+			#ax.set_yticks(np.arange(len(vegetables)))
+			# ... and label them with the respective list entries
+			#ax1.set_xticklabels(x_labels)
+			#ax1.set_yticklabels(y_labels)
+			ax1.set_title(r'(a) $Z_{strike}$ vs skin depth for the MT array', fontsize=textsize, loc='center')
+			#ax1.set_xlabel(r'depth [m]', fontsize=textsize)
 			#ax1.set_ylabel(r'$Z_{strike}$ [°]', fontsize=textsize)
-			#ax1.grid(True, which='both', linewidth=0.1)				
+
+			# Rotate the tick labels and set their alignment.
+			#plt.setp(ax1.get_xticklabels(), rotation=90, ha="right",
+			#	rotation_mode="anchor")
+
+			# Loop over data dimensions and create text annotations.
+			#for i in range(len(Z_strike_aux)):
+			#	for j in range(len(sd_vec)):
+					#text = ax.text(j, i, matrix_Zstk_depth[i, j],
+			#					ha="center", va="center", color="w")
+
+			#ax1.set_title("Heatmap Zstrike vs skin depth ")
+			#plt.xscale('log')
+			#fig.tight_layout()
+			#plt.show()				
 
 			# HIST depths 1
 			bins = np.linspace(np.min(Zstrikes_depths_1), np.max(Zstrikes_depths_1), int(.5*np.sqrt(len(Zstrikes_depths_1))))
@@ -438,7 +486,7 @@ if __name__ == "__main__":
 			ax4.set_title(r'(d) $Z_{strike}$ for depths: ['+str(d3_from/1e3)+', '+str(d3_to/1e3)+'] km', fontsize=textsize, loc='center')
 			plt.tight_layout()
 			#save 
-			plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'Z_strike_skin_depth_'+str(d1_from/1e3)+'_'+str(d3_to/1e3)+'_km'+'.png', dpi=100, facecolor='w', edgecolor='w',
+			plt.savefig('.'+os.sep+'dat_dim_ana'+os.sep+'Z_strike_skin_depth_heatmap'+'.png', dpi=100, facecolor='w', edgecolor='w',
 				orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=0.1)
 
 

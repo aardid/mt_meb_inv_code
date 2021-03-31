@@ -392,12 +392,13 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         x_axis = x_axis/1e3
     
     ## plot envelopes 5% and 95% for cc boundaries
-    f = plt.figure(figsize=[9.5,7.5])
+    f = plt.figure(figsize=[18.5,9.5])
     if prior_meb:
         f = plt.figure(figsize=[11.5,9.5])
         ax = plt.axes([0.18,0.25,0.70,0.50]) 
     if plot_litho_wells:
         f = plt.figure(figsize=[18.5,9.5])
+        #f = plt.figure(figsize=[8.5,5.5])
         ax = plt.axes([0.1,0.1,0.75,0.75]) # fig.add_axes((left, bottom, width, height))
 
     # plot meadian and topo
@@ -715,15 +716,15 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
                 #with open(r'data\nzafd.json', 'r') as fp:
                 for j in range(N):
                     if wl.name == 'WK317':
-                        ax.fill_between([x_axis_wl[i]+.1,x_axis_wl[i]+.3],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                        ax.fill_between([x_axis_wl[i]+.0,x_axis_wl[i]+.4],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
                             color = colors[j], alpha = 0.8, zorder = 5)
                     elif wl.name == 'WK318':
-                        ax.fill_between([x_axis_wl[i]+.0,x_axis_wl[i]+.2],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                        ax.fill_between([x_axis_wl[i]+-.1,x_axis_wl[i]+.3],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
                             color = colors[j], alpha = 0.8, zorder = 5)
                         #ax.fill_between([x_axis_wl[i]-.3,x_axis_wl[i]-.1],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
                         #    color = colors[j], alpha = 0.8, zorder = 5)
                     else:
-                        ax.fill_between([x_axis_wl[i]-.1,x_axis_wl[i]+.1],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
+                        ax.fill_between([x_axis_wl[i]-.2,x_axis_wl[i]+.2],[wl.elev -depths_from[j], wl.elev -depths_from[j]], [wl.elev -depths_to[j],wl.elev -depths_to[j]], \
                             color = colors[j], alpha = 0.8, zorder = 5)
                     #thick = depths_to[j] - depths_from[j]
                     #if thick > 25:
@@ -799,7 +800,7 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
         if prior_meb:
             ax.set_xlim([x_axis[0]-2, x_axis[-1]+1])
         if plot_litho_wells: 
-            ax.set_xlim([x_axis[0]-4.0, x_axis[-1]+1])
+            ax.set_xlim([x_axis[0]-8.0, x_axis[-1]+1])
     # ylim
     if prior_meb:
         if ylim:
@@ -816,8 +817,6 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
             if plot_litho_wells: 
                 ax.set_ylim([-1.7e3, max(topo)+400.])
     
-    
-    
     #plt.xticks(np.linspace(0,10,10))
     ax.set_xlabel('y [km]', size = textsize)
     ax.set_ylabel('z [m]', size = textsize)
@@ -830,7 +829,6 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     ax.tick_params(labelsize=textsize)
 
     #plt.grid(True)
-    
     if export_fig:
         return f, ax
 

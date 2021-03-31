@@ -53,14 +53,14 @@ if __name__ == "__main__":
 		######## Just one of the following can be 'True'
 		meb_results = False # add scatter MeB results # modify .png ouput
 		mt_results = False # add scatter MT results # modify .png ouput
-		temp_results = True # add scatter Temp results  # modify .png ouput
+		temp_results = False # add scatter Temp results  # modify .png ouput
 		temp_grad = False # add scatter temperature gradient inside the conductor # modify .png ouput
 		temp_hflux = False # add scatter conductive heatflux  # modify .png ouput
 		temp_hflux_tot = False # add scatter conductive total heatflux (cond+adv)  # modify .png ouput
 		z1_vs_temp_z1_basemap = False # z1 from MT vs temp at z1  # modify .png ouput
 		d2_vs_temp_d2_basemap = False # d2 (z1+z2) from MT vs temp at d2  # modify .png ouput
 		temp_grad_HF_basemap = False # temperature gradient and heat flux # modify .png ouput
-
+		misfit_tough2_mod = True  # map of temperature misfit for selected wells from tough2 models
 		########
 		# plot map with wells and stations
 		if base_map:
@@ -330,18 +330,18 @@ if __name__ == "__main__":
 			lon_stas = mt_result[1]
 			lat_stas = mt_result[2]
 			# array to plot
-			if True: # z1_mean
+			if False: # z1_mean
 				z1_mean = mt_result[3]
 				name = 'z1_mean'
 				array = z1_mean
 				levels = np.arange(50,450,25)  # for mean z1
 				title = 'Depth to the top of the conductor'
-			if False: # z2_mean
+			if True: # z2_mean
 				z2_mean = mt_result[5]
 				name = 'z2_mean'
 				array = z2_mean
 				levels = np.arange(200,650,25)  # for mean z10
-				title = 'Conductor Thickness'
+				title = 'Conductor thickness'
 			if False: # z2_std
 				z2_std = mt_result[6]
 				name = 'z2_std'
@@ -370,7 +370,7 @@ if __name__ == "__main__":
 					zorder = 5, label = r'$z_1$: Depth to the top of the conductor at MT station')
 			if name == 'z2_mean':
 				ax.scatter([],[], s = size, c = 'b', edgecolors = 'k', \
-					zorder = 5, label = 'Thickness of the Conductor at MT station')
+					zorder = 5, label = r'$z_2$: Thickness of the conductor at MT station')
 			if True:
 				ax.set_title(title, size = textsize)
 			# absence of CC (no_cc)
@@ -415,11 +415,11 @@ if __name__ == "__main__":
 			lon_stas = temp_result[1]
 			lat_stas = temp_result[2]
 			# array to plot
-			if False: # T1
+			if True: # T1
 				T1_mean = temp_result[3]
 				array = T1_mean
 				name = 'T1_mean'
-			if True:  # T2
+			if False:  # T2
 				T2_mean = temp_result[5]
 				array = T2_mean
 				name = 'T2_mean'
@@ -431,10 +431,18 @@ if __name__ == "__main__":
 			#normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
 			scatter_temp = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', 
 				cmap = 'YlOrRd', zorder = 5)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
-			ax.scatter([],[], s = size, c = 'r', edgecolors = 'k', \
-				zorder = 5, label = r'$T_2$: Wells temperature at the bottom of the conductor')#alpha = 0.5)
+			if name == 'T2_mean':
+				title = 'Temperature at the bottom of the clay cap'
+				ax.scatter([],[], s = size, c = 'r', edgecolors = 'k', \
+					zorder = 5, label = r'$T_2$: Wells temperature at the bottom of the clay cap')#alpha = 0.5)
+				ax.set_title(title, size = textsize)
 			#
-			title = 'Depth to the Top of the Conductor'
+			if name == 'T1_mean':
+				title = 'Temperature at the top of the clay cap'
+				ax.scatter([],[], s = size, c = 'r', edgecolors = 'k', \
+					zorder = 5, label = r'$T_1$: Wells temperature at the top of the clay cap')#alpha = 0.5)
+				ax.set_title(title, size = textsize)
+			#
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_temp_'+name+'.png'
 		# add scatter geothermal gradient 
 		if temp_grad:
@@ -1076,12 +1084,59 @@ if __name__ == "__main__":
 
 			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'
 						#
-		####################################################
+		# add scatter plot of temperature misfit using tough2 models  
+		if misfit_tough2_mod: 
+			##
+			recal = True
+			if recal: # recalibrated model 
+				name = 'mf_t2_recal'
+			else: # cal model
+				name = 'mf_t2_cal'
+			#name = 'mf_t2_recal'
+			dif_cal_recal = True
+			if recal: # recalibrated model 
+				name = 'mf_t2_dif_cal_recal'
+			# geothermal gradient 
+			#mf_mean = []
+			#lon_stas = []
+			#lat_stas = []
+			count = 0
+			# import results to get lat and lon 
+			mf = np.genfromtxt('.'+os.sep+'wells_info'+os.sep+'wl_lat_lon_mfcal_mfrecal.txt', delimiter = ',', skip_header=1).T	
+			lat_stas = mf[1]
+			lon_stas = mf[2]
+			if recal: # recalibrated model 
+				array = mf[4] # array to plot: recal misfit 
+			else: # cal model
+				array = mf[3] # array to plot: cal misfit 
+			if recal: # recalibrated model 
+				array = abs(mf[3]-mf[4]) # array to plot: dif between cal and recal misfit 
+			# scatter plot
+			size = 200*np.ones(len(array))
+			# levels = np.arange(200,576,25)  # for mean z1
+			## vmin = min(levels)
+			# vmax = max(levels)
+			#normalize = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
+			scatter_temp = ax.scatter(lon_stas,lat_stas, s = size, c = array, edgecolors = 'k', 
+				cmap = 'coolwarm', zorder = 5)#, label = 'Well temperature at: z2 mean')#alpha = 0.5)
+			#ax.scatter([],[], s = size, c = 'pink', edgecolors = 'k', \
+			#	zorder = 5, label = 'Temperature misfit at well location')#alpha = 0.5)
+			# Need to
+			if recal: # recalibrated model 
+				ax.set_title('Temperature misfit recalibrated model', size = textsize)
+			else: # cal model
+				ax.set_title('Temperature misfit calibrated model', size = textsize)		####################################################
+			if recal: # recalibrated model 
+				ax.set_title('Diference between cal. and recal. models on temp. misfit', size = textsize)		####################################################
+			# scatter plot
+			file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_'+name+'.png'
+		
 		## add colorbar 
 		if base_map: # topo 
 			if not (meb_results or mt_results or temp_results \
 					or z1_vs_temp_z1_basemap or d2_vs_temp_d2_basemap \
-						or temp_hflux or temp_hflux_tot or temp_grad or temp_grad_HF_basemap):
+						or temp_hflux or temp_hflux_tot or temp_grad 
+							or misfit_tough2_mod or temp_grad_HF_basemap):
 				f.colorbar(topo_cb, ax=ax, label ='Elevation [m] (m.a.s.l.)')
 				file_name = '.'+os.sep+'base_map_img'+os.sep+'figures'+os.sep+'base_map_topo.png'
 		if meb_results: # meb
@@ -1106,6 +1161,8 @@ if __name__ == "__main__":
 		if temp_grad_HF_basemap:
 			f.colorbar(scatter_temp, ax=ax, label ='Temperature gradient [°C/km]')
 			f.colorbar(scatter_hf, ax=ax, label =r'Heat flux [W/m$^2$]')
+		if misfit_tough2_mod:
+			f.colorbar(scatter_temp, ax=ax, label ='Average misfit per well')
 		#
 		ax.legend(loc=3, prop={'size': textsize}, fancybox=True, framealpha=0.5)
 		f.tight_layout()

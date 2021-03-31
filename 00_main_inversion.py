@@ -48,8 +48,8 @@ pale_red_col = u'#EE6666'
 
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
-	pc = 'office'
-	#pc = 'personalMac'
+	#pc = 'office'
+	pc = 'personalMac'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True # True always
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
-	prof_WRK_EW_7 = False # PW_TM_AR
+	prof_WRK_EW_7 = True # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
 	prof_WT_NS_1 = False # KS_OT_AR
 	#
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 	prof_THNW04 = False
 	prof_THNW05 = False
 	#
-	# Filter has qualitu MT stations
+	# Filter has quality MT stations
 	filter_lowQ_data_MT = False
 	# Filter MeB wells with useless info (for prior)
 	filter_useless_MeB_well = False
@@ -129,6 +129,8 @@ if __name__ == "__main__":
 		# Defined lists of MT station 
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
+
+			sta2work = ['WT314a']
 			if prof_WRKNW5:
 				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
 					'WT068a','WT070b','WT223a','WT107a','WT111a']			
@@ -544,7 +546,7 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
-		prior_meb = None  # if False -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
+		prior_meb = True  # if False -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
@@ -565,7 +567,7 @@ if __name__ == "__main__":
 					## inv_dat: weighted data to invert and range of periods
 					## 		inv_dat = [1,1,1,1] # [appres zxy, phase zxy, appres zyx, phase zyx]
 					## range_p = [0.001,10.] # range of periods
-					if False: # import inversion parameters from file 
+					if True: # import inversion parameters from file 
 						name_file =  '.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'inv_pars.txt'
 						inv_pars = [x.split() for x in open(name_file).readlines() if x[0]!='#']
 						inv_pars_names = [x[0] for x in inv_pars] 
@@ -761,7 +763,7 @@ if __name__ == "__main__":
 		# Create figure of unceratain boundaries of the clay cap and move to mcmc_inversions folder
 		file_name = 'z1_z2_uncert'
 		#plot_2D_uncert_bound_cc(station_objects, pref_orient = 'EW', file_name = file_name) # width_ref = '30%' '60%' '90%', 
-		prior_meb = True
+		prior_meb = False
 		if prior_meb:
 			if prof_WRK_EW_7:
 				plot_some_wells = ['WK681','WK122','WK315B','WKM15','WK321'] # 'WK314','WK682','WK123'
@@ -1380,13 +1382,13 @@ if __name__ == "__main__":
 			print('wells not considered: '+str(i)+'/'+str(len(wells_objects)))
 			temp_at_masl.close()
 
-		if True:   # plot well temperature profile 
-			if True:
+		if False:   # plot well temperature profile 
+			if False:
 				fig, (ax1, ax2) = plt.subplots(1, 2)
 				fig.set_size_inches(10,7)
 				fig.suptitle(' ')
 				#(1) well 1 
-				wl_ref = 'WK272'
+				wl_ref = 'WK033'#'WK272'
 				for wl in wells_objects:
 					if wl.name == wl_ref:
 						#ax1.set_xscale("linear")
@@ -1395,13 +1397,14 @@ if __name__ == "__main__":
 						ax1.plot(wl.temp_prof_rs, wl.red_depth_rs,'-', c = pale_orange_col, linewidth = 2.0)
 				ax1.plot([], [],'o', c = pale_blue_col, label = 'temperature data') # plot true data
 				ax1.plot([], [],'-', c = pale_orange_col, label = 'interpolated data')
-				if True:
+				
+				if False:
 					ax1.plot( [0,300.], [300.,300.],'g--', alpha = 0.5) 
 					ax1.plot( [0,300.], [50.,50.],'g--', alpha = 0.5)
 					ax1.plot( [], [],'g--', label = 'suggested boundary', alpha = 0.5) # plot true data
 					#
 				ax1.set_xlim([-5,300])
-				ax1.set_ylim([-300,500])
+				#ax1.set_ylim([-300,500])
 				ax1.set_xlabel('temperature [°C]', fontsize=textsize)
 				ax1.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
 				ax1.set_title('Temperature profile for well '+wl_ref, fontsize=textsize)
@@ -1409,7 +1412,7 @@ if __name__ == "__main__":
 				ax1.legend(loc = 'lower left', prop={'size': textsize})
 
 				#(1) well 2
-				wl_ref = 'TH14'
+				wl_ref = 'TH07'
 				for wl in wells_objects:
 					if wl.name == wl_ref:
 						#ax1.set_xscale("linear")
@@ -1418,11 +1421,12 @@ if __name__ == "__main__":
 						ax2.plot(wl.temp_prof_rs, wl.red_depth_rs,'-', c = pale_orange_col, linewidth = 2.0)
 				ax2.plot([], [],'o', c = pale_blue_col, label = 'temperature data') # plot true data
 				ax2.plot([], [],'-', c = pale_orange_col, label = 'interpolated data')
-				if True:
+				if False:
 					ax2.plot( [0,300.], [250.,250.],'g--', alpha = 0.5) 
 					ax2.plot( [0,300.], [100.,100.],'g--', alpha = 0.5)
 					ax2.plot( [], [],'g--', label = 'suggested boundary', alpha = 0.5) # plot true data
 					#
+				
 				ax2.set_xlim([-5,300])
 				ax2.set_ylim([-300,500])
 				ax2.set_xlabel('temperature [°C]', fontsize=textsize)
@@ -1437,20 +1441,24 @@ if __name__ == "__main__":
 				plt.close("all")
 
 			# plot MeB profile 
-			if False:
+			if True:
 				fig, (ax1,ax2) = plt.subplots(1, 2)
 				fig.set_size_inches(10,7)
 				fig.suptitle(' ')
 				#(1) loop over wells 
-				wl_ref = ['WK261','WK270'] #number of wells needs to match number of axes
+				wl_ref = ['WK261','WK270']#['WK307', 'WK686'] #number of wells needs to match number of axes
 				for i, ax in enumerate(fig.axes):
 					wl_aux = [wl for wl in wells_objects if wl.name == wl_ref[i]][0]
-					ax.plot(wl_aux.meb_prof, [d - wl_aux.elev for d in wl_aux.meb_depth],'*', c = pale_red_col, markersize = 12., label = 'MeB data') # plot true data
-					ax.plot(wl_aux.meb_prof, [d - wl_aux.elev for d in wl_aux.meb_depth],'--', c = pale_blue_col, linewidth = 1.5, label = 'interpolated data')
-					ax.plot([2,2],[wl_aux.elev-1200.,wl_aux.elev],'y--', linewidth = 1.0, label = 'resolution limit')
-					ax.plot([5,5],[wl_aux.elev-1200.,wl_aux.elev],'g--', linewidth = 1.0, label = 'high confidence limit')
+					ax.plot(wl_aux.meb_prof, [wl_aux.elev - d for d in wl_aux.meb_depth],'*', c = pale_red_col, markersize = 12., label = 'MeB data') # plot true data
+					ax.plot(wl_aux.meb_prof, [wl_aux.elev - d for d in wl_aux.meb_depth],'--', c = pale_blue_col, linewidth = 1.5, label = 'interpolated data')
+					ax.plot([2,2],[wl_aux.elev-2500.,wl_aux.elev],'y--', linewidth = 1.0, label = 'resolution limit')
+					ax.plot([5,5],[wl_aux.elev-2500.,wl_aux.elev],'g--', linewidth = 1.0, label = 'high confidence limit')
 					ax.set_xlim([0,12])
 					ax.set_ylim([wl_aux.elev-1200.,wl_aux.elev])
+					if 'WK307' == wl_aux.name:
+						ax.set_ylim([-2000,500])#[wl_aux.elev-1200.,wl_aux.elev])
+					if 'WK686' == wl_aux.name:
+						ax.set_ylim([-400,500])#[wl_aux.elev-1200.,wl_aux.elev])
 					ax.set_xlabel('Clay content [MeB %]', fontsize=textsize)
 					ax.set_ylabel('m.a.s.l. [m]', fontsize=textsize)
 					ax.grid(True, which='both', linewidth=0.1)	
@@ -1460,7 +1468,27 @@ if __name__ == "__main__":
 				fig.savefig('.'+os.sep+'wells_info'+os.sep+'meb_prof_ex'+os.sep+'meb_examples.png', dpi=300, facecolor='w', edgecolor='w',
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 				plt.close("all")
-				
+
+		if True:	# .txt with wells locations and misfit temp from tough2 models 
+			# load misfit results
+			file_path = '/Users/macadmin/Desktop/res_sim/wt_tough2_sim/ForAlberto/wells_info/hist_misfit.txt'
+			# create new file
+			g = open('.'+os.sep+'wells_info'+os.sep+'wl_lat_lon_mfcal_mfrecal.txt', "w")
+			g.write('# well name, lat, lon, misfir cal, misfit recal \n')
+			# loop over mf file, find location for each well, write line for new file 
+			with open(file_path, "r") as f:
+				next(f)
+				for x in f:
+					wl_name, mf_cal, mf_recal = x.split(sep = ',')
+					if wl_name == 'GGL01': wl_name = 'GGL1'
+					mf_cal, mf_recal = float(mf_cal[1:]), float(mf_recal[1:])
+					# find wl in wells objects 
+					wl1 = [wl for wl in wells_objects if wl.name == wl_name][0]  # list of all elements with .n==30					# write new file
+					g.write(wl1.name+','+str(wl1.lat_dec)+','+str(wl1.lon_dec)+','+str(mf_cal)+','+str(mf_recal)+'\n')
+			g.close()
+			f.close()
+
+
 
 
 
