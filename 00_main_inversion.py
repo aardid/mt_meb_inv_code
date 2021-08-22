@@ -49,7 +49,8 @@ pale_red_col = u'#EE6666'
 if __name__ == "__main__":
 	## PC that the code will be be run ('ofiice', 'personalSuse', 'personalWin')
 	#pc = 'office'
-	pc = 'personalMac'
+	#pc = 'personalMac'
+	pc = 'office_uc'
 	# ==============================================================================
 	## Set of data to work with 
 	full_dataset = True # True always
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 	prof_WRKNW6 = False
 	prof_WRKNW5 = False
 	array_WRKNW5_WRKNW6 = False
-	prof_WRK_EW_7 = True # PW_TM_AR
+	prof_WRK_EW_7 = False # PW_TM_AR
 	prof_WRK_SENW_8 = False # KS_OT_AR
 	prof_WT_NS_1 = False # KS_OT_AR
 	#
@@ -68,7 +69,7 @@ if __name__ == "__main__":
 	prof_THNW05 = False
 	#
 	# Filter has quality MT stations
-	filter_lowQ_data_MT = False
+	filter_lowQ_data_MT = True
 	# Filter MeB wells with useless info (for prior)
 	filter_useless_MeB_well = False
 	## run with quality filter per well
@@ -105,6 +106,19 @@ if __name__ == "__main__":
 			####### MeB data in wells 
 			path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data.txt"
 			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
+		#########  MT data
+		if pc == 'office_uc': 
+			#########  MT data
+			path_files = 'C:\\Users\\aar135\\data\\Wairakei_Tauhara_data\\MT_Survey\\EDI_Files\\*.edi' 	# Whole array 
+			####### Temperature in wells data
+			path_wells_loc = "C:\\Users\\aar135\\data\\Wairakei_Tauhara_data\\Temp_wells\\well_location_latlon.txt"
+			path_wells_temp = "C:\\Users\\aar135\\data\\Wairakei_Tauhara_data\\Temp_wells\\well_depth_redDepth_temp.txt"
+            #path_wells_temp_date = 	os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'Wairakei_Tauhara_data'+os.sep+'Temp_wells'+os.sep+'well_depth_redDepth_temp_date.txt'
+			path_wells_temp_date = 	"C:\\Users\\aar135\\data\\Wairakei_Tauhara_data\\Temp_wells\\well_depth_redDepth_temp_date.txt"
+			# Column order: Well	Depth [m]	Interpreted Temperature [deg C]	Reduced Level [m]
+			####### MeB data in wells 
+			path_wells_meb = "C:\\Users\\aar135\\data\\Wairakei_Tauhara_data\\MeB_wells\\MeB_data.txt"
+			#path_wells_meb = "D:\Wairakei_Tauhara_data\MeB_wells\MeB_data_sample.txt"	
 
 		## Data paths for personal's pc SUSE (uncommend the one to use)
 		if pc == 'personalMac':
@@ -130,7 +144,6 @@ if __name__ == "__main__":
 		if full_dataset:
 			sta2work = [file_dir[i][pos_ast:-4] for i in range(len(file_dir))]
 
-			sta2work = ['WT314a']
 			if prof_WRKNW5:
 				sta2work = ['WT039a','WT024a','WT030a','WT501a','WT502a','WT060a','WT071a', \
 					'WT068a','WT070b','WT223a','WT107a','WT111a']			
@@ -188,10 +201,11 @@ if __name__ == "__main__":
 		# # Note: wells_location = [[wl_name1,lat1,lon1,elev1],...] list of arrays
 		# ## Recover MeB data for wells from path_wells_meb
 		wl_name_meb, wl_prof_depth_meb, wl_prof_meb = read_well_meb(path_wells_meb)
-        # name exepctions: 
-		for i, wl_meb in enumerate(wl_name_meb):
-			if wl_meb in ['WK409','WK123','WK124']: # wells with an A in temp profiles but not A in MeB profiles
-				wl_name_meb[i] = wl_meb+'A'
+        # name exepctions:
+		wl_name_meb = wl_name_meb[32:] 
+		#for i, wl_meb in enumerate(wl_name_meb):
+		#	if wl_meb in ['WK409','WK123','WK124']: # wells with an A in temp profiles but not A in MeB profiles
+		#		wl_name_meb[i] = wl_meb+'A'
 		#########################################################################################
 		## Create wells objects
 		# Defined lists of wells
@@ -546,14 +560,14 @@ if __name__ == "__main__":
 		if pdf_fit:
 			pp = PdfPages('fit.pdf')
 		start_time_f = time.time()
-		prior_meb = True  # if False -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
+		prior_meb = False  # if False -> None; extra condition inside the loop: if every app res value is > 10 ohm m, prior_meb False
 		prior_meb_weigth = 1.0
 		station_objects.sort(key=lambda x: x.ref, reverse=False)
 		# run inversion
 		if True:
 			for sta_obj in station_objects:
-				if sta_obj.ref < 0: # start at 0
-				#if sta_obj.name[:-4] != 'WT130a': #sta2work = ['WT122','WT130a','WT115a']
+				if sta_obj.ref < 216: # start at 0
+				#if sta_obj.name[:-4] != 'WT016a': #sta2work = ['WT122','WT130a','WT115a']
 					pass
 				else: 
 					print('({:}/{:}) Running MCMC inversion:\t'.format(sta_obj.ref+1,len(station_objects))+sta_obj.name[:-4])
@@ -779,7 +793,7 @@ if __name__ == "__main__":
 		else:
 			plot_some_wells = False
 		# for plotting lithology 
-		litho_plot = True
+		litho_plot = False
 		if litho_plot:
 			if prof_WRK_EW_7:
 				plot_litho_wells = ['WK315B','WKM14','WKM15','WK681'] # 'WK315b','WKM14','WKM15','WK681'
@@ -1202,7 +1216,7 @@ if __name__ == "__main__":
 			sta_re_inv = [x[0][:-4] for x in sta_re_inv if x[4] is '0']
 			print(sta_re_inv)
 
-		if False:  # histogram of MT inversion parameters for stations inverted
+		if True:  # histogram of MT inversion parameters for stations inverted
 			# Resistivity Boundary, Risk
 			path_rest_bound_WT = '.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat'
 			# Resistivity Boundary, Mielke, OUT
@@ -1254,21 +1268,39 @@ if __name__ == "__main__":
 				wl_meb_results.close()
 				wls_loc.close()
 			# mcmc MT results 
-			if False:
+			if True:
 				sta_mcmc_results = open('.'+os.sep+'mcmc_inversions'+os.sep+'00_global_inversion'+os.sep+'mt_sta_results.dat','w')
 				sta_mcmc_results.write('sta_name'+','+'lon_dec'+','+'lat_dec'+','+'z1_mean'+','+'z1_std'+','+'z2_mean'+','+'z2_std'+'\n')
 				for sta in station_objects:
-					# extract meb mcmc results from file 
-					mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+str(sta.name[:-4])+os.sep+"est_par.dat")
-					# values for mean a std for normal distribution representing the prior
-					sta.z1_pars = [mt_mcmc_results[0,1], mt_mcmc_results[0,2]] # mean [1] z1 # median [3] z1 
-					sta.z2_pars = [mt_mcmc_results[1,1], mt_mcmc_results[1,2]] # mean [1] z1 # median [3] z1 
-					# write results 
-					sta_mcmc_results.write(str(sta.name[:-4])+','+str(sta.lon_dec)+','+str(sta.lat_dec)+','
-						+str(sta.z1_pars[0])+','+str(sta.z1_pars[1])+','+str(sta.z2_pars[0])+','+str(sta.z2_pars[1])+'\n')
+					if True: # filter stations inside resistivity boundary
+							lats_nzgm, lons_nzgm = np.genfromtxt('.'+os.sep+'base_map_img'+os.sep+'shorelines_reservoirlines'+os.sep+'rest_bound_WK_50ohmm.dat', skip_header=1, delimiter=',').T
+							# define poligon
+							poli_in = [[lons_nzgm[i],lats_nzgm[i]] for i in range(len(lons_nzgm))]
+							# check if centre is station is inside the polygon 
+							val = ray_tracing_method(sta.lon_dec, sta.lat_dec, poli_in)
+							if val:
+									# extract meb mcmc results from file 
+									mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+str(sta.name[:-4])+os.sep+"est_par.dat")
+									# values for mean a std for normal distribution representing the prior
+									sta.z1_pars = [mt_mcmc_results[0,1], mt_mcmc_results[0,2]] # mean [1] z1 # median [3] z1 
+									sta.z2_pars = [mt_mcmc_results[1,1], mt_mcmc_results[1,2]] # mean [1] z1 # median [3] z1 
+									# write results 
+									sta_mcmc_results.write(str(sta.name[:-4])+','+str(sta.lon_dec)+','+str(sta.lat_dec)+','
+										+str(sta.z1_pars[0])+','+str(sta.z1_pars[1])+','+str(sta.z2_pars[0])+','+str(sta.z2_pars[1])+'\n')
+    								
+					else:
+						pass
+						# extract meb mcmc results from file 
+						mt_mcmc_results = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+str(sta.name[:-4])+os.sep+"est_par.dat")
+						# values for mean a std for normal distribution representing the prior
+						sta.z1_pars = [mt_mcmc_results[0,1], mt_mcmc_results[0,2]] # mean [1] z1 # median [3] z1 
+						sta.z2_pars = [mt_mcmc_results[1,1], mt_mcmc_results[1,2]] # mean [1] z1 # median [3] z1 
+						# write results 
+						sta_mcmc_results.write(str(sta.name[:-4])+','+str(sta.lon_dec)+','+str(sta.lat_dec)+','
+							+str(sta.z1_pars[0])+','+str(sta.z1_pars[1])+','+str(sta.z2_pars[0])+','+str(sta.z2_pars[1])+'\n')
 				sta_mcmc_results.close()
 			# temp at z1 an z2 in wells  and z1 and z2 at well positions
-			if True:
+			if False:
 				wl_temp_z1_z2 = open('.'+os.sep+'corr_temp_bc'+os.sep+'00_global'+os.sep+'wls_conductor_T1_T2.dat','w')
 				wl_temp_z1_z2.write('wl_name'+','+'lon_dec'+','+'lat_dec'+','+'T1_mean'+','+'T1_std'+','+'T2_mean'+','+'T2_std'+'\n')
 				for wl in wells_objects:
@@ -1469,7 +1501,7 @@ if __name__ == "__main__":
 					orientation='portrait', format='png',transparent=True, bbox_inches=None, pad_inches=.1)	
 				plt.close("all")
 
-		if True:	# .txt with wells locations and misfit temp from tough2 models 
+		if False:	# .txt with wells locations and misfit temp from tough2 models 
 			# load misfit results
 			file_path = '/Users/macadmin/Desktop/res_sim/wt_tough2_sim/ForAlberto/wells_info/hist_misfit.txt'
 			# create new file

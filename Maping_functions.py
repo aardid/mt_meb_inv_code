@@ -393,6 +393,8 @@ def plot_2D_uncert_bound_cc_mult_env(sta_objects, type_coord = None, unit_dist =
     
     ## plot envelopes 5% and 95% for cc boundaries
     f = plt.figure(figsize=[18.5,9.5])
+    ax = plt.axes([0.18,0.25,0.70,0.50])
+    
     if prior_meb:
         f = plt.figure(figsize=[11.5,9.5])
         ax = plt.axes([0.18,0.25,0.70,0.50]) 

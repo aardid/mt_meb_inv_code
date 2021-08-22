@@ -2263,39 +2263,55 @@ def histogram_mcmc_MT_inv_results_multisamples(station_objects, filt_in_count = 
 
     ## load pars
     for sta in station_objects:
-        aux = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'est_par.dat')
-        sta.z1_pars = [aux[0][1],aux[0][2]]
-        sta.z2_pars = [aux[1][1],aux[1][2]]
-        sta.r1_pars = [aux[2][1],aux[2][2]]
-        sta.r2_pars = [aux[3][1],aux[3][2]]
-        sta.r3_pars = [aux[4][1],aux[4][2]]
-            
-        if filt_in_count:
-            N_samples = 50
-            # check if station is inside poligon 
-            val = ray_tracing_method(sta.lon_dec, sta.lat_dec, poli_in)
-            if val:
-                count = 0
-                while count < N_samples:
-                    z1_samp = np.random.normal(sta.z1_pars[0], sta.z1_pars[1], 1)[0]
-                    z2_samp = np.random.normal(sta.z2_pars[0], sta.z2_pars[1], 1)[0]
-                    r1_samp = np.random.normal(sta.r1_pars[0], sta.r1_pars[1], 1)[0]
-                    r2_samp = np.random.normal(sta.r2_pars[0], sta.r2_pars[1], 1)[0]
-                    r3_samp = np.random.normal(sta.r3_pars[0], sta.r3_pars[1], 1)[0]
-                    #
-                    if z1_samp > 0.:
-                        z1_batch_filt_in.append(z1_samp)
-                    if z2_samp > 0.:
-                        z2_batch_filt_in.append(z2_samp)
-                    if r1_samp > 4.e4:
-                        r1_batch_filt_in.append(r1_samp)
-                    if r2_samp > 0.:
-                        r2_batch_filt_in.append(r2_samp)
-                    if r3_samp < 300.:
-                        r3_batch_filt_in.append(r3_samp)
-                    count+=1
-    
-    if filt_in_count:    
+        try:
+            aux = np.genfromtxt('.'+os.sep+'mcmc_inversions'+os.sep+sta.name[:-4]+os.sep+'est_par.dat')
+            sta.z1_pars = [aux[0][1],aux[0][2]]
+            sta.z2_pars = [aux[1][1],aux[1][2]]
+            sta.r1_pars = [aux[2][1],aux[2][2]]
+            sta.r2_pars = [aux[3][1],aux[3][2]]
+            sta.r3_pars = [aux[4][1],aux[4][2]]
+                
+            if filt_in_count:
+                N_samples = 50
+                # check if station is inside poligon 
+                val = ray_tracing_method(sta.lon_dec, sta.lat_dec, poli_in)
+                if val:
+                    count = 0
+                    while count < N_samples:
+                        z1_samp = np.random.normal(sta.z1_pars[0], sta.z1_pars[1], 1)[0]
+                        z2_samp = np.random.normal(sta.z2_pars[0], sta.z2_pars[1], 1)[0]
+                        r1_samp = np.random.normal(sta.r1_pars[0], sta.r1_pars[1], 1)[0]
+                        r2_samp = np.random.normal(sta.r2_pars[0], sta.r2_pars[1], 1)[0]
+                        r3_samp = np.random.normal(sta.r3_pars[0], sta.r3_pars[1], 1)[0]
+                        #
+                        if z1_samp > 0.:
+                            z1_batch_filt_in.append(z1_samp)
+                        if z2_samp > 0.:
+                            z2_batch_filt_in.append(z2_samp)
+                        if r1_samp > 4.e4:
+                            r1_batch_filt_in.append(r1_samp)
+                        if r2_samp > 0.:
+                            r2_batch_filt_in.append(r2_samp)
+                        if r3_samp < 300.:
+                            r3_batch_filt_in.append(r3_samp)
+                        count+=1
+        except:
+            pass
+    if filt_in_count:
+        if True:# write txt with sample values for each par in each station
+                # to construct posterior
+            # par to print  
+            par = 'z2' #
+            # batch 
+            if par == 'z2':
+                batch = z2_batch_filt_in
+            with open('sample_post_'+par+'.txt', 'w') as f:
+                if filt_in_count:
+                    f.write('n,'+par+'(infield) \n')
+                else:
+                    f.write('n,'+par+'\n')
+                for i in range(len(batch)):
+                    f.write(str(i)+','+str(batch[i])+'\n')
         # plot histograms 
         f = plt.figure(figsize=(12, 7))
         gs = gridspec.GridSpec(nrows=2, ncols=3)

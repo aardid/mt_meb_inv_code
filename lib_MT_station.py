@@ -225,7 +225,8 @@ class Station(object):
             path = "D:\workflow_data\MTdata_PT_unrotated\Z_Files"+os.sep+self.name[:-4]+".Z"
         if pc == "personalMac": 
             path = os.sep+'Users'+os.sep+'macadmin'+os.sep+'Documents'+os.sep+'WT_MT_inv'+os.sep+'data'+os.sep+'workflow_data'+os.sep+'MTdata_PT_unrotated'+os.sep+'Z_Files'+os.sep+self.name[:-4]+".Z"
-
+        if pc == "office_uc": 
+            path = "C:\\Users\\aar135\\data\\Wairakei_Tauhara_data\\MT_Survey\\Z_Files"+os.sep+self.name[:-4]+".Z"
         Z_dr = np.genfromtxt(path).T
         self.T = Z_dr[0]
         # Zxx
