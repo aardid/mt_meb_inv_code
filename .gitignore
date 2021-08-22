@@ -1,7 +1,7 @@
 __pycache__
 .vscode
-mcmc_inversions
-mcmc_meb
+mcmc_inversions/*
+mcmc_meb/*
 meb_info
 temp_prof_est
 temp_prof_samples
@@ -9,9 +9,9 @@ wells_info
 tests
 noise_distributions
 modEM_inv
-corr_temp_bc
+corr_temp_bc/*
 MT_info
 paraview_files
 plain_view_plots
-base_map_img
+base_map_img/*
 wells_info

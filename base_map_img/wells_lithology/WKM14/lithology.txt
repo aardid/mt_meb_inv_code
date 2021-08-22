@@ -1,7 +1,0 @@
-#depth_from,depth_to,formation
-0,6,NR
-6,19,NR
-19,96,ORNFM
-96,234,HFF
-234,604,WRFM
-604,616,WHK_IG
